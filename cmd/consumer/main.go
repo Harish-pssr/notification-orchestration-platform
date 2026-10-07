@@ -57,7 +57,7 @@ func run() error {
 	}
 	defer pool.Close()
 
-	nc, err := nats.Connect(cfg.NATSURL, nats.Name("consumer-"+string(channel)))
+	nc, err := nats.Connect(cfg.NATSURL, nats.Name("consumer-"+string(channel)), nats.MaxReconnects(-1))
 	if err != nil {
 		return fmt.Errorf("connect nats: %w", err)
 	}

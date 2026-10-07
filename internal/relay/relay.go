@@ -4,6 +4,7 @@ package relay
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
@@ -31,17 +32,26 @@ type Config struct {
 	BackoffBase    time.Duration
 	BackoffCap     time.Duration
 	PublishTimeout time.Duration
+	BrokerBackoff  time.Duration // pause after a batch hit a broker failure (D18); 0 means 1 s
 }
+
+// brokerError marks a failure that happened while talking to the broker. It is the
+// broker's fault, not the event's, so it must not use up the event's attempts (D18).
+type brokerError struct{ err error }
+
+func (e *brokerError) Error() string { return e.err.Error() }
+func (e *brokerError) Unwrap() error { return e.err }
 
 // Relay is one relay worker. Run several instances for concurrency.
 type Relay struct {
-	cfg     Config
-	store   *outbox.Store
-	js      jetstream.JetStream
-	log     *slog.Logger
-	faults  *faults.Registry // nil means no fault injection
-	metrics *metrics.Relay   // nil means no metrics
-	paused  atomic.Bool      // true while the run loop is idle because of a pause fault
+	cfg           Config
+	store         *outbox.Store
+	js            jetstream.JetStream
+	log           *slog.Logger
+	faults        *faults.Registry // nil means no fault injection
+	metrics       *metrics.Relay   // nil means no metrics
+	paused        atomic.Bool      // true while the run loop is idle because of a pause fault
+	brokerTrouble atomic.Bool      // set when a batch hit a broker failure; the run loop then backs off
 }
 
 // SetMetrics attaches the relay's metrics. Call it before Run.
@@ -84,7 +94,13 @@ func (r *Relay) Run(ctx context.Context) error {
 		if err != nil {
 			r.log.Error("relay round failed", "error", err)
 		}
-		if n == 0 { // idle or errored: wait before polling again
+		if r.brokerTrouble.Swap(false) {
+			// The broker is unreachable (D18): do not hammer the outbox with claims.
+			select {
+			case <-ctx.Done():
+			case <-time.After(r.brokerBackoff()):
+			}
+		} else if n == 0 { // idle or errored: wait before polling again
 			select {
 			case <-ctx.Done():
 			case <-time.After(r.cfg.Poll):
@@ -92,6 +108,13 @@ func (r *Relay) Run(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (r *Relay) brokerBackoff() time.Duration {
+	if r.cfg.BrokerBackoff > 0 {
+		return r.cfg.BrokerBackoff
+	}
+	return time.Second
 }
 
 // RunOnce claims one batch and processes it, returning how many rows it claimed.
@@ -116,20 +139,32 @@ func (r *Relay) RunOnce(ctx context.Context) (int, error) {
 		return len(claimed), err
 	}
 
+	brokerDown := false
 	for _, c := range claimed {
-		r.process(ctx, c, pending[c.ID])
+		if brokerDown {
+			// An earlier event in this batch just failed because the broker is
+			// unreachable, so do not wait for a timeout on every other one (D18).
+			r.releaseForBroker(ctx, c, "broker unavailable: not attempted")
+			continue
+		}
+		if r.process(ctx, c, pending[c.ID]) {
+			brokerDown = true
+			r.brokerTrouble.Store(true)
+		}
 	}
 	return len(claimed), nil
 }
 
-func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox.Pending) {
+// process publishes one claimed event and finishes it. It reports whether the publish
+// failed because of the broker (D18).
+func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox.Pending) (brokerFailed bool) {
 	log := r.log.With("event_id", c.ID, "event_type", c.EventType, "attempt", c.Attempts)
 
 	// Poison guard (D11): the relay itself crash-looped on this row. Dead-letter it
 	// instead of publishing again.
 	if c.Attempts > r.cfg.MaxAttempts {
 		r.finishFailed(ctx, log, c, "exceeded max relay attempts", true)
-		return
+		return false
 	}
 
 	publishStart := time.Now()
@@ -137,8 +172,14 @@ func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox
 	r.metrics.PublishDone(time.Since(publishStart), channelNames(channels), err)
 	if err != nil {
 		log.Warn("publish failed", "error", err, "status", "publish_failed")
+		var be *brokerError
+		if errors.As(err, &be) {
+			// The broker's fault, not the event's: give the attempt back and retry (D18).
+			r.releaseForBroker(ctx, c, "broker unavailable: "+err.Error())
+			return true
+		}
 		r.finishFailed(ctx, log, c, err.Error(), c.Attempts >= r.cfg.MaxAttempts)
-		return
+		return false
 	}
 
 	// Fault hook (D8): the window between "broker accepted" and "database updated".
@@ -172,6 +213,21 @@ func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox
 		log.Warn("lease lost before finishing; another relay owns this event", "status", "fence_lost")
 	default:
 		log.Info("published", "status", "published", "channels", len(channels))
+	}
+	return false
+}
+
+// releaseForBroker puts an event back to RETRYING without spending an attempt (D18).
+func (r *Relay) releaseForBroker(ctx context.Context, c outbox.Claimed, reason string) {
+	ok, err := r.store.MarkBrokerUnavailable(ctx, c, r.cfg.Name, reason, r.brokerBackoff())
+	switch {
+	case err != nil:
+		r.log.Error("release for broker failed", "event_id", c.ID, "error", err)
+	case !ok:
+		r.metrics.FenceLost()
+		r.log.Warn("lease lost before releasing the event", "event_id", c.ID, "status", "fence_lost")
+	default:
+		r.log.Warn("broker unavailable, will retry without using an attempt", "event_id", c.ID, "status", "broker_unavailable")
 	}
 }
 
@@ -211,7 +267,7 @@ func (r *Relay) publish(ctx context.Context, c outbox.Claimed, pending []outbox.
 
 		f, err := r.js.PublishMsgAsync(msg)
 		if err != nil {
-			return fmt.Errorf("publish to %s: %w", ch, err)
+			return &brokerError{fmt.Errorf("publish to %s: %w", ch, err)}
 		}
 		futures = append(futures, f)
 	}
@@ -220,9 +276,9 @@ func (r *Relay) publish(ctx context.Context, c outbox.Claimed, pending []outbox.
 		select {
 		case <-f.Ok():
 		case err := <-f.Err():
-			return fmt.Errorf("broker rejected %s: %w", pending[i].Channel, err)
+			return &brokerError{fmt.Errorf("broker rejected %s: %w", pending[i].Channel, err)}
 		case <-ctx.Done():
-			return fmt.Errorf("waiting for broker ack: %w", ctx.Err())
+			return &brokerError{fmt.Errorf("waiting for broker ack: %w", ctx.Err())}
 		}
 	}
 	return nil

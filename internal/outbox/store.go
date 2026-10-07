@@ -252,6 +252,24 @@ func (s *Store) MarkPublished(ctx context.Context, c Claimed, worker string) (bo
 	return tag.RowsAffected() == 1, nil
 }
 
+// MarkBrokerUnavailable releases a claimed event after a failure that was the broker's
+// fault, not the event's (D18): the event goes back to RETRYING and the attempt this
+// claim used is given back, so an outage of any length never dead-letters it. It is
+// fenced like MarkFailed.
+func (s *Store) MarkBrokerUnavailable(ctx context.Context, c Claimed, worker, reason string, retryIn time.Duration) (bool, error) {
+	tag, err := s.pool.Exec(ctx, `
+		UPDATE outbox_events
+		SET status = 'RETRYING', attempts = greatest(attempts - 1, 0), last_error = $4,
+		    next_attempt_at = now() + make_interval(secs => $5),
+		    locked_by = NULL, locked_until = NULL
+		WHERE id = $1 AND locked_by = $2 AND attempts = $3 AND status = 'PROCESSING'`,
+		c.ID, worker, c.Attempts, reason, retryIn.Seconds())
+	if err != nil {
+		return false, fmt.Errorf("mark broker unavailable: %w", err)
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 // MarkFailed records a failed publish: RETRYING after retryIn, or DLQ when dlq is
 // true. It is fenced like MarkPublished.
 func (s *Store) MarkFailed(ctx context.Context, c Claimed, worker, reason string, retryIn time.Duration, dlq bool) (bool, error) {

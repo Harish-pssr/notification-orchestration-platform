@@ -44,7 +44,9 @@ func run() error {
 	}
 	defer pool.Close()
 
-	nc, err := nats.Connect(cfg.NATSURL, nats.Name("relay"))
+	nc, err := nats.Connect(cfg.NATSURL, nats.Name("relay"),
+		nats.MaxReconnects(-1),    // keep trying for as long as the broker is away (D18)
+		nats.ReconnectBufSize(-1)) // fail a publish now instead of queueing it behind our back
 	if err != nil {
 		return fmt.Errorf("connect nats: %w", err)
 	}
@@ -69,6 +71,7 @@ func run() error {
 		BackoffBase:    config.GetenvDuration("BACKOFF_BASE", time.Second),
 		BackoffCap:     config.GetenvDuration("BACKOFF_CAP", 30*time.Second),
 		PublishTimeout: config.GetenvDuration("PUBLISH_TIMEOUT", 5*time.Second),
+		BrokerBackoff:  config.GetenvDuration("RELAY_BROKER_BACKOFF", time.Second),
 	}, outbox.NewStore(pool), js, log)
 
 	// Metrics (D9): served on their own port because the relay has no HTTP server.
