@@ -58,7 +58,8 @@ scripts/up.sh            # Linux, macOS, or Git Bash on Windows
 
 The first run builds the images, which takes a few minutes. It starts two Postgres databases (the platform's and
 the mock provider's), NATS JetStream, the migrations, the provider, the API and dashboard, one relay, three
-consumers (email, push, webhook) and Prometheus.
+consumers (email, push, webhook), Prometheus and Grafana. Set `NO_GRAFANA=1` before `scripts/up.sh` (or
+`$env:NO_GRAFANA = "1"` in PowerShell) to leave Grafana out.
 
 Then:
 
@@ -77,7 +78,8 @@ Then:
   Sending the same request again returns the same event instead of creating a second one.
 - **Run the tests:** `scripts/test.sh` (vet plus every test; the integration tests need the stack to be up).
   Add `-short` to run only the tests that need no infrastructure.
-- **Stop:** `scripts/down.sh` keeps the data; `scripts/down.sh -v` deletes it for a clean slate.
+- **Stop:** `scripts/down.sh` stops everything, Grafana included, and keeps the data; `scripts/down.sh -v` deletes
+  it for a clean slate. (PowerShell: `scripts\down.ps1`.)
 
 All published ports are bound to `127.0.0.1` (this machine only):
 
@@ -89,7 +91,7 @@ All published ports are bound to `127.0.0.1` (this machine only):
 | 4222, 8222 | NATS client port and NATS monitoring |
 | 9090 | mock provider |
 | 9091 | Prometheus |
-| 3000 | Grafana (optional, see below) |
+| 3000 | Grafana (started by `scripts/up.sh`; no login in development) |
 
 Postgres uses 15433 and 15434 because Windows reserves the range 5317 to 5816.
 
@@ -143,11 +145,9 @@ channel's consumer (messages pending, awaiting acknowledgement, redelivered).
 **Metrics.** `curl localhost:8080/metrics` serves the API's counters and the backlog gauges. Prometheus at
 http://localhost:9091 scrapes every process (Status, Targets lists them); try `notif_outbox_waiting_events` or
 `sum(rate(notif_events_created_total[1m]))`. The relay and consumers serve metrics on port 9100 inside the Docker
-network. Grafana with a provisioned dashboard is optional:
-
-```bash
-$DC --profile grafana up -d      # Grafana at http://localhost:3000, no login in development
-```
+network. **Grafana** (http://localhost:3000, no login in development) starts with `scripts/up.sh` and comes with a
+provisioned dashboard called "Notification platform" (throughput, backlog, dead letters, role health, latencies,
+CPU and memory per process).
 
 Live histograms are approximate by design; the benchmark figures in [docs/benchmarks.md](docs/benchmarks.md) are
 computed from exact database timestamps.
