@@ -41,6 +41,8 @@ func main() {
 		err = sustain(ctx, os.Args[2:])
 	case "capacity":
 		err = capacity(ctx, os.Args[2:])
+	case "env":
+		err = envCommand(ctx, os.Args[2:])
 	case "reliability":
 		err = reliability(ctx, os.Args[2:])
 	case "recovery":
@@ -55,7 +57,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain|capacity|reliability|recovery -confirm [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
+	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain|capacity|reliability|recovery -confirm  |  bench env [-out DIR] [-allow-battery] [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
 	os.Exit(2)
 }
 

@@ -18,12 +18,14 @@ N=${N:-20000}
 RUNS=${RUNS:-3}
 COUNTS=${COUNTS:-"1 2 4 8"}
 SEED_DELAY=${SEED_DELAY:-6}
-OUT=benchmark-results
+OUT=${OUT:-benchmark-results}
 CSV=$OUT/relay-scaling.csv
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.dev.yml"
 
 mkdir -p "$OUT" bin
 go build -o bin/loadgen ./cmd/loadgen
+go build -o bin/bench ./cmd/bench
+bin/bench env -out "$OUT"   # records the machine and refuses to run on battery power
 # APPEND=1 resumes an interrupted experiment (use with COUNTS and RUN_START) instead of starting a new CSV.
 RUN_START=${RUN_START:-1}
 if [ "${APPEND:-0}" != "1" ]; then
