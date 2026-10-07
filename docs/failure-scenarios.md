@@ -1,6 +1,6 @@
 # Failure scenarios
 
-Each scenario lists the failure, the expected behaviour, how it is tested, and what was observed. Only scenarios that have actually been run are marked as observed. A complete crash-at-every-step analysis and a known-gaps list are still to be written.
+Each scenario lists the failure, the expected behaviour, how it is tested, and what was observed. Only scenarios that have actually been run are marked as observed. For a step-by-step analysis of what a crash at each point of an event's flow leaves behind and how it recovers, see [crash-analysis.md](crash-analysis.md); for what is not handled, see [limitations.md](limitations.md).
 
 ## Verified (automated tests)
 
@@ -171,6 +171,6 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Test:** `bench recovery -service nats` for the load case; `TestBrokerOutageNeverDeadLettersAnEvent` and `TestBrokerFailureReleasesTheRestOfTheBatchWithoutTryingIt` for the low-traffic case (a broker stand-in that always fails); and a manual check on the real stack.
 - **Observed:** load case: peak backlog about 15,500 to 16,000 events, recovery 97 to 101 s, nothing lost in any repetition. Low-traffic case: **a defect was found and fixed (D18).** Before the fix, three events were dead-lettered by a 75 s outage because every failed publish used one of their five attempts. After the fix a broker failure gives the attempt back, and the same outage ends with all three events published and delivered.
 
-## Planned
+## Not yet covered
 
-Scenarios still to add: consumer crash after the provider call and before the acknowledgement (real crash rather than a simulated delivery count), and loss of the broker's storage.
+Scenarios not provoked for real: a consumer crash after the provider call and before the acknowledgement (the poison guard is verified with a simulated delivery count), a Postgres outage, an API crash, and loss of the broker's storage. They are analysed in [crash-analysis.md](crash-analysis.md).

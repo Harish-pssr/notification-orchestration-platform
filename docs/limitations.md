@@ -1,0 +1,65 @@
+# Known limitations
+
+What this system does **not** handle, why that is acceptable here, and how each gap would be handled in production. Nothing below is hidden elsewhere: where a limitation affects a claim, the claim is worded to match. See [crash-analysis.md](crash-analysis.md) for what happens at each failure point that *is* handled.
+
+Each entry has the same shape: **the gap**, **why it exists** (a deliberate scope choice, not an oversight), and **what production would do**.
+
+## Availability and durability
+
+**Single points of failure.** One Postgres (platform), one Postgres (provider), one NATS node, one host. A Postgres outage stops the API and the whole pipeline; the system recovers when it returns but is not available meanwhile. *Why:* the project is about the behaviour of the pipeline, not high availability of its infrastructure. *Production:* Postgres with streaming replication and automated failover (for example Patroni or a managed service), NATS JetStream with 3 replicas, services spread across hosts.
+
+**No backups.** The databases live in Docker volumes; losing the volume loses the data. *Production:* continuous archiving with point-in-time recovery, restore drills.
+
+**A broker that loses its messages is not detected.** If NATS lost its storage, the outbox would say `PUBLISHED` while the deliveries stay `PENDING` forever, and nothing notices. Likewise, a consumer that dies before the poison guard on every redelivery eventually exhausts the broker's redelivery limit and leaves a delivery stuck. *Why:* the outbox covers the relay-to-broker gap, not the broker-to-consumer gap; the reconciler is the missing half. *Production:* a periodic reconciler that finds deliveries still `PENDING` or `RETRYING` long after their event was `PUBLISHED` (a query on the existing partial indexes) and republishes them through the normal relay path, plus an alert on its count.
+
+**The outbox, deliveries and idempotency tables grow without bound.** Nothing archives or deletes finished events or old API idempotency keys. At the measured rates a table reaches tens of millions of rows in days. *Production:* partition the tables by time and detach or drop old partitions, a retention policy for `api_idempotency` (keys only need to outlive client retries), and autovacuum tuning (the investigation in B6 showed autovacuum running about every minute on the hot tables).
+
+## Ordering and semantics
+
+**No ordering guarantee.** Events are not delivered in the order they were created, even for the same account or aggregate: several relays and several concurrent consumers process rows and messages in parallel. *Why:* ordering and parallelism pull in opposite directions, and notifications such as "payment succeeded" rarely need order. *Production:* if needed, a per-key sequence number and a per-key single writer (partition by aggregate id), or consumer-side buffering that applies events in sequence order.
+
+**"Delivered" means "the provider accepted it", not "the person received it".** There are no delivery receipts, bounces, opens or webhooks back from the provider. *Production:* an asynchronous feedback path from the real provider (callbacks or polling a status API) that moves a delivery through further states (accepted, delivered, bounced) and handles bounces and suppression lists.
+
+**A provider that ignores idempotency keys breaks the "no duplicate side effects" claim.** The guarantee holds because the (mock) provider writes the key and the effect in one transaction under a unique constraint. Real providers vary: some honour an idempotency header, some do not. *Production:* for providers without key support, accept at-most-once for that channel (and risk loss), or reconcile with the provider's status API before retrying, or use a provider that supports keys.
+
+**Retention of the provider's keys.** The mock keeps keys forever; real providers expire them (often after 24 hours), which bounds how late a retry can still be recognised. *Production:* keep retry windows shorter than the provider's key lifetime.
+
+## Failure handling
+
+**No circuit breaker.** When a provider is down, every delivery is attempted and fails individually, with backoff, until it is dead-lettered. A breaker would stop calling a provider that is clearly down. The relay does back off when the broker is unreachable (D18), but a general breaker was deferred. *Production:* a breaker per provider and channel with half-open probing, and pausing the consumer rather than burning attempts.
+
+**No lease heartbeats.** A relay holds its claim for a fixed lease (30 s in production, 5 s in the development stack). If a publish legitimately takes longer, another relay takes the row; the fenced finish keeps the data correct, but the event may be published twice. *Production:* extend the lease while work is in progress.
+
+**Dead-letter handling is manual.** Dead letters are kept with their reason and replayed by an operator; there is no automatic retention, alerting or auto-replay. *Production:* alerts on dead-letter count and age, an expiry policy, and a runbook per failure reason.
+
+**Retry policy is global.** One maximum attempt count and one backoff shape for all channels. *Production:* per-channel policies (an email can wait a day, an OTP cannot) and per-provider rate limits.
+
+## Security and compliance
+
+**One shared admin token, no identities.** Every write (creating events, replay, fault injection) uses the same bearer token (D19). There is no per-user authentication, no roles and no audit log of who did what. Reading is open, so event payloads are visible to anyone who can reach the dashboard. *Production:* OIDC login, role-based access, an audit trail, and authenticated reads.
+
+**No transport security between internal services,** and secrets are plain environment variables. *Production:* mutual TLS or a service mesh, a secrets manager.
+
+**No payload governance.** There is no schema versioning beyond strict decoding of the three event types, no encryption of payloads at rest, and no handling of personal data (retention, erasure). *Production:* a schema registry and versioned event types, field-level encryption for personal data, and deletion jobs that honour privacy requests.
+
+**No rate limiting or abuse protection** on the API. *Production:* per-client limits at the edge.
+
+## Observability
+
+**No distributed tracing and no alerting rules.** The system has structured logs with a correlation id (the event id), Prometheus metrics and a Grafana dashboard, but no OpenTelemetry traces, no alert rules and no service-level objectives. Live latency histograms are bucketed and approximate. *Production:* traces across API, relay, broker, consumer and provider, SLOs on delivery latency and dead-letter rate, and alerts on backlog growth.
+
+## Performance and scale
+
+**The measured ceiling is modest and specific to one machine.** Roughly 310 to 370 events per second (about 1,000 deliveries per second) end to end on a Windows laptop under Docker Desktop (B2, B3). The pipeline is commit-bound: each event needs several synchronous commits. *Why not pushed further:* batching the consumer's database writes was considered and rejected because one slow message would delay the others' status writes (D15). *Production:* batch and group commits where head-of-line blocking is acceptable, partition the outbox across databases, shard by tenant, and move the hot path off a single Postgres.
+
+**The relay polls.** At low load an event waits half a poll interval (about 100 ms on average at the 200 ms default) before the relay notices it (D14). *Production:* `LISTEN/NOTIFY` as a wake-up hint with the poll kept as the safety net, or a shorter interval.
+
+**Schema migrations are forward-only** (applied once, under an advisory lock) with no rollback and no online-change strategy for large tables. *Production:* expand-and-contract migrations and a tested rollback path.
+
+## What the evidence covers
+
+- **One laptop, one environment.** All performance figures come from Docker Desktop on Windows. No benchmark was run on Linux, and the production setup in [deployment.md](deployment.md) was verified locally, not on a public server (decision D20).
+- **The multi-second latency stalls are explained but not proven.** They are periods of slow WAL fsync (B6); the likely cause is this environment's storage path, an inference from elimination.
+- **Failure injection is partial.** Provider errors are injected before the effect runs; consumer crash loops, API and Postgres crashes, and broker storage loss are not provoked (see the end of crash-analysis.md).
+- **The provider is a mock** that shares the machine's CPU (about 30% of it at the ceiling), so the platform's own capacity is understated.
+- **One event type dominates the benchmarks** (PaymentSucceeded, three channels); a mixed workload would change the fan-out.

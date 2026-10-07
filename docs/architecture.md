@@ -1,6 +1,6 @@
 # Architecture
 
-Status: describes what is built so far (outbox, concurrent relays, idempotent consumers, retries, dead letters, replay, fault injection). Sections marked *planned* describe work that is designed but not built yet. References like "D4" or "D7" in code comments and below are numbered design decisions kept in the maintainer's private notes.
+Status: describes what is built (outbox, concurrent relays, concurrent idempotent consumers, retries, dead letters, replay, fault injection, metrics, a dashboard, benchmarks and failure experiments). What is deliberately not handled is in [limitations.md](limitations.md); what happens at each crash point is in [crash-analysis.md](crash-analysis.md). References like "D4" or "D7" in code comments and below are numbered design decisions kept in the maintainer's private notes.
 
 ## Goal
 
@@ -49,10 +49,10 @@ A business operation commits to the database, and notifications for it must even
 |---|---|---|
 | API | `cmd/api` | Validates requests; writes business row, outbox row, delivery rows and the idempotency record atomically; serves read endpoints and the dashboard |
 | Relay | `cmd/relay` | Claims due outbox rows, publishes one message per pending channel, finishes the row with a fenced update |
-| Consumer | `cmd/consumer` (`CHANNEL=email\|push\|webhook`) | Pulls messages for one channel, loads the delivery and payload, calls the provider with an idempotency key, marks the delivery |
+| Consumer | `cmd/consumer` (`CHANNEL=email\|push\|webhook`) | Pulls messages for one channel and processes up to `CONSUMER_CONCURRENCY` (default 8) at once: loads the delivery and payload, calls the provider with an idempotency key, marks the delivery (D15) |
 | Provider | `cmd/provider` | Stands in for the external email/push/webhook systems; deduplicates by `Idempotency-Key`; counts requests and effects separately |
 | Migrate | `cmd/migrate` | Applies embedded SQL migrations to the platform or provider database |
-| Loadgen | `cmd/loadgen` | Resets, seeds and reports benchmark runs |
+| Loadgen, Bench | `cmd/loadgen`, `cmd/bench` | Open-loop load generation and the benchmark, reliability and recovery experiments (see [benchmarks.md](benchmarks.md)) |
 
 ## Data flow for one event
 
@@ -83,7 +83,7 @@ PENDING --> DELIVERED
    |  \
    |   +--> RETRYING --> DELIVERED
    |            |
-   +------------+--> DLQ        (retry and DLQ behaviour arrive in Slice 4)
+   +------------+--> DLQ        (retries exhausted, permanent error, or poison guard; replay returns it to PENDING)
 ```
 
 ## Reliability guarantees and how they are achieved
@@ -98,6 +98,9 @@ PENDING --> DELIVERED
 | Duplicate deliveries are possible | Accepted by design: relay crash after publish, lease overlap, broker redelivery (D4, D11) |
 | Duplicate side effects do not occur | Receiver-side idempotency key with the effect in one transaction (D5) |
 | Messages are not lost when the broker is full | `discard new` makes the relay keep the event in the outbox and retry (D11) |
+| A broker outage never dead-letters an event | A failure while talking to the broker gives the attempt back and the event is retried; the rest of the batch is released and the relay backs off (D18) |
+| A slow message does not hold up others | Consumers process messages concurrently with a bounded worker pool (D15) |
+| Writes need a credential, reads do not | One admin token guards every write, including event creation when `CREATE_REQUIRES_TOKEN=true` (D8, D19) |
 
 What is **not** guaranteed: ordering across events or per aggregate; exactly-once delivery; broker durability across a host crash with the default fsync behaviour (the outbox is the safety net).
 ## Retry, dead letters and replay (D7)
@@ -150,5 +153,6 @@ Design rules: labels are low-cardinality only (`channel`, `event_type`, `outcome
 
 **Grafana** (optional profile) is provisioned with a dashboard covering throughput, backlog, dead letters, role health, consumer outcomes, duplicates handled, relay stage latencies, delivery latency, provider traffic, and CPU and memory per process.
 
-## Planned (decided, not yet built)
-- Benchmarks and the optimization exercise (Slice 7), deployment on one VM (D10, Slice 8)
+## Not built
+
+Deliberate gaps (single points of failure, no reconciler for a lossy broker, unbounded table growth, no ordering, one shared token, and others) are listed with their production remedies in [limitations.md](limitations.md). The production Compose setup in [deployment.md](deployment.md) was verified locally and has not been deployed to a public server.
