@@ -54,7 +54,7 @@ function toast(msg, kind) {
 }
 
 // ---------- state ----------
-const state = { live: true, route: "overview", summary: null, events: [], updated: null, error: null, drawerId: null, filters: { q: "", state: "all", type: "all" }, config: { faults_enabled: false }, experiment: null };
+const state = { live: true, route: "overview", summary: null, events: [], updated: null, error: null, drawerId: null, filters: { q: "", state: "all", type: "all" }, config: { faults_enabled: false, create_requires_token: false }, experiment: null };
 
 // ---------- admin token and helpers for operator actions (D8) ----------
 const tokenEl = $("#admin-token");
@@ -182,6 +182,7 @@ const sections = {
               <button class="btn" id="cr-resend" style="margin-bottom:10px" disabled title="Repeat the last request with the same key">Resend last request</button>
             </div>
             <p class="muted small">With more than one, values are randomised and every event gets its own key.</p>
+            <p class="small" id="cr-needs"></p>
           </div>
           <div class="card">
             <div class="card-head"><h2>Request log</h2><p>This session</p></div>
@@ -218,7 +219,9 @@ const sections = {
       return body;
     },
     async post(id, key, body) {
-      const r = await api("/api/events/" + id, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(body) });
+      const headers = { "Content-Type": "application/json", "Idempotency-Key": key };
+      if (getToken()) headers.Authorization = "Bearer " + getToken(); // needed when the server asks for it (D19)
+      const r = await api("/api/events/" + id, { method: "POST", headers, body: JSON.stringify(body) });
       return { ...r, replayed: r.headers.get("Idempotent-Replayed") === "true" };
     },
     async send() {
@@ -277,7 +280,12 @@ const sections = {
       this.renderLog();
     },
     renderLog() { $("#cr-log").innerHTML = this.logItems.slice(0, 30).join(""); },
-    update() {},
+    update() {
+      // On a public deployment writes need the admin token; viewing never does.
+      const needs = state.config.create_requires_token && !getToken();
+      $("#cr-send").disabled = needs;
+      $("#cr-needs").textContent = needs ? "Creating events needs the admin token (top right). Viewing everything else does not." : "";
+    },
   },
 
   events: {

@@ -40,7 +40,10 @@ type Deps struct {
 	Faults        *faults.Registry
 	FaultsEnabled bool   // FAULTS_ENABLED: the admin endpoints exist only when true
 	AdminToken    string // ADMIN_TOKEN: shared secret for the admin endpoints
-	ProviderURL   string // base URL of the mock provider
+	// CreateRequiresToken makes event creation need the admin token too (D19), so on a public
+	// deployment every write uses the one credential and reading stays open. Off locally.
+	CreateRequiresToken bool
+	ProviderURL         string // base URL of the mock provider
 }
 
 // NewHandler returns the API's routes.
@@ -53,9 +56,15 @@ func NewHandler(d Deps) http.Handler {
 	if d.MetricsHandler != nil {
 		mux.Handle("GET /metrics", d.MetricsHandler)
 	}
-	mux.HandleFunc("POST /api/events/payment-succeeded", e.create(paymentSucceeded))
-	mux.HandleFunc("POST /api/events/booking-confirmed", e.create(bookingConfirmed))
-	mux.HandleFunc("POST /api/events/password-changed", e.create(passwordChanged))
+	creating := func(h http.HandlerFunc) http.Handler {
+		if d.CreateRequiresToken {
+			return admin.RequireToken(d.AdminToken, h)
+		}
+		return h
+	}
+	mux.Handle("POST /api/events/payment-succeeded", creating(e.create(paymentSucceeded)))
+	mux.Handle("POST /api/events/booking-confirmed", creating(e.create(bookingConfirmed)))
+	mux.Handle("POST /api/events/password-changed", creating(e.create(passwordChanged)))
 	mux.HandleFunc("GET /api/summary", e.summary)
 	mux.HandleFunc("GET /api/events", e.list)
 	mux.HandleFunc("GET /api/events/{id}", e.get)
@@ -78,7 +87,7 @@ func NewHandler(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/idempotency", e.idempotency(d.ProviderURL, client))
 	// The UI uses this to know whether to offer the failure controls.
 	mux.HandleFunc("GET /api/config", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{"faults_enabled": d.FaultsEnabled})
+		writeJSON(w, http.StatusOK, map[string]any{"faults_enabled": d.FaultsEnabled, "create_requires_token": d.CreateRequiresToken})
 	})
 
 	if d.Faults != nil {

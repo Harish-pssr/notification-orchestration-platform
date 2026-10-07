@@ -145,7 +145,9 @@ func run() error {
 		Faults:         faults.New(pool, faultsEnabled, time.Second, slog.Default()),
 		FaultsEnabled:  faultsEnabled,
 		AdminToken:     os.Getenv("ADMIN_TOKEN"),
-		ProviderURL:    config.Getenv("PROVIDER_URL", "http://localhost:9090"),
+		// On a public deployment every write uses the one admin token (D19).
+		CreateRequiresToken: config.Getenv("CREATE_REQUIRES_TOKEN", "false") == "true",
+		ProviderURL:         config.Getenv("PROVIDER_URL", "http://localhost:9090"),
 		Checks: map[string]httpapi.Check{
 			"postgres": func(ctx context.Context) error { return pool.Ping(ctx) },
 			"nats": func(context.Context) error {
