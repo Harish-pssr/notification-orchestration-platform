@@ -1,0 +1,68 @@
+{
+  "run": "reliability-control-20261007T133212Z",
+  "negative_control": true,
+  "relays": 4,
+  "consumers": 4,
+  "rate": 150,
+  "duplicate_probability": 0.05,
+  "provider_error_probability": 0.02,
+  "load": {
+    "run": "reliability-control-20261007T133212Z",
+    "target_rate": 150,
+    "duration_s": 66.666666666,
+    "planned": 9999,
+    "sent": 9999,
+    "created": 9999,
+    "rejected": 0,
+    "errors": 0,
+    "skipped": 0,
+    "achieved_rate": 149.98500000149986,
+    "max_inflight": 18,
+    "schedule_lag_p50_ms": 0.620028,
+    "schedule_lag_p99_ms": 1.6101436800000013,
+    "schedule_lag_max_ms": 3.453513,
+    "api_p50_ms": 7.028684,
+    "api_p95_ms": 10.184105,
+    "api_p99_ms": 13.100462260000013,
+    "api_max_ms": 114.535163,
+    "generator_kept_up": true
+  },
+  "relay_crashes": null,
+  "drain_after_load_s": 0.0772598,
+  "counts": {
+    "events": 9999,
+    "deliveries": 29997,
+    "deliveries_by_status": {
+      "DELIVERED": 29997
+    },
+    "delivered": 29997,
+    "dead_lettered": 0,
+    "not_finished": 0,
+    "retried_deliveries": 539,
+    "ignored_by_consumers": 0,
+    "provider_requests": 32028,
+    "provider_distinct_request_keys": 29997,
+    "provider_effects": 31422,
+    "provider_distinct_effect_keys": 29997,
+    "provider_injected_failures": 606,
+    "duplicate_deliveries": 1425,
+    "duplicate_side_effects": 1425,
+    "suppressed_by_provider": 0
+  },
+  "verdict": {
+    "pass": true
+  },
+  "environment": {
+    "captured_at": "2026-10-07T13:32:12.1494998Z",
+    "os": "windows",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logical_cpus": 16,
+    "clock_mhz": 2500,
+    "max_clock_mhz": 2500,
+    "power_source": "ac",
+    "power_plan": "Balanced",
+    "docker_cpus": 16,
+    "docker_mem_gb": 7.572845458984375
+  },
+  "started_at": "2026-10-07T13:32:12Z"
+}

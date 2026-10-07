@@ -1,0 +1,85 @@
+environment: 12th Gen Intel(R) Core(TM) i5-12500H, 16 logical CPUs, power ac (Balanced), clock 2500/2500 MHz, Docker VM 16 CPUs 7.6 GB
+=== reliability-20261007T132052Z: 100000 events at 150/s (about 11m7s), 4 relay(s), 4 consumer(s) per channel ===
+[18:50:56] start: configuring failure injection
+[18:51:00] load running: 100000 events at 150/s
+[18:52:33] relay crash 1 of 3: SIGKILL notifplatform-relay-2
+[18:54:31] relay crash 2 of 3: SIGKILL notifplatform-relay-1
+[19:00:12] relay crash 3 of 3: SIGKILL notifplatform-relay-4
+load finished: 99999 created, 0 rejected, 0 errors
+[19:02:08] load finished: waiting for every delivery to finish
+[19:02:08] finished: PASS
+
+events accepted by the API         99999
+events stored                      99999
+deliveries                        299997  (delivered 299997, dead-lettered 0, unfinished 0)
+deliveries that needed a retry      5764
+relay crashes                          3
+provider requests                 321078  (distinct keys 299997, injected errors 6480)
+duplicate copies absorbed          15192  (stopped by consumers 591, by the provider 14601)
+provider side effects             299997  (distinct keys 299997)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+environment: 12th Gen Intel(R) Core(TM) i5-12500H, 16 logical CPUs, power ac (Balanced), clock 2500/2500 MHz, Docker VM 16 CPUs 7.6 GB
+=== reliability-control-20261007T133212Z: 10000 events at 150/s (about 1m7s), 4 relay(s), 4 consumer(s) per channel ===
+[19:02:15] start: configuring failure injection
+[19:02:18] load running: 10000 events at 150/s
+load finished: 9999 created, 0 rejected, 0 errors
+[19:03:26] load finished: waiting for every delivery to finish
+[19:03:26] finished: PASS
+
+events accepted by the API          9999
+events stored                       9999
+deliveries                         29997  (delivered 29997, dead-lettered 0, unfinished 0)
+deliveries that needed a retry       539
+relay crashes                          0
+provider requests                  32028  (distinct keys 29997, injected errors 606)
+duplicate copies absorbed              0  (stopped by consumers 0, by the provider 0)
+provider side effects              31422  (distinct keys 29997)
+DUPLICATE SIDE EFFECTS              1425
+RESULT: PASS
+environment: 12th Gen Intel(R) Core(TM) i5-12500H, 16 logical CPUs, power ac (Balanced), clock 2500/2500 MHz, Docker VM 16 CPUs 7.6 GB
+=== recovery-relay-20261007T133328Z: repetition 1 of 3 ===
+[19:03:31] repetition 1 of the relay outage: steady load
+[19:04:01] repetition 1: stopping relay
+[19:05:04] repetition 1: relay restarted, recovering
+  outage 61 s | peak backlog: 15510 events in the outbox, 46545 deliveries undelivered (steady about 32)
+  recovery: 99 s after restart (below 1500 deliveries) | peak delivery rate 1313/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-relay-20261007T133328Z: repetition 2 of 3 ===
+[19:06:46] repetition 2 of the relay outage: steady load
+[19:07:16] repetition 2: stopping relay
+[19:08:20] repetition 2: relay restarted, recovering
+  outage 61 s | peak backlog: 15555 events in the outbox, 46671 deliveries undelivered (steady about 33)
+  recovery: 100 s after restart (below 1500 deliveries) | peak delivery rate 1315/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-relay-20261007T133328Z: repetition 3 of 3 ===
+[19:10:01] repetition 3 of the relay outage: steady load
+[19:10:31] repetition 3: stopping relay
+[19:11:35] repetition 3: relay restarted, recovering
+  outage 61 s | peak backlog: 15583 events in the outbox, 46749 deliveries undelivered (steady about 31)
+  recovery: 98 s after restart (below 1500 deliveries) | peak delivery rate 1299/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+[19:13:14] finished all repetitions
+environment: 12th Gen Intel(R) Core(TM) i5-12500H, 16 logical CPUs, power ac (Balanced), clock 2500/2500 MHz, Docker VM 16 CPUs 7.6 GB
+=== recovery-nats-20261007T134320Z: repetition 1 of 3 ===
+[19:13:22] repetition 1 of the nats outage: steady load
+[19:13:52] repetition 1: stopping nats
+[19:14:55] repetition 1: nats restarted, recovering
+  outage 62 s | peak backlog: 16017 events in the outbox, 48057 deliveries undelivered (steady about 35)
+  recovery: 98 s after restart (below 1500 deliveries) | peak delivery rate 1311/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-nats-20261007T134320Z: repetition 2 of 3 ===
+[19:16:35] repetition 2 of the nats outage: steady load
+[19:17:05] repetition 2: stopping nats
+[19:18:07] repetition 2: nats restarted, recovering
+  outage 61 s | peak backlog: 15479 events in the outbox, 46449 deliveries undelivered (steady about 43)
+  recovery: 97 s after restart (below 1500 deliveries) | peak delivery rate 1325/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-nats-20261007T134320Z: repetition 3 of 3 ===
+[19:19:49] repetition 3 of the nats outage: steady load
+[19:20:19] repetition 3: stopping nats
+[19:21:20] repetition 3: nats restarted, recovering
+  outage 61 s | peak backlog: 15592 events in the outbox, 46783 deliveries undelivered (steady about 31)
+  recovery: 101 s after restart (below 1500 deliveries) | peak delivery rate 1289/s
+  accepted 45000, stored 45000, delivered 135000 of 135000, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+[19:23:04] finished all repetitions

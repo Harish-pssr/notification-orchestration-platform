@@ -1,0 +1,84 @@
+{
+  "run": "reliability-20261007T132052Z",
+  "negative_control": false,
+  "relays": 4,
+  "consumers": 4,
+  "rate": 150,
+  "duplicate_probability": 0.05,
+  "provider_error_probability": 0.02,
+  "load": {
+    "run": "reliability-20261007T132052Z",
+    "target_rate": 150,
+    "duration_s": 666.666666666,
+    "planned": 99999,
+    "sent": 99999,
+    "created": 99999,
+    "rejected": 0,
+    "errors": 0,
+    "skipped": 0,
+    "achieved_rate": 149.99850000015002,
+    "max_inflight": 72,
+    "schedule_lag_p50_ms": 0.630042,
+    "schedule_lag_p99_ms": 1.5702029600000007,
+    "schedule_lag_max_ms": 100.43474,
+    "api_p50_ms": 6.768318,
+    "api_p95_ms": 10.940226099999999,
+    "api_p99_ms": 44.47361416000002,
+    "api_max_ms": 477.845094,
+    "generator_kept_up": true
+  },
+  "relay_crashes": [
+    {
+      "planned_at_s": 93.433469287,
+      "at": "2026-10-07T13:22:33Z",
+      "container": "notifplatform-relay-2"
+    },
+    {
+      "planned_at_s": 211.118926279,
+      "at": "2026-10-07T13:24:31Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 552.619381651,
+      "at": "2026-10-07T13:30:13Z",
+      "container": "notifplatform-relay-4"
+    }
+  ],
+  "drain_after_load_s": 0.3049422,
+  "counts": {
+    "events": 99999,
+    "deliveries": 299997,
+    "deliveries_by_status": {
+      "DELIVERED": 299997
+    },
+    "delivered": 299997,
+    "dead_lettered": 0,
+    "not_finished": 0,
+    "retried_deliveries": 5764,
+    "ignored_by_consumers": 591,
+    "provider_requests": 321078,
+    "provider_distinct_request_keys": 299997,
+    "provider_effects": 299997,
+    "provider_distinct_effect_keys": 299997,
+    "provider_injected_failures": 6480,
+    "duplicate_deliveries": 14601,
+    "duplicate_side_effects": 0,
+    "suppressed_by_provider": 14601
+  },
+  "verdict": {
+    "pass": true
+  },
+  "environment": {
+    "captured_at": "2026-10-07T13:20:52.2333492Z",
+    "os": "windows",
+    "cpu_model": "12th Gen Intel(R) Core(TM) i5-12500H",
+    "logical_cpus": 16,
+    "clock_mhz": 2500,
+    "max_clock_mhz": 2500,
+    "power_source": "ac",
+    "power_plan": "Balanced",
+    "docker_cpus": 16,
+    "docker_mem_gb": 7.572845458984375
+  },
+  "started_at": "2026-10-07T13:20:52Z"
+}
