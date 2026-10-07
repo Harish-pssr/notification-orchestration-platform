@@ -4,7 +4,6 @@
  *   title, desc   shown in the page header
  *   mount(root)   called once, builds the static DOM (so form input survives refreshes)
  *   update()      called after every data refresh while the section is visible
- * Later slices fill in the placeholder sections by replacing their mount/update.
  */
 
 // ---------- helpers ----------
@@ -105,13 +104,6 @@ const EVENT_TYPES = {
 };
 
 // ---------- sections ----------
-function placeholder({ badge, intro, items }) {
-  return (root) => {
-    root.innerHTML = `<div class="card placeholder"><span class="badge">${esc(badge)}</span>
-      <p>${esc(intro)}</p><ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></div>`;
-  };
-}
-
 const sections = {
   overview: {
     title: "Overview",
@@ -325,9 +317,70 @@ const sections = {
     },
   },
 
-  health: { title: "Health", desc: "Which relay and consumer instances are alive, and which roles are up, down or paused.",
-    mount: placeholder({ badge: "Arrives with failure controls (Slice 5)", intro: "Workers send heartbeats; a role is UP when at least one instance is fresh.",
-      items: ["Per-instance heartbeat with last-seen age", "Role status: UP, DOWN or PAUSED for the relay and each consumer", "Backlog depth per channel"] }), update() {} },
+  health: {
+    title: "Health",
+    desc: "Workers come and go, so health is per role: UP when at least one instance has sent a heartbeat recently, DOWN when none has, PAUSED when an operator paused it.",
+    data: null,
+    mount(root) {
+      root.innerHTML = `
+        <div id="hl-roles" class="tiles"></div>
+        <div class="card">
+          <div class="card-head"><h2>Instances</h2><p id="hl-note" class="muted small"></p></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Instance</th><th>Role</th><th>State</th><th>Last heartbeat</th></tr></thead>
+            <tbody id="hl-instances"></tbody></table></div>
+        </div>`;
+      root.addEventListener("click", async (e) => {
+        const b = e.target.closest("button[data-pause]");
+        if (!b) return;
+        const point = b.dataset.pause, resume = b.dataset.action === "resume";
+        try {
+          if (resume) await must(adminApi("DELETE", "/api/faults/" + point));
+          else await must(adminApi("PUT", "/api/faults/" + point, { action: "pause" }));
+          toast(resume ? "Resumed" : "Paused");
+        } catch (err) { toast(err.message, "bad"); }
+        this.update();
+      });
+    },
+    async update() {
+      const r = await api("/api/health").catch(() => null);
+      if (r && r.ok) { this.data = r.body; this.render(); }
+    },
+    render() {
+      const d = this.data, usable = state.config.faults_enabled && getToken();
+      const pretty = { "relay": "Relay", "consumer-email": "Email consumer", "consumer-push": "Push consumer", "consumer-webhook": "Webhook consumer" };
+      const pausePoint = { "relay": "relay.pause", "consumer-email": "consumer.email.pause", "consumer-push": "consumer.push.pause", "consumer-webhook": "consumer.webhook.pause" };
+      const statusChip = { UP: chip("DELIVERED", "UP"), DOWN: chip("DLQ", "DOWN"), PAUSED: chip("RETRYING", "PAUSED") };
+
+      $("#hl-roles").innerHTML = (d.roles || []).map((role) => {
+        let backlog = "";
+        if (role.name === "relay") {
+          backlog = d.backlog ? `${num(d.backlog.outbox)} event(s) waiting in the outbox` : "";
+        } else {
+          const ch = role.name.replace("consumer-", ""), b = d.broker && d.broker.channels && d.broker.channels[ch];
+          const waiting = d.backlog && d.backlog.deliveries ? (d.backlog.deliveries[ch] || 0) : 0;
+          backlog = (b ? `${num(b.pending)} waiting in broker, ${num(b.ack_pending)} in flight<br>` : "") + `${num(waiting)} not yet delivered`;
+        }
+        const paused = role.status === "PAUSED";
+        const btn = `<button class="btn" style="margin-top:8px" data-pause="${pausePoint[role.name]}" data-action="${paused ? "resume" : "pause"}" ${usable ? "" : "disabled"}>${paused ? "Resume" : "Pause"}</button>`;
+        return `<div class="tile"><div class="tile-label">${pretty[role.name] || esc(role.name)}</div>
+          <div style="margin:4px 0">${statusChip[role.status] || esc(role.status)}</div>
+          <div class="tile-note">${role.live} live instance${role.live === 1 ? "" : "s"}</div>
+          <div class="tile-note" style="margin-top:6px">${backlog}</div>${btn}</div>`;
+      }).join("");
+
+      // Instances that went away recently stay visible as evidence of an outage; ones
+      // gone for more than five minutes (old deploys) are hidden as noise.
+      const all = (d.roles || []).flatMap((role) => role.instances).filter((i) => i.fresh || i.age_s < 300);
+      $("#hl-instances").innerHTML = all.length ? all.map((i) => `<tr>
+          <td class="mono">${esc(i.name)}</td><td>${esc(i.role)}</td>
+          <td>${i.fresh ? (i.state === "PAUSED" ? chip("RETRYING", "PAUSED") : chip("DELIVERED", "RUNNING")) : chip("DLQ", "GONE")}</td>
+          <td class="muted">${i.age_s < 2 ? "just now" : Math.round(i.age_s) + " s ago"}</td></tr>`).join("")
+        : `<tr><td colspan="4" class="empty">No worker has sent a heartbeat yet.</td></tr>`;
+      $("#hl-note").textContent = `Alive means a heartbeat within ${d.stale_after_s} s. Instances gone for over 5 minutes are hidden.` +
+        (usable ? "" : " Pause and resume need the admin token and fault injection enabled.");
+    },
+  },
 
   dlq: {
     title: "Dead letters",
@@ -456,7 +509,7 @@ const sections = {
           <div class="card">
             <div class="card-head"><h2>Relay</h2><p>Faults at the publish step</p></div>
             <div class="row"><button class="btn" id="fc-dup">Duplicate next event</button><button class="btn" id="fc-crash">Crash relay after publish (once)</button></div>
-            <p class="muted small" style="margin-top:8px">Crash kills a relay right after the broker accepted the publish and before the database is updated; another relay recovers it once the lease expires. Pause controls arrive with the health panel.</p>
+            <p class="muted small" style="margin-top:8px">Crash kills a relay right after the broker accepted the publish and before the database is updated; another relay recovers it once the lease expires. To pause or resume the relay or a consumer, use the Health page.</p>
             <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
             <button class="btn" id="fc-restore-all">Restore everything</button>
           </div>
