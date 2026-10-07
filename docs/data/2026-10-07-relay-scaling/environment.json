@@ -1,0 +1,12 @@
+{
+  "captured_at": "2026-10-07T14:05:30.513371Z",
+  "os": "windows",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i5-12500H",
+  "logical_cpus": 16,
+  "clock_mhz": 2500,
+  "max_clock_mhz": 2500,
+  "power_source": "ac",
+  "power_plan": "Balanced",
+  "docker_cpus": 16,
+  "docker_mem_gb": 7.572845458984375
+}

@@ -2,33 +2,34 @@
 
 Every number here was measured. Raw data for each experiment is kept in [`docs/data/`](data) (the scripts write to `benchmark-results/`, which is not committed). Nothing is estimated. Each section states its environment, dataset, method and limitations.
 
-## B1. Relay scaling (baseline, unoptimized)
+## B1. Relay scaling (relay stage alone)
 
-**Question:** how fast do N relay workers publish a backlog of outbox events to the broker?
+**Question:** how fast do N relay workers publish a backlog of outbox events to the broker, with nothing else competing?
 
-
-> **Note (added later):** B1 predates the environment capture added to the benchmark tooling, so the machine's power state during B1 is unknown, and it predates the relay's metrics instrumentation. It will be re-measured with the current tooling; treat its figures as provisional until then.
+This section was **re-measured** on mains power with the current tooling, which records the environment. The first measurement is kept at the end of this section as superseded, with the reasons.
 
 ### Environment
 
 | | |
 |---|---|
-| Machine | Laptop, Intel Core i5-12500H (12 cores, 16 logical), 15.6 GB RAM |
-| OS | Windows 11 Home (10.0.26300) |
-| Container runtime | Docker Desktop 29.8.2 (Compose 5.5.1), Linux VM given 16 CPUs and about 8 GB RAM |
-| Software | Go 1.27.0; PostgreSQL 17 (alpine, default settings); NATS 2 (alpine) with JetStream, file storage |
-| Relay settings | batch 10 events per claim, lease 30 s, idle poll 200 ms, publish timeout 5 s (all defaults) |
-| Load tool | `cmd/loadgen` on the Windows host, talking to the published ports |
+| Machine | Intel Core i5-12500H, 16 logical CPUs, laptop |
+| Power | **AC power**, plan "Balanced", clock 2500 MHz (recorded in `environment.json`) |
+| Container runtime | Docker Desktop on Windows; Linux VM with 16 CPUs and 7.6 GB |
+| Software | Go 1.27.0; PostgreSQL 17 (alpine, `max_connections=300`); NATS 2 with JetStream (file storage) |
+| Relay settings | batch 10 events per claim, lease 5 s (dev), idle poll 200 ms, publish timeout 5 s |
+| Platform code | the current code, with the relay's metrics and the broker-outage handling (D18) |
+| Load tool | `cmd/loadgen` on the Windows host, talking to the published database ports (the relay itself talks to Postgres and NATS inside the Compose network) |
+| Captured | 2026-10-07 |
 
 This is Docker Desktop on Windows (WSL2), not a native Linux server. The numbers describe this environment only.
 
 ### Dataset and method
 
 - 20,000 `PaymentSucceeded` events, each routed to 3 channels, so **60,000 broker messages per run**. Events are inserted directly into `outbox_events` and `channel_deliveries`, bypassing the HTTP API, so the relay stage is measured on its own.
-- Consumers were stopped, so nothing competes for CPU and the stream simply accumulates messages.
+- Consumers are stopped, so nothing competes for CPU and the stream simply accumulates messages.
 - Per run: reset all data and purge the stream; start R fresh relay containers and wait until all are ready; seed the events with a due time 6 s in the future (so all relays are idle and warm and start together); wait until every event is `PUBLISHED`.
 - **Throughput = published events divided by the window from the first to the last `published_at`**, both read from the database. No clock from the load tool is involved.
-- 3 runs for each of 1, 2, 4 and 8 relays. Script: `scripts/relay-scaling.sh` (`N=20000 RUNS=3 COUNTS="1 2 4 8"`).
+- 3 runs for each of 1, 2, 4 and 8 relays. Script: `scripts/relay-scaling.sh` (`N=20000 RUNS=3 COUNTS="1 2 4 8"`). Raw data: `docs/data/2026-10-07-relay-scaling/`.
 
 ### Results
 
@@ -36,41 +37,45 @@ Events published per second (each event is 3 broker messages):
 
 | Relays | Run 1 | Run 2 | Run 3 | Median | Speed-up vs 1 relay | Per-relay median |
 |---|---|---|---|---|---|---|
-| 1 | 261 | 282 | 272 | **272** | 1.0x | 272 |
-| 2 | 651 | 672 | 670 | **670** | 2.5x | 335 |
-| 4 | 1,207 | 1,225 | 1,248 | **1,225** | 4.5x | 306 |
-| 8 | 2,108 | 1,743 | 2,092 | **2,092** | 7.7x | 262 |
+| 1 | 438 | 524 | 542 | **524** | 1.0x | 524 |
+| 2 | 793 | 733 | 777 | **777** | 1.5x | 389 |
+| 4 | 1,409 | 1,438 | 1,426 | **1,426** | 2.7x | 357 |
+| 8 | 2,438 | 2,148 | 2,128 | **2,148** | 4.1x | 269 |
 
-At the median, 8 relays published about 2,092 events (about 6,276 messages) per second. In every run all 20,000 events were published, none went to the dead-letter state, and every event needed exactly one attempt (no lease expiries or retries happened).
+At the median, 8 relays published about 2,148 events (about 6,444 messages) per second. In every run all 20,000 events were published, none was dead-lettered, and every event needed exactly one attempt.
 
-CPU snapshot taken about one second after the backlog became due (CPU% is relative to one core, so 100 means one full core). It is a single instantaneous sample per run, so it is only indicative:
+CPU snapshot taken about one second after the backlog became due (100 means one full core; a single instantaneous sample per run, so only indicative):
 
 | Relays | Relay processes (total) | Postgres | NATS |
 |---|---|---|---|
-| 1 | 24 to 28% | 27 to 34% | 16 to 25% |
-| 2 | 39 to 41% | 33 to 47% | 24 to 26% |
-| 4 | 70 to 81% | 80 to 85% | 37 to 45% |
-| 8 | 162 to 181% | 134 to 174% | 67 to 70% |
+| 1 | 15 to 20% | 19 to 36% | 12 to 14% |
+| 2 | 27 to 35% | 23 to 30% | 17 to 23% |
+| 4 | 67 to 71% | 50 to 64% | 33 to 38% |
+| 8 | 145 to 167% | 130 to 169% | 58 to 63% |
 
 ### What the data shows
 
-- **Throughput scaled well but not perfectly evenly.** Doubling relays roughly doubled throughput up to 4 relays, and 8 relays gave 7.7x. The 8-relay runs varied more (1,743 to 2,108).
-- **No component was CPU-saturated.** With 1 relay, the relay process used about a quarter of one core. It is waiting on round trips (database and broker), not computing. Postgres was the most heavily used component at 8 relays (about 1.3 to 1.7 cores out of 16 available), but not saturated.
-- **Per-relay throughput is not constant** (272, 335, 306 and 262 events/s per relay). One hypothesis for the higher per-relay rate at 2 and 4 relays is that Postgres groups concurrent commits into fewer disk flushes, which helps more as concurrency rises. **This has not been verified**; it is a hypothesis to test in the optimization slice, not a finding.
+- **Scaling is real but sub-linear:** 1.5x with 2 relays, 2.7x with 4, 4.1x with 8, so each added relay contributes less than the one before. Per-relay throughput falls from 524 to 269 events/s.
+- **A single relay is fast on its own:** 524 events/s, claiming 10 at a time, with the relay process using under a fifth of one core. It spends its time waiting on round trips to Postgres (the claim, and one `UPDATE` per event to finish it) and to NATS.
+- **No component was CPU-saturated.** At 8 relays the relay processes use about 1.5 cores and Postgres about 1.3 to 1.7 cores out of 16. The shared database and the commit path, not raw CPU, are the likely limit as relays are added; this was not isolated by an experiment here.
+- **Run-to-run spread is small except at 8 relays** (2,128 to 2,438), consistent with the machine being near its shared limits.
 
 ### Limitations
 
 - One machine; the relay, Postgres, NATS and the Docker VM share the same CPU. Results will differ on a native Linux server.
-- The relay stage only. End-to-end throughput and latency (committed to delivered) are measured separately in a later benchmark with consumers running.
+- The relay stage only. End-to-end throughput and latency are in B2 to B3.
 - Events were seeded in bulk, not created through the API.
 - The CPU figures are single snapshots, not time series.
-- These figures were measured **before** the Prometheus instrumentation was added to the relay (Slice 6). The instrumented relay adds a small amount of work per event, so the baseline will be measured again with metrics enabled before any optimization is compared against it.
-- This is a baseline of the simple implementation: one claim per 10 events, one `UPDATE` per event to finish it. No optimization has been applied. The optimization exercise will be driven by measurements and compared against these numbers.
+- 3 runs per configuration; medians are reported with all runs shown.
+
+### The earlier measurement of B1 (superseded)
+
+The first measurement of this experiment (2026-10-06, `docs/data/relay-scaling-2026-10-06.csv`) gave medians of 272, 670, 1,225 and 2,092 events/s for 1, 2, 4 and 8 relays (speed-ups 1.0x, 2.5x, 4.5x, 7.7x). It is **superseded** and should not be used: the machine's power state was not recorded then, and later work found that running on battery produced unstable results (see B2). The single-relay figure in particular (272/s) is about half of the 524/s measured here on mains power, while the 8-relay figure is about the same, which is what produced the apparent super-linear scaling. The explanation offered at the time for the higher per-relay rate with more relays (Postgres grouping concurrent commits) was a hypothesis that this re-measurement does not support. The re-measurement also uses the current, instrumented code.
 
 ### Notes on how the data was produced
 
-- A first design of this experiment started the relays and seeded events at the same moment, which produced unreliable results (relay start-up skew dominated short runs: 82/s for 1 relay in one run against about 290/s in repeats). That design was discarded. The delayed-due-time method above removed the skew.
-- The laptop went to sleep during the full experiment after run 1 of the 8-relay configuration. Runs 2 and 3 of that configuration were re-run immediately afterwards under the same conditions with the same script (`APPEND=1 RUN_START=2 COUNTS=8`). The 8-relay run 2 (1,743/s) is the lowest of that group and is kept in the table.
+- An earlier design of this experiment started the relays and seeded events at the same moment, which produced unreliable results (relay start-up skew dominated short runs). That design was discarded; the delayed-due-time method above removes the skew.
+- The tool now records the environment and refuses to run on battery power (`bench env`, called by the script).
 
 ## B2. End-to-end capacity and latency through the HTTP API (baseline)
 
@@ -143,7 +148,7 @@ Two things the confirmation stage caught that a single ramp would have reported 
 1. **The baseline (1 relay, 1 consumer per channel) sustains 98 events/s**, and the drift control agrees: **98 at the start and 98 at the end** of the session, with matching latency (p50 159 vs 165 ms).
 2. **A single consumer is the first bottleneck.** At the baseline load the stage means (from the metrics) are: consumer-to-provider call 6.2 ms (the provider's own work 3.3 ms), the consumer's own database read and status update roughly 3 ms more, so one consumer handles one message in about 9 to 10 ms, which is about 100 messages per second. That matches the measured 98 events/s (each event puts one message on each channel's consumer). The relay is not the constraint here: its finish update is 2.9 ms per event, publish 0.45 ms, claim 3.3 ms per batch of up to 10.
 3. **Consumer scaling:** with 4 relays, capacity grows 98, 156, 234, 313 events/s at 1, 2, 4, 8 consumers per channel: close to linear up to 4, then flattening.
-4. **Relay scaling:** with 8 consumers per channel, 1, 2, 4 and 8 relays sustain 156, 293, 313 and 313 events/s. One relay limits the system (it shares the database with everything else, so it manages about 150 events/s here, well below the 270/s it reached alone in B1); from 2 relays on, adding relays changes little.
+4. **Relay scaling:** with 8 consumers per channel, 1, 2, 4 and 8 relays sustain 156, 293, 313 and 313 events/s. One relay limits the system (it shares the database with everything else, so it manages about 150 events/s here, well below the 524 events/s it reached alone in B1 (relay stage only, nothing else competing)); from 2 relays on, adding relays changes little.
 5. **The ceiling is about 313 events/s (about 940 deliveries/s) and it is a limit of the shared resources, not of one component.** At the ceiling the whole VM is about 60% busy (941 to 989 of 1,600), the platform's Postgres is the hottest component (222 to 238), the mock provider plus its own Postgres take about 290 (roughly 30% of everything), the consumers about 205, and the relay only 45 to 52. The ceiling is the same with 4 or 8 relays and with 4 or 8 consumers. On this hybrid CPU, hyperthread siblings and efficiency cores share compute, so the machine saturates well below 100% of its logical capacity.
 6. **Latency at 70% load is low:** end-to-end p50 between 31 and 165 ms and p99 between 65 and 302 ms in the typical (median) repetition. It is best at 4 consumers per channel (p50 31 ms, p99 65 ms at 164 events/s). With one consumer, about 100 ms of the roughly 160 ms is the time from creation to publication by the relay (p50 98 ms), which is consistent with the relay's 200 ms idle polling interval (an event waits half a poll interval on average at low load). That explanation is a hypothesis to be tested in the optimization exercise, not yet verified.
 7. **Occasional multi-second stalls remain.** In 4 of 27 latency repetitions the p99 exceeded 2 s (up to 3.6 s), although the medians are tight. The same kind of intermittent stall was seen once in an earlier, battery-powered run. Its cause is **not yet identified**; autovacuum and CPU saturation were checked in that earlier investigation and did not explain it.
@@ -160,7 +165,7 @@ Two things the confirmation stage caught that a single ramp would have reported 
 
 ### How this data was produced (a correction)
 
-A first attempt at this matrix was **discarded**. Its results were inconsistent (a configuration that passed one hour failed the next, and one step stalled for about 20 s without reproducing), and the cause turned out to be the machine: the laptop was **running on battery** with a power-limited CPU. The benchmark tool now records the machine's power source, power plan and clock with the results and **refuses to run on battery**. The figures in this section were all measured on mains power after that fix. The earlier relay-only measurement (B1) predates the environment capture, so its power state is unknown; it will be re-measured with the current tooling.
+A first attempt at this matrix was **discarded**. Its results were inconsistent (a configuration that passed one hour failed the next, and one step stalled for about 20 s without reproducing), and the cause turned out to be the machine: the laptop was **running on battery** with a power-limited CPU. The benchmark tool now records the machine's power source, power plan and clock with the results and **refuses to run on battery**. The figures in this section were all measured on mains power after that fix. The earlier relay-only measurement (B1) predates the environment capture, so its power state was unknown; it has since been re-measured with the current tooling and the old table is marked superseded.
 
 ## B3. Optimization: concurrent message processing in each consumer (before and after)
 
