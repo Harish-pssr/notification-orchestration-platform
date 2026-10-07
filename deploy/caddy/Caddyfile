@@ -1,0 +1,17 @@
+# Caddy in front of the API (D10). It obtains and renews the HTTPS certificate by itself for
+# $DOMAIN (Let's Encrypt; for "localhost" it uses its own local CA, handy for testing).
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+
+	reverse_proxy api:8080
+}

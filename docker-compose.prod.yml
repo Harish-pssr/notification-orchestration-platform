@@ -1,0 +1,43 @@
+# Production overlay (D10): the same stack as local, with Caddy in front for automatic HTTPS.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Only Caddy is reachable from outside the machine. The API listens on the private Docker
+# network (and on 127.0.0.1:8080 for the operator), Postgres, NATS and the provider are not
+# published at all. Required secrets must be set in an uncommitted .env (see .env.example);
+# Compose refuses to start with them missing instead of falling back to a default.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"   # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env (the name that points at this machine)}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env (Let's Encrypt contact address)}
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data        # certificates: keep them, Let's Encrypt rate-limits re-issuing
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_started
+
+  postgres-platform:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+
+  postgres-provider:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+
+  api:
+    ports: !reset []              # Caddy is the only way in from outside
+    environment:
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env (needed for replay)}
+
+volumes:
+  caddy-data:
+  caddy-config:

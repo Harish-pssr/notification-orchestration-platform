@@ -44,6 +44,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile grafana
 Live histograms are approximate by design; benchmark figures in
 [docs/benchmarks.md](docs/benchmarks.md) are computed from exact database timestamps.
 
+## Deployment
+
+One VM running the same Compose stack behind Caddy (automatic HTTPS): see [docs/deployment.md](docs/deployment.md).
+`scripts/deploy.sh` checks the configuration, starts everything and runs `scripts/smoke.sh`; fault injection is
+off by default and no database or broker port is ever published beyond the machine.
+
 ## Benchmarks and failure experiments
 
 These reset all data, so they need the dev stack (`scripts/up.sh`) and refuse to run on battery power.
