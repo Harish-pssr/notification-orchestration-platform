@@ -19,19 +19,19 @@ x-dev-consumer: &dev-consumer
 
 services:
   postgres-platform:
-    ports: ["15433:5432"]
+    ports: ["127.0.0.1:15433:5432"]
     command: ["postgres", "-c", "max_connections=300", "-c", "log_checkpoints=on"]   # checkpoint timing is logged for stall investigations
   postgres-provider:
-    ports: ["15434:5432"]
+    ports: ["127.0.0.1:15434:5432"]
   nats:
-    ports: ["4222:4222", "8222:8222"]
+    ports: ["127.0.0.1:4222:4222", "127.0.0.1:8222:8222"]
   provider:
-    ports: ["9090:9090"]
+    ports: ["127.0.0.1:9090:9090"]
     environment: *dev-faults
   prometheus:
-    ports: ["9091:9090"]   # 9090 is the provider
+    ports: ["127.0.0.1:9091:9090"]   # 9090 is the provider
   grafana:
-    ports: ["3000:3000"]
+    ports: ["127.0.0.1:3000:3000"]
     environment:   # local demo only: no login needed to view
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer

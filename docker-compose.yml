@@ -118,7 +118,7 @@ services:
     build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: api } }
     restart: unless-stopped
     environment: *app-env
-    ports: ["8080:8080"]
+    ports: ["127.0.0.1:8080:8080"]   # loopback only; in production Caddy is the public entry (docker-compose.prod.yml)
     depends_on:
       migrate-platform: { condition: service_completed_successfully }
       nats: { condition: service_healthy }
