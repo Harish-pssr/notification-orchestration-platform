@@ -46,7 +46,7 @@ Compose recreates only what changed, and the volumes (databases, broker storage,
 - **Fault injection is off** (`FAULTS_ENABLED=false`). The failure-injection endpoints answer 403, so nobody can crash a worker or break the provider through the dashboard. It is meant for the local and benchmark setups.
 - **Replay needs the admin token**; it is an operator action, not fault injection, so it works with faults off.
 - Postgres, NATS and the provider are never published.
-- Anyone who can reach the URL can read the dashboard and create events: the dashboard has no login in this version (decision D8 chose a shared admin token for the dangerous actions only). Treat a public deployment as a demo system carrying only demo data.
+- **One credential, the admin token, for every write.** Anyone can open the dashboard and read events; creating an event, replaying dead letters and (if enabled) fault injection all need the same `ADMIN_TOKEN`, entered in the box at the top right of the dashboard (the Create page's Send button stays disabled until it is). The production overlay sets `CREATE_REQUIRES_TOKEN=true` to make event creation require it; locally it is off, so the benchmarks and tests can create events freely. Give the token only to the people you want to let try it. There is no login system beyond that: payloads are readable by anyone, so a public deployment should carry only demo data.
 
 ## Operating notes
 

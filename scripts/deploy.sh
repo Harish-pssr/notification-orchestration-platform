@@ -32,7 +32,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --
 echo "waiting for https://$DOMAIN/healthz ..."
 for _ in $(seq 60); do
   if curl -fsS --max-time 5 -o /dev/null "https://$DOMAIN/healthz" 2>/dev/null; then
-    scripts/smoke.sh "https://$DOMAIN"
+    EXPECT_AUTH=1 ADMIN_TOKEN="$ADMIN_TOKEN" scripts/smoke.sh "https://$DOMAIN"
     exit 0
   fi
   sleep 3

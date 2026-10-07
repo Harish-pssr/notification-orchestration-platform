@@ -36,7 +36,8 @@ services:
   api:
     ports: !reset []              # Caddy is the only way in from outside
     environment:
-      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env (needed for replay)}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env (needed for every write)}
+      CREATE_REQUIRES_TOKEN: "true"   # creating events needs the same token as replay (D19)
 
 volumes:
   caddy-data:
