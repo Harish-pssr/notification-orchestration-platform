@@ -147,3 +147,14 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
   .main { padding: 14px 16px 32px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Start page: readable prose, numbered steps, glossary */
+.prose p { max-width: 74ch; line-height: 1.65; }
+.prose p + p { margin-top: 10px; }
+.steps, .points { margin: 0; padding-left: 22px; max-width: 78ch; line-height: 1.6; }
+.steps li, .points li { margin-bottom: 10px; padding-left: 4px; }
+.steps li::marker { color: var(--accent); font-weight: 650; }
+.glossary { display: grid; grid-template-columns: minmax(130px, 190px) 1fr; gap: 8px 18px; margin: 0; max-width: 90ch; }
+.glossary dt { font-weight: 600; }
+.glossary dd { margin: 0; color: var(--muted); line-height: 1.55; }
+@media (max-width: 700px) { .glossary { grid-template-columns: 1fr; gap: 2px; } .glossary dd { margin-bottom: 10px; } }

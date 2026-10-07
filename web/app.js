@@ -105,14 +105,93 @@ const EVENT_TYPES = {
 
 // ---------- sections ----------
 const sections = {
+  start: {
+    title: "Start here",
+    desc: "What this project is, how one event travels through it, and a two-minute way to try it.",
+    mount(root) {
+      root.innerHTML = `
+        <div class="card prose">
+          <div class="card-head"><h2>What this is</h2></div>
+          <p>When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+          <p>It is the kind of plumbing that sits behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+        </div>
+
+        <div class="card prose">
+          <div class="card-head"><h2>The journey of one event</h2><p>Each step has a matching counter on the Overview page.</p></div>
+          <ol class="steps">
+            <li><strong>The API saves the event.</strong> It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.</li>
+            <li><strong>The outbox holds it.</strong> The event record is a to-do list entry in the same database, "saved, not yet handed on". Because it is committed with the payment, an event can never be lost between "the payment happened" and "we told someone".</li>
+            <li><strong>The relay hands it to the broker.</strong> A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which stores each message until somebody confirms it.</li>
+            <li><strong>A consumer asks the provider to send it.</strong> There is one consumer for each channel (email, push, webhook). It takes a message and calls the provider, which stands in for the real external service.</li>
+            <li><strong>The provider sends it exactly once.</strong> Every notification carries an idempotency key. If the same notification arrives twice, the provider recognises the key and does not send it again. The delivery is then marked <em>Delivered</em>.</li>
+          </ol>
+        </div>
+
+        <div class="card prose">
+          <div class="card-head"><h2>Why you can trust it</h2></div>
+          <ul class="points">
+            <li><strong>Nothing is lost.</strong> An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.</li>
+            <li><strong>Repeats are harmless.</strong> The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (This system does not claim "exactly once" delivery.)</li>
+            <li><strong>Failures are retried.</strong> Temporary errors are retried with growing delays. Permanent ones go to <a href="#/dlq">Dead letters</a>, where an operator can fix the cause and replay them.</li>
+            <li><strong>Outages heal.</strong> While a part is down, events wait safely in the database or the broker, and drain when it returns.</li>
+          </ul>
+        </div>
+
+        <div class="card prose">
+          <div class="card-head"><h2>Try it in two minutes</h2></div>
+          <ol class="steps" id="st-try"></ol>
+        </div>
+
+        <div class="card prose">
+          <div class="card-head"><h2>What has been measured</h2><p>On one laptop (Docker Desktop on Windows); details and limits are in the repository's docs/benchmarks.md.</p></div>
+          <ul class="points">
+            <li><strong>Reliability under failure:</strong> 99,999 events with 3 relay crashes, about 15,000 injected duplicate messages and about 2% failing provider calls. Every delivery completed, 0 dead letters, <strong>0 duplicate notifications</strong>. Switching the protections off produced 1,425 duplicates, so the counter can see them.</li>
+            <li><strong>Outages:</strong> the relay, and separately the message broker, stopped for 60 seconds under load (3 times each). Nothing was lost, and the backlog drained about 100 seconds after each restart.</li>
+            <li><strong>Capacity:</strong> roughly 310 to 370 events per second end to end on that laptop. A figure from a laptop is a measurement of that laptop, not a promise.</li>
+          </ul>
+        </div>
+
+        <div class="card prose">
+          <div class="card-head"><h2>Words used on these pages</h2></div>
+          <dl class="glossary">
+            <dt>Event</dt><dd>Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.</dd>
+            <dt>Channel</dt><dd>A way to notify: email, push or webhook. Each event type is routed to some of them.</dd>
+            <dt>Delivery</dt><dd>One event on one channel. A payment event has three deliveries; each is tracked separately.</dd>
+            <dt>Outbox</dt><dd>The list, in the database, of events that are saved but not yet handed to the broker. A long outbox means the relay is behind or stopped.</dd>
+            <dt>Relay</dt><dd>The worker that moves events from the outbox to the broker. Several can run at once.</dd>
+            <dt>Broker</dt><dd>The message queue (NATS JetStream) that stores messages until a consumer confirms them.</dd>
+            <dt>Consumer</dt><dd>The worker for one channel: takes messages from the broker and asks the provider to send them.</dd>
+            <dt>Provider</dt><dd>The external service that actually sends the notification. Here it is a mock, with its own database, so it behaves like something outside the platform.</dd>
+            <dt>Idempotency key</dt><dd>A unique id for one operation. Repeating a request with the same key returns the first result instead of doing the work again; this is how duplicates are made harmless.</dd>
+            <dt>At least once</dt><dd>The delivery guarantee: a message is never lost but may arrive more than once.</dd>
+            <dt>Retry and backoff</dt><dd>After a temporary failure, try again after a growing, slightly randomised delay.</dd>
+            <dt>Dead letter</dt><dd>A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.</dd>
+            <dt>Replay</dt><dd>Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.</dd>
+            <dt>Backlog / in flight</dt><dd>Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.</dd>
+          </dl>
+        </div>`;
+    },
+    update() {
+      const cfg = state.config;
+      const steps = [];
+      steps.push(`<li><a href="#/create">Create an event.</a> Send a PaymentSucceeded: it is routed to email, push and webhook.${cfg.create_requires_token ? " On this deployment creating events needs the admin token (the box at the top right); everything else can be viewed freely." : ""}</li>`);
+      steps.push(`<li>Watch it on the <a href="#/overview">Overview</a>: the counters and the pipeline move as the event passes each step.</li>`);
+      steps.push(`<li>Open it in <a href="#/events">Events</a> (click the row) to see its timeline: when it was created, when it was published, and when each channel delivered it.</li>`);
+      steps.push(cfg.faults_enabled
+        ? `<li>Break something on purpose in <a href="#/faults">Failure controls</a>: make the webhook provider return errors, create an event, and watch it retry and then land in <a href="#/dlq">Dead letters</a>. Restore the provider and replay it. Or pause the relay on <a href="#/health">Health</a> and watch the backlog build and drain.</li>`
+        : `<li>Failure controls are switched off on this deployment so visitors cannot break it. The cases they cover (a crashing relay, a failing provider, a broker outage, duplicate messages) are described in the repository's docs/failure-scenarios.md, and <a href="#/idempotency">Idempotency</a> shows where duplicates are stopped.</li>`);
+      $("#st-try").innerHTML = steps.join("");
+    },
+  },
+
   overview: {
     title: "Overview",
-    desc: "Live state of the pipeline, counted exactly from the database.",
+    desc: "A live picture of the pipeline: how many events exist, where they are right now, and whether anything needs attention. Counted exactly from the database.",
     mount(root) {
       root.innerHTML = `
         <div class="tiles" id="ov-tiles"></div>
         <div class="card">
-          <div class="card-head"><h2>Pipeline</h2><p>Where events are right now, from write to delivery.</p></div>
+          <div class="card-head"><h2>Pipeline</h2><p>Where events are right now, from saved to delivered. New here? <a href="#/start">Start here</a> explains each step.</p></div>
           <div class="pipeline" id="ov-pipeline"></div>
         </div>
         <div class="card">
@@ -136,37 +215,37 @@ const sections = {
       }
       const lat = s.latency;
       $("#ov-tiles").innerHTML = [
-        tile("Events created", num(created), "committed to the outbox"),
-        tile("Waiting for relay", num(backlog), "outbox backlog"),
-        tile("Published to broker", num(ev.PUBLISHED || 0), "relay finished"),
-        tile("Deliveries completed", `${num(delivered)}<span class="muted small"> / ${num(total)}</span>`, "all channels"),
-        tile("Needs attention", num(trouble), "retrying or dead-lettered", trouble > 0),
-        tile("Latency (p50 / p95)", lat.count ? fmtPair(lat.p50_ms, lat.p95_ms) : "–", `last ${num(lat.count)} deliveries`),
+        tile("Events created", num(created), "saved by the API"),
+        tile("Waiting for relay", num(backlog), "saved, not yet passed on; normally near 0"),
+        tile("Published to broker", num(ev.PUBLISHED || 0), "handed to the message broker"),
+        tile("Deliveries completed", `${num(delivered)}<span class="muted small"> / ${num(total)}</span>`, "one per event and channel"),
+        tile("Needs attention", num(trouble), "retrying or gave up; 0 is healthy", trouble > 0),
+        tile("Latency (p50 / p95)", lat.count ? fmtPair(lat.p50_ms, lat.p95_ms) : "–", `saved to delivered, last ${num(lat.count)} deliveries`),
       ].join("");
 
       $("#ov-pipeline").innerHTML = `
-        <div class="node"><h3>1 · API</h3><div class="big">${num(created)}</div><div class="sub">events written with their business change in one transaction</div></div>
+        <div class="node"><h3>1 · API</h3><div class="big">${num(created)}</div><div class="sub">saves each event with its business change in one transaction</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>2 · Outbox</h3><div class="big">${num(backlog)}</div><div class="sub">waiting for a relay${ev.DLQ ? ` · ${num(ev.DLQ)} dead-lettered` : ""}</div></div>
+        <div class="node"><h3>2 · Outbox</h3><div class="big">${num(backlog)}</div><div class="sub">saved, waiting for the relay to pick them up (normally near 0)${ev.DLQ ? ` · ${num(ev.DLQ)} dead-lettered` : ""}</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>3 · Relay → Broker</h3><div class="big">${num(ev.PUBLISHED || 0)}</div><div class="sub">published to NATS JetStream</div></div>
+        <div class="node"><h3>3 · Relay → Broker</h3><div class="big">${num(ev.PUBLISHED || 0)}</div><div class="sub">handed to the message broker (NATS), which keeps them until a consumer confirms</div></div>
         <div class="arrow" aria-hidden="true">→</div>
         <div class="fan">${CHANNELS.map((ch) => {
           const c = s.channels[ch] || {};
           const inflight = (c.PENDING || 0) + (c.RETRYING || 0);
           return `<div class="channel-node"><strong>${ch}</strong><span class="big">${num(c.DELIVERED || 0)}</span>
-            <div class="channel-stats"><span>delivered</span><span>${num(inflight)} in flight</span>${c.DLQ ? `<span style="color:var(--bad)">${num(c.DLQ)} dead-lettered</span>` : ""}</div></div>`;
+            <div class="channel-stats"><span>delivered</span><span title="Waiting for a consumer, or being retried">${num(inflight)} not yet delivered</span>${c.DLQ ? `<span style="color:var(--bad)">${num(c.DLQ)} dead-lettered</span>` : ""}</div></div>`;
         }).join("")}</div>`;
 
       const recent = state.events.slice(0, 8);
       $("#ov-recent").innerHTML = recent.length ? recent.map((e) => eventRow(e, false)).join("")
-        : `<tr><td colspan="4" class="empty">No events yet. <a href="#/create">Create one</a> to see it flow through.</td></tr>`;
+        : `<tr><td colspan="4" class="empty">No events yet. <a href="#/create">Create one</a> and watch it travel through the pipeline.</td></tr>`;
     },
   },
 
   create: {
     title: "Create events",
-    desc: "Send business events to the API. Each is written with its outbox record in one transaction, then delivered to the channels it routes to.",
+    desc: "Send an event to the API and watch it flow through. The API saves it, with a to-do record, in one database transaction; the relay then delivers it on every channel that event type is routed to.",
     mount(root) {
       root.innerHTML = `
         <div class="grid-2">
@@ -174,7 +253,7 @@ const sections = {
             <div class="card-head"><h2>New event</h2></div>
             <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
             <div id="cr-fields"></div>
-            <label class="field"><span>Idempotency-Key (generated once per request; reuse it to see replay)</span>
+            <label class="field"><span>Idempotency-Key: a unique id for this request. Send the same key again (use Resend) and you get the first result back instead of a second event</span>
               <input type="text" id="cr-key" class="mono" autocomplete="off"></label>
             <div class="row">
               <label class="field" style="width:110px"><span>How many</span><input type="number" id="cr-count" min="1" max="1000" value="1"></label>
@@ -290,7 +369,7 @@ const sections = {
 
   events: {
     title: "Events",
-    desc: "Every event with its outbox state and per-channel delivery. Select a row for the full story.",
+    desc: "Every event, with its state in the outbox and the delivery status of each channel. Click a row to see its full timeline.",
     mount(root) {
       root.innerHTML = `
         <div class="card">
@@ -327,7 +406,7 @@ const sections = {
 
   health: {
     title: "Health",
-    desc: "Workers come and go, so health is per role: UP when at least one instance has sent a heartbeat recently, DOWN when none has, PAUSED when an operator paused it.",
+    desc: "Which parts of the system are running and how much work is waiting in front of each. Workers come and go, so health is per role (the relay, or one channel's consumer): UP while at least one instance reports in, DOWN when none does, PAUSED when an operator paused it.",
     data: null,
     mount(root) {
       root.innerHTML = `
@@ -337,8 +416,10 @@ const sections = {
           <div class="table-wrap"><table>
             <thead><tr><th>Instance</th><th>Role</th><th>State</th><th>Settings</th><th>Last heartbeat</th></tr></thead>
             <tbody id="hl-instances"></tbody></table></div>
+          <p style="margin-top:10px"><button class="btn btn-ghost" id="hl-gone" hidden></button></p>
         </div>`;
       root.addEventListener("click", async (e) => {
+        if (e.target.closest("#hl-gone")) { this.showGone = !this.showGone; this.render(); return; }
         const b = e.target.closest("button[data-pause]");
         if (!b) return;
         const point = b.dataset.pause, resume = b.dataset.action === "resume";
@@ -380,20 +461,26 @@ const sections = {
       // Instances that went away recently stay visible as evidence of an outage; ones
       // gone for more than five minutes (old deploys) are hidden as noise.
       const all = (d.roles || []).flatMap((role) => role.instances).filter((i) => i.fresh || i.age_s < 300);
-      $("#hl-instances").innerHTML = all.length ? all.map((i) => `<tr>
+      // Stopped instances (scaled down or restarted) look like a fault, so they are hidden unless asked for.
+      const stopped = all.filter((i) => !i.fresh);
+      const shown = this.showGone ? all : all.filter((i) => i.fresh);
+      const goneBtn = $("#hl-gone");
+      goneBtn.hidden = stopped.length === 0;
+      goneBtn.textContent = this.showGone ? "Hide stopped instances" : `Show ${stopped.length} stopped instance${stopped.length === 1 ? "" : "s"}`;
+      $("#hl-instances").innerHTML = shown.length ? shown.map((i) => `<tr>
           <td class="mono">${esc(i.name)}</td><td>${esc(i.role)}</td>
           <td>${i.fresh ? (i.state === "PAUSED" ? chip("RETRYING", "PAUSED") : chip("DELIVERED", "RUNNING")) : chip("DLQ", "GONE")}</td>
           <td class="muted small">${esc(settingsText(i.config))}</td>
           <td class="muted">${i.age_s < 2 ? "just now" : Math.round(i.age_s) + " s ago"}</td></tr>`).join("")
         : `<tr><td colspan="5" class="empty">No worker has sent a heartbeat yet.</td></tr>`;
-      $("#hl-note").textContent = `Alive means a heartbeat within ${d.stale_after_s} s. Instances gone for over 5 minutes are hidden.` +
+      $("#hl-note").textContent = `Running means a heartbeat within the last ${d.stale_after_s} s. Instances that stopped (scaled down or restarted) are hidden by default.` +
         (usable ? "" : " Pause and resume need the admin token and fault injection enabled.");
     },
   },
 
   experiment: {
     title: "Experiment",
-    desc: "Shown while a benchmark or reliability run is active: what is being varied, which phase the run is in, and live counts that should converge.",
+    desc: "Appears while a benchmark or failure experiment is running: what is being changed, which phase the run is in, and live counters that should end at nothing lost and nothing duplicated.",
     samples: [],
     provider: null,
     mount(root) {
@@ -462,7 +549,7 @@ const sections = {
 
   dlq: {
     title: "Dead letters",
-    desc: "Deliveries that exhausted their retries or failed permanently. Read the reason, fix the cause, then replay. Replaying is safe: the provider recognises work it already did.",
+    desc: "Deliveries that gave up: their retries ran out, or the provider rejected them for good. Read the reason, fix the cause, then replay. Replaying is safe because the provider recognises work it already did.",
     selected: new Set(),
     data: { deliveries: [], events: [] },
     mount(root) {
@@ -564,7 +651,7 @@ const sections = {
 
   faults: {
     title: "Failure controls",
-    desc: "Break things on purpose and watch the guarantees hold. Controls need the admin token and fault injection enabled on the server.",
+    desc: "Break things on purpose and watch the guarantees hold. These controls need the admin token, and they are switched off on public deployments.",
     mount(root) {
       root.innerHTML = `
         <div class="grid-2">
@@ -642,7 +729,7 @@ const sections = {
 
   idempotency: {
     title: "Idempotency",
-    desc: "Duplicate deliveries happen by design. This page shows where each one was stopped, and whether any duplicate side effect got through.",
+    desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and proves that no duplicate notification was actually sent.",
     running: false,
     mount(root) {
       root.innerHTML = `
@@ -823,6 +910,7 @@ const mounted = new Set();
 function show(route) {
   if (!sections[route]) route = "overview";
   state.route = route;
+  if (route === "start") { try { localStorage.setItem("seen-start", "1"); } catch { /* ignore */ } }
   const s = sections[route];
   document.title = `${s.title} · Notification Platform Console`;
   $("#page-title").textContent = s.title; $("#page-desc").textContent = s.desc;
@@ -867,7 +955,14 @@ $("#live").onchange = (e) => { state.live = e.target.checked; if (state.live) re
 $("#drawer-close").onclick = closeDrawer; $("#drawer-backdrop").onclick = closeDrawer;
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.drawerId) closeDrawer(); });
 // #/<section> or #/<section>/<event id>
-function parseHash() { const [route, id] = location.hash.replace(/^#\//, "").split("/"); return { route: route || "overview", id }; }
+function parseHash() {
+  const [route, id] = location.hash.replace(/^#\//, "").split("/");
+  if (route) return { route, id };
+  // First visit: explain the project. After that the Overview is the landing page.
+  let seen = false;
+  try { seen = !!localStorage.getItem("seen-start"); } catch { /* storage can be unavailable */ }
+  return { route: seen ? "overview" : "start", id };
+}
 function navigate() {
   const { route, id } = parseHash();
   show(route);
