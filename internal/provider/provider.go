@@ -115,6 +115,11 @@ func (p *Provider) send(w http.ResponseWriter, r *http.Request) {
 	// Injected failure (D8): answered after the request was counted, before any effect.
 	if p.applyFailure(w, r, channel) {
 		p.metrics.Request(string(channel), metrics.ResultInjected, time.Since(start))
+		// Remembered so reports can tell a retry after an injected failure from a duplicate.
+		if _, err := p.pool.Exec(context.WithoutCancel(r.Context()),
+			`INSERT INTO injected_failures (key, channel) VALUES ($1, $2)`, key, string(channel)); err != nil {
+			p.log.Warn("could not record injected failure", "error", err)
+		}
 		return
 	}
 

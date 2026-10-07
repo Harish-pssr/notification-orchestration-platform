@@ -32,7 +32,7 @@ func Reset(ctx context.Context) error {
 		return err
 	}
 	defer provider.Close()
-	if _, err := provider.Exec(ctx, `TRUNCATE requests, effects, idempotency_keys`); err != nil {
+	if _, err := provider.Exec(ctx, `TRUNCATE requests, effects, idempotency_keys, injected_failures`); err != nil {
 		return fmt.Errorf("truncate provider: %w", err)
 	}
 
