@@ -109,65 +109,72 @@ const sections = {
     title: "Start here",
     desc: "What this project is, how one event travels through it, and a two-minute way to try it.",
     mount(root) {
+      const step = (n, title, text) => `<div class="step"><span class="step-n">${n}</span><h3>${title}</h3><p>${text}</p></div>`;
+      const point = (title, text) => `<div class="point"><h3>${title}</h3><p>${text}</p></div>`;
+      const term = (t, d) => `<div><dt>${t}</dt><dd>${d}</dd></div>`;
       root.innerHTML = `
-        <div class="card prose">
+        <div class="card">
           <div class="card-head"><h2>What this is</h2></div>
-          <p>When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
-          <p>It is the kind of plumbing that sits behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+          <div class="cols-2 prose">
+            <p>When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+            <p>It is the kind of plumbing that sits behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+          </div>
         </div>
 
-        <div class="card prose">
-          <div class="card-head"><h2>The journey of one event</h2><p>Each step has a matching counter on the Overview page.</p></div>
-          <ol class="steps">
-            <li><strong>The API saves the event.</strong> It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.</li>
-            <li><strong>The outbox holds it.</strong> The event record is a to-do list entry in the same database, "saved, not yet handed on". Because it is committed with the payment, an event can never be lost between "the payment happened" and "we told someone".</li>
-            <li><strong>The relay hands it to the broker.</strong> A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which stores each message until somebody confirms it.</li>
-            <li><strong>A consumer asks the provider to send it.</strong> There is one consumer for each channel (email, push, webhook). It takes a message and calls the provider, which stands in for the real external service.</li>
-            <li><strong>The provider sends it exactly once.</strong> Every notification carries an idempotency key. If the same notification arrives twice, the provider recognises the key and does not send it again. The delivery is then marked <em>Delivered</em>.</li>
-          </ol>
+        <div class="card">
+          <div class="card-head"><h2>The journey of one event</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
+          <div class="step-grid">
+            ${step(1, "The API saves it", "It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.")}
+            ${step(2, "The outbox holds it", "The event record is a to-do entry in the same database: \"saved, not yet handed on\". Committed with the payment, it can never be lost in between.")}
+            ${step(3, "The relay hands it on", "A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which keeps each until it is confirmed.")}
+            ${step(4, "A consumer asks to send it", "One consumer per channel (email, push, webhook) takes a message and calls the provider, which stands in for the real external service.")}
+            ${step(5, "The provider sends it once", "Every notification carries an idempotency key. If the same one arrives twice, the provider recognises the key and does not send again. The delivery is marked <em>Delivered</em>.")}
+          </div>
         </div>
 
-        <div class="card prose">
+        <div class="card">
           <div class="card-head"><h2>Why you can trust it</h2></div>
-          <ul class="points">
-            <li><strong>Nothing is lost.</strong> An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.</li>
-            <li><strong>Repeats are harmless.</strong> The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (This system does not claim "exactly once" delivery.)</li>
-            <li><strong>Failures are retried.</strong> Temporary errors are retried with growing delays. Permanent ones go to <a href="#/dlq">Dead letters</a>, where an operator can fix the cause and replay them.</li>
-            <li><strong>Outages heal.</strong> While a part is down, events wait safely in the database or the broker, and drain when it returns.</li>
-          </ul>
+          <div class="point-grid">
+            ${point("Nothing is lost", "An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.")}
+            ${point("Repeats are harmless", "The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
+            ${point("Failures are retried", "Temporary errors are retried with growing delays. Permanent ones go to <a href=\"#/dlq\">Dead letters</a>, where an operator can fix the cause and replay them.")}
+            ${point("Outages heal", "While a part is down, events wait safely in the database or the broker, and drain when it returns.")}
+          </div>
         </div>
 
-        <div class="card prose">
-          <div class="card-head"><h2>Try it in two minutes</h2></div>
-          <ol class="steps" id="st-try"></ol>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head"><h2>Try it in two minutes</h2></div>
+            <ol class="steps" id="st-try"></ol>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>What has been measured</h2></div>
+            <ul class="points">
+              <li><strong>Reliability under failure:</strong> 99,999 events with 3 relay crashes, about 15,000 injected duplicate messages and about 2% failing provider calls. Every delivery completed, 0 dead letters, <strong>0 duplicate notifications</strong>. With the protections switched off the same run produced 1,425 duplicates, so the counter can see them.</li>
+              <li><strong>Outages:</strong> the relay, and separately the message broker, stopped for 60 seconds under load (3 times each). Nothing was lost, and the backlog drained about 100 seconds after each restart.</li>
+              <li><strong>Capacity:</strong> roughly 310 to 370 events per second end to end.</li>
+            </ul>
+            <p class="muted small" style="margin-top:8px">Measured on one laptop (Docker Desktop on Windows): a measurement of that laptop, not a promise. Method and limits are in the repository's docs/benchmarks.md.</p>
+          </div>
         </div>
 
-        <div class="card prose">
-          <div class="card-head"><h2>What has been measured</h2><p>On one laptop (Docker Desktop on Windows); details and limits are in the repository's docs/benchmarks.md.</p></div>
-          <ul class="points">
-            <li><strong>Reliability under failure:</strong> 99,999 events with 3 relay crashes, about 15,000 injected duplicate messages and about 2% failing provider calls. Every delivery completed, 0 dead letters, <strong>0 duplicate notifications</strong>. Switching the protections off produced 1,425 duplicates, so the counter can see them.</li>
-            <li><strong>Outages:</strong> the relay, and separately the message broker, stopped for 60 seconds under load (3 times each). Nothing was lost, and the backlog drained about 100 seconds after each restart.</li>
-            <li><strong>Capacity:</strong> roughly 310 to 370 events per second end to end on that laptop. A figure from a laptop is a measurement of that laptop, not a promise.</li>
-          </ul>
-        </div>
-
-        <div class="card prose">
+        <div class="card">
           <div class="card-head"><h2>Words used on these pages</h2></div>
           <dl class="glossary">
-            <dt>Event</dt><dd>Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.</dd>
-            <dt>Channel</dt><dd>A way to notify: email, push or webhook. Each event type is routed to some of them.</dd>
-            <dt>Delivery</dt><dd>One event on one channel. A payment event has three deliveries; each is tracked separately.</dd>
-            <dt>Outbox</dt><dd>The list, in the database, of events that are saved but not yet handed to the broker. A long outbox means the relay is behind or stopped.</dd>
-            <dt>Relay</dt><dd>The worker that moves events from the outbox to the broker. Several can run at once.</dd>
-            <dt>Broker</dt><dd>The message queue (NATS JetStream) that stores messages until a consumer confirms them.</dd>
-            <dt>Consumer</dt><dd>The worker for one channel: takes messages from the broker and asks the provider to send them.</dd>
-            <dt>Provider</dt><dd>The external service that actually sends the notification. Here it is a mock, with its own database, so it behaves like something outside the platform.</dd>
-            <dt>Idempotency key</dt><dd>A unique id for one operation. Repeating a request with the same key returns the first result instead of doing the work again; this is how duplicates are made harmless.</dd>
-            <dt>At least once</dt><dd>The delivery guarantee: a message is never lost but may arrive more than once.</dd>
-            <dt>Retry and backoff</dt><dd>After a temporary failure, try again after a growing, slightly randomised delay.</dd>
-            <dt>Dead letter</dt><dd>A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.</dd>
-            <dt>Replay</dt><dd>Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.</dd>
-            <dt>Backlog / in flight</dt><dd>Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.</dd>
+            ${term("Event", "Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.")}
+            ${term("Channel", "A way to notify: email, push or webhook. Each event type is routed to some of them.")}
+            ${term("Delivery", "One event on one channel. A payment event has three deliveries, each tracked separately.")}
+            ${term("Outbox", "The list, in the database, of events that are saved but not yet handed to the broker. A long outbox means the relay is behind or stopped.")}
+            ${term("Relay", "The worker that moves events from the outbox to the broker. Several can run at once.")}
+            ${term("Broker", "The message queue (NATS JetStream) that stores messages until a consumer confirms them.")}
+            ${term("Consumer", "The worker for one channel: takes messages from the broker and asks the provider to send them.")}
+            ${term("Provider", "The external service that actually sends the notification. Here it is a mock with its own database, so it behaves like something outside the platform.")}
+            ${term("Idempotency key", "A unique id for one operation. Repeating a request with the same key returns the first result instead of doing the work again; this is how duplicates are made harmless.")}
+            ${term("At least once", "The delivery guarantee: a message is never lost but may arrive more than once.")}
+            ${term("Retry and backoff", "After a temporary failure, try again after a growing, slightly randomised delay.")}
+            ${term("Dead letter", "A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.")}
+            ${term("Replay", "Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.")}
+            ${term("Backlog", "Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.")}
           </dl>
         </div>`;
     },
@@ -248,24 +255,30 @@ const sections = {
     desc: "Send an event to the API and watch it flow through. The API saves it, with a to-do record, in one database transaction; the relay then delivers it on every channel that event type is routed to.",
     mount(root) {
       root.innerHTML = `
+        <div class="card">
+          <div class="card-head"><h2>1 · Choose an event type</h2><p>Each type is delivered on the channels shown on its card.</p></div>
+          <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
+        </div>
         <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h2>New event</h2></div>
-            <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
-            <div id="cr-fields"></div>
-            <label class="field"><span>Idempotency-Key: a unique id for this request. Send the same key again (use Resend) and you get the first result back instead of a second event</span>
-              <input type="text" id="cr-key" class="mono" autocomplete="off"></label>
-            <div class="row">
-              <label class="field" style="width:110px"><span>How many</span><input type="number" id="cr-count" min="1" max="1000" value="1"></label>
-              <button class="btn btn-primary" id="cr-send" style="margin-bottom:10px">Send</button>
-              <button class="btn" id="cr-resend" style="margin-bottom:10px" disabled title="Repeat the last request with the same key">Resend last request</button>
+            <div class="card-head"><h2>2 · Fill in the details</h2><p id="cr-routes"></p></div>
+            <div class="fields-grid" id="cr-fields"></div>
+            <details class="advanced">
+              <summary>Advanced: idempotency key and sending many at once</summary>
+              <label class="field"><span>Idempotency key: a unique id for this request. Send the same key again (use Resend) and you get the first result back instead of a second event</span>
+                <input type="text" id="cr-key" class="mono" autocomplete="off"></label>
+              <label class="field" style="max-width:180px"><span>How many events</span><input type="number" id="cr-count" min="1" max="1000" value="1"></label>
+              <p class="muted small">With more than one, the values are randomised and every event gets its own key.</p>
+            </details>
+            <div class="actions">
+              <button class="btn btn-primary btn-lg" id="cr-send">Send event</button>
+              <button class="btn" id="cr-resend" disabled title="Repeat the last request with the same key">Resend last request</button>
             </div>
-            <p class="muted small">With more than one, values are randomised and every event gets its own key.</p>
             <p class="small" id="cr-needs"></p>
           </div>
           <div class="card">
-            <div class="card-head"><h2>Request log</h2><p>This session</p></div>
-            <ul class="log" id="cr-log"><li class="muted">Nothing sent yet.</li></ul>
+            <div class="card-head"><h2>3 · Watch it happen</h2><p>Requests sent from this page</p></div>
+            <ul class="log" id="cr-log"><li class="muted"><span>Nothing sent yet. Choose a type and press <strong>Send event</strong>; then follow it on the <a href="#/overview">Overview</a> or open it from here.</span></li></ul>
           </div>
         </div>`;
       this.type = "payment-succeeded"; this.last = null; this.logItems = [];
@@ -287,6 +300,7 @@ const sections = {
         ? `<label class="field"><span>${f.label}</span><select data-key="${f.key}">${f.options.map((o) => `<option>${o}</option>`).join("")}</select></label>`
         : `<label class="field"><span>${f.label}</span><input type="${f.type}" data-key="${f.key}" value="${esc(f.random())}"></label>`).join("");
       $("#cr-key").value = crypto.randomUUID();
+      $("#cr-routes").textContent = "Delivered on: " + EVENT_TYPES[id].routes.join(", ");
     },
     readBody(id, randomise) {
       const body = {};
