@@ -23,6 +23,7 @@ import (
 	"notifplatform/internal/backoff"
 	"notifplatform/internal/events"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/metrics"
 )
 
 // Config holds the consumer's tunables.
@@ -43,14 +44,18 @@ type Config struct {
 // Consumer is one consumer instance for one channel. Replicas share the channel's
 // durable consumer, so the broker divides messages among them.
 type Consumer struct {
-	cfg    Config
-	pool   *pgxpool.Pool
-	cons   jetstream.Consumer
-	http   *http.Client
-	log    *slog.Logger
-	faults *faults.Registry // nil means no fault injection
-	paused atomic.Bool      // true while the run loop is idle because of a pause fault
+	cfg     Config
+	pool    *pgxpool.Pool
+	cons    jetstream.Consumer
+	http    *http.Client
+	log     *slog.Logger
+	faults  *faults.Registry  // nil means no fault injection
+	metrics *metrics.Consumer // nil means no metrics
+	paused  atomic.Bool       // true while the run loop is idle because of a pause fault
 }
+
+// SetMetrics attaches the consumer's metrics. Call it before Run.
+func (c *Consumer) SetMetrics(m *metrics.Consumer) { c.metrics = m }
 
 // New builds a consumer. cons is the durable pull consumer for cfg.Channel.
 func New(cfg Config, pool *pgxpool.Pool, cons jetstream.Consumer, log *slog.Logger) *Consumer {
@@ -120,15 +125,18 @@ func (c *Consumer) Run(ctx context.Context) error {
 func (c *Consumer) Handle(ctx context.Context, msg jetstream.Msg) { c.handle(ctx, msg) }
 
 func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
+	c.metrics.Received()
 	var m events.Message
 	if err := json.Unmarshal(msg.Data(), &m); err != nil || m.Channel != c.cfg.Channel {
 		c.log.Error("unreadable message, discarding", "error", err)
+		c.metrics.Outcome(metrics.OutcomeDiscarded)
 		_ = msg.Term()
 		return
 	}
 	meta, err := msg.Metadata()
 	if err != nil {
 		c.log.Error("no metadata", "error", err)
+		c.metrics.Outcome(metrics.OutcomeError)
 		_ = msg.Nak()
 		return
 	}
@@ -147,15 +155,18 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		log.Error("no delivery row for message, discarding", "status", "orphan")
+		c.metrics.Outcome(metrics.OutcomeDiscarded)
 		_ = msg.Term()
 		return
 	case err != nil:
 		log.Error("load delivery failed", "error", err)
+		c.metrics.Outcome(metrics.OutcomeError)
 		_ = msg.NakWithDelay(c.cfg.RetryDelay)
 		return
 	case status == "DLQ":
 		// Already dead-lettered; a replay sends a new message, so this one is stale.
 		log.Warn("message for a dead-lettered delivery, discarding", "status", "stale_dlq")
+		c.metrics.Outcome(metrics.OutcomeDiscarded)
 		_ = msg.Term()
 		return
 	case status == "DELIVERED" && !c.skipCheckDisabled():
@@ -167,6 +178,7 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 			log.Error("count duplicate failed", "error", err)
 		}
 		log.Info("duplicate delivery ignored", "status", "duplicate_ignored")
+		c.metrics.Outcome(metrics.OutcomeDuplicateIgnore)
 		_ = msg.Ack()
 		return
 	}
@@ -179,7 +191,9 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 		return
 	}
 
+	callStart := time.Now()
 	callErr := c.call(ctx, m, payload)
+	c.metrics.ProviderCall(time.Since(callStart), callErr == nil)
 	if callErr == nil {
 		c.finishDelivered(ctx, log, msg, m, attempt)
 		return
@@ -199,22 +213,38 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 		}
 		log.Warn("provider call failed, will retry", "error", callErr.Error(), "status", "retrying", "retry_in", delay)
 		c.recordRetry(ctx, m, attempt, delay, callErr)
+		c.metrics.Outcome(metrics.OutcomeRetried)
 		_ = msg.NakWithDelay(delay)
 	}
 }
 
 func (c *Consumer) finishDelivered(ctx context.Context, log *slog.Logger, msg jetstream.Msg, m events.Message, attempt int) {
-	if _, err := c.pool.Exec(ctx, `
-		UPDATE channel_deliveries
-		SET status = 'DELIVERED', attempts = $3, delivered_at = coalesce(delivered_at, now()),
+	// The database computes the end-to-end latency (event created to delivered) in the
+	// same statement, so it uses the database clock (D9). The status guard means only
+	// the first transition returns a row: a repeat delivery cannot double-count.
+	var latency float64
+	err := c.pool.QueryRow(ctx, `
+		UPDATE channel_deliveries d
+		SET status = 'DELIVERED', attempts = $3, delivered_at = now(),
 		    last_error = NULL, next_attempt_at = NULL
-		WHERE event_id = $1 AND channel = $2`, m.EventID, string(m.Channel), attempt); err != nil {
+		FROM outbox_events o
+		WHERE d.event_id = $1 AND d.channel = $2 AND o.id = d.event_id AND d.status <> 'DELIVERED'
+		RETURNING extract(epoch FROM (d.delivered_at - o.created_at))`,
+		m.EventID, string(m.Channel), attempt).Scan(&latency)
+	switch {
+	case err == nil:
+		c.metrics.Latency(latency)
+	case errors.Is(err, pgx.ErrNoRows):
+		// Already DELIVERED (a repeat the provider suppressed): nothing to update.
+	default:
 		// The provider already ran the effect. Without an ack NATS redelivers, the
 		// provider recognises the key, and we try this update again.
 		log.Error("mark delivered failed", "error", err)
+		c.metrics.Outcome(metrics.OutcomeError)
 		_ = msg.NakWithDelay(c.cfg.RetryDelay)
 		return
 	}
+	c.metrics.Outcome(metrics.OutcomeDelivered)
 	_ = msg.Ack()
 	log.Info("delivered", "status", "delivered")
 }
@@ -228,9 +258,11 @@ func (c *Consumer) finishDead(ctx context.Context, log *slog.Logger, msg jetstre
 		WHERE event_id = $1 AND channel = $2 AND status <> 'DELIVERED'`,
 		m.EventID, string(m.Channel), attempt, reason); err != nil {
 		log.Error("dead-letter write failed", "error", err)
+		c.metrics.Outcome(metrics.OutcomeError)
 		_ = msg.NakWithDelay(c.cfg.RetryDelay)
 		return
 	}
+	c.metrics.Outcome(metrics.OutcomeDeadLettered)
 	_ = msg.Term() // stop redelivery
 	log.Error("delivery dead-lettered", "status", "dlq", "reason", reason)
 }

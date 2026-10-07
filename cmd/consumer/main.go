@@ -21,6 +21,7 @@ import (
 	"notifplatform/internal/events"
 	"notifplatform/internal/faults"
 	"notifplatform/internal/health"
+	"notifplatform/internal/metrics"
 )
 
 func main() {
@@ -82,6 +83,11 @@ func run() error {
 		BackoffBase: config.GetenvDuration("BACKOFF_BASE", time.Second),
 		BackoffCap:  config.GetenvDuration("BACKOFF_CAP", 30*time.Second),
 	}, pool, cons, log)
+
+	// Metrics (D9): served on their own port because the consumer has no HTTP server.
+	reg := metrics.NewRegistry()
+	c.SetMetrics(metrics.NewConsumer(reg, string(channel)))
+	go metrics.Serve(ctx, config.Getenv("METRICS_ADDR", ":9100"), reg, log)
 
 	// Fault injection (D8): a no-op unless FAULTS_ENABLED=true.
 	fr := faults.New(pool, config.Getenv("FAULTS_ENABLED", "false") == "true",
