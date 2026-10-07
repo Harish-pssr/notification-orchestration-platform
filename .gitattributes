@@ -1,0 +1,7 @@
+# Windows Git can rewrite line endings to CRLF; scripts and SQL with CRLF break
+# inside Linux containers. Force LF for everything text.
+* text=auto eol=lf
+*.sh text eol=lf
+*.sql text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
