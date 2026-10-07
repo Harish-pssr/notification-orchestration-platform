@@ -12,11 +12,13 @@ import (
 	"net/http"
 	"regexp"
 	"sync/atomic"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"notifplatform/internal/admin"
 	"notifplatform/internal/events"
+	"notifplatform/internal/metrics"
 )
 
 // keyPrefix matches the only prefixes stats accepts: hex digits, dashes and colons.
@@ -34,7 +36,14 @@ type Provider struct {
 	adminEnabled bool
 	adminToken   string
 
-	fails *failures // injected misbehaviour per channel (D8)
+	fails          *failures         // injected misbehaviour per channel (D8)
+	metrics        *metrics.Provider // nil means no metrics
+	metricsHandler http.Handler      // serves /metrics when set
+}
+
+// SetMetrics attaches the provider's metrics and the handler that serves them.
+func (p *Provider) SetMetrics(m *metrics.Provider, h http.Handler) {
+	p.metrics, p.metricsHandler = m, h
 }
 
 // New returns a Provider. Pass dedupe=false only for the negative-control run.
@@ -54,6 +63,9 @@ func (p *Provider) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/{channel}", p.send)
 	mux.HandleFunc("GET /stats", p.stats)
+	if p.metricsHandler != nil {
+		mux.Handle("GET /metrics", p.metricsHandler)
+	}
 	mux.HandleFunc("GET /failures", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(p.fails.snapshot())
@@ -97,16 +109,26 @@ func (p *Provider) send(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Time from here on: this is the work a real provider would do for the request.
+	start := time.Now()
+
 	// Injected failure (D8): answered after the request was counted, before any effect.
 	if p.applyFailure(w, r, channel) {
+		p.metrics.Request(string(channel), metrics.ResultInjected, time.Since(start))
 		return
 	}
 
 	response, replayed, err := p.execute(r.Context(), key, channel, body)
 	if err != nil {
+		p.metrics.Request(string(channel), metrics.ResultError, time.Since(start))
 		p.fail(w, "execute", err)
 		return
 	}
+	result := metrics.ResultExecuted
+	if replayed {
+		result = metrics.ResultReplayed
+	}
+	p.metrics.Request(string(channel), result, time.Since(start))
 
 	w.Header().Set("Content-Type", "application/json")
 	if replayed {

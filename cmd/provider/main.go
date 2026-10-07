@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"notifplatform/internal/config"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/provider"
 )
 
@@ -46,6 +47,8 @@ func run() error {
 
 	addr := config.Getenv("PROVIDER_ADDR", ":9090")
 	p := provider.New(pool, dedupe, log)
+	reg := metrics.NewRegistry()
+	p.SetMetrics(metrics.NewProvider(reg), metrics.Handler(reg))
 	p.SetAdmin(config.Getenv("FAULTS_ENABLED", "false") == "true", os.Getenv("ADMIN_TOKEN"))
 	srv := &http.Server{Addr: addr, Handler: p.Handler(), ReadHeaderTimeout: 5 * time.Second}
 
