@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,7 +32,8 @@ type Config struct {
 	Name        string
 	Channel     events.Channel
 	ProviderURL string        // e.g. http://provider:9090
-	Batch       int           // messages requested per fetch
+	Batch       int           // most messages requested per fetch
+	Concurrency int           // messages processed at the same time by this instance (D15)
 	FetchWait   time.Duration // how long an open fetch request waits at the broker
 	CallTimeout time.Duration // timeout for one provider call
 	RetryDelay  time.Duration // delay before retrying after a database error (not a provider failure)
@@ -52,6 +54,7 @@ type Consumer struct {
 	faults  *faults.Registry  // nil means no fault injection
 	metrics *metrics.Consumer // nil means no metrics
 	paused  atomic.Bool       // true while the run loop is idle because of a pause fault
+	working atomic.Int64      // messages being processed right now
 }
 
 // SetMetrics attaches the consumer's metrics. Call it before Run.
@@ -90,28 +93,75 @@ func (c *Consumer) pauseRequested() bool {
 func (c *Consumer) Paused() bool { return c.paused.Load() }
 
 // Run fetches and handles messages until ctx is cancelled.
+//
+// Messages are processed concurrently, up to cfg.Concurrency at a time (D15). A slot is
+// claimed before each fetch, and the fetch asks for no more messages than there are free
+// slots, so a slow message occupies one slot and holds nothing else back: there is no
+// "wait for the whole batch" step.
 func (c *Consumer) Run(ctx context.Context) error {
-	c.log.Info("consumer started", "max_attempts", c.cfg.MaxAttempts)
+	c.log.Info("consumer started", "max_attempts", c.cfg.MaxAttempts, "concurrency", c.cfg.Concurrency)
+	slots := make(chan struct{}, max(c.cfg.Concurrency, 1)) // a buffered channel used as a counting semaphore
+	var wg sync.WaitGroup
+	defer wg.Wait() // do not return while a message is still being handled
+
 	for ctx.Err() == nil {
 		if c.pauseRequested() {
 			// Paused by a fault (D8): stop asking for work. Messages wait safely in the
-			// broker, which is exactly what the "consumer down" demo shows. Only now,
-			// with no fetch outstanding, do we report ourselves as paused.
-			c.paused.Store(true)
+			// broker, which is exactly what the "consumer down" demo shows. Only when
+			// nothing is outstanding (no open fetch, no message in progress) do we report
+			// ourselves as paused.
+			if c.working.Load() == 0 {
+				c.paused.Store(true)
+			}
 			sleep(ctx, 500*time.Millisecond)
 			continue
 		}
 		c.paused.Store(false)
+
+		// Wait for one free slot, then take any others that are free right now.
+		select {
+		case slots <- struct{}{}:
+		case <-ctx.Done():
+			continue
+		}
+		want := 1
+		for want < c.cfg.Batch {
+			select {
+			case slots <- struct{}{}:
+				want++
+				continue
+			default:
+			}
+			break
+		}
+
 		// Fetch sends a request that stays open at the broker: messages are handed
 		// over as they arrive, and an empty wait simply times out and loops.
-		batch, err := c.cons.Fetch(c.cfg.Batch, jetstream.FetchMaxWait(c.cfg.FetchWait))
+		batch, err := c.cons.Fetch(want, jetstream.FetchMaxWait(c.cfg.FetchWait))
 		if err != nil {
 			c.log.Error("fetch failed", "error", err)
+			for i := 0; i < want; i++ {
+				<-slots
+			}
 			sleep(ctx, time.Second)
 			continue
 		}
+		got := 0
 		for msg := range batch.Messages() {
-			c.handle(ctx, msg)
+			got++
+			c.working.Add(1)
+			c.metrics.InFlight(1)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer func() { <-slots }() // free the slot only when the message is finished
+				defer c.metrics.InFlight(-1)
+				defer c.working.Add(-1)
+				c.handle(ctx, msg)
+			}()
+		}
+		for i := got; i < want; i++ { // slots claimed for messages that never arrived
+			<-slots
 		}
 		if err := batch.Error(); err != nil && ctx.Err() == nil {
 			c.log.Warn("fetch ended with error", "error", err)

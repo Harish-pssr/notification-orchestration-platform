@@ -44,7 +44,14 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := pgxpool.New(ctx, cfg.PlatformDSN)
+	concurrency := config.GetenvInt("CONSUMER_CONCURRENCY", 8)
+	poolCfg, err := pgxpool.ParseConfig(cfg.PlatformDSN)
+	if err != nil {
+		return fmt.Errorf("parse platform dsn: %w", err)
+	}
+	// Every message in progress may hold a connection, so the pool must not be the limit.
+	poolCfg.MaxConns = int32(max(int(poolCfg.MaxConns), concurrency+2))
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return fmt.Errorf("connect postgres: %w", err)
 	}
@@ -76,6 +83,7 @@ func run() error {
 		Channel:     channel,
 		ProviderURL: config.Getenv("PROVIDER_URL", "http://localhost:9090"),
 		Batch:       config.GetenvInt("CONSUMER_BATCH", 10),
+		Concurrency: concurrency,
 		FetchWait:   config.GetenvDuration("CONSUMER_FETCH_WAIT", 2*time.Second),
 		CallTimeout: config.GetenvDuration("CALL_TIMEOUT", 5*time.Second),
 		RetryDelay:  config.GetenvDuration("RETRY_DELAY", time.Second),

@@ -189,6 +189,7 @@ type Consumer struct {
 	outcomes    *prometheus.CounterVec
 	providerDur *prometheus.HistogramVec
 	latency     *prometheus.HistogramVec
+	inFlight    *prometheus.GaugeVec
 }
 
 // NewConsumer registers a consumer's metrics on reg; channel labels every series.
@@ -210,8 +211,11 @@ func NewConsumer(reg prometheus.Registerer, channel string) *Consumer {
 			Help:    "Event created to delivered, per channel. Live and approximate (bucketed); benchmarks use exact database timestamps instead.",
 			Buckets: latencyBuckets,
 		}, []string{"channel"}),
+		inFlight: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: Namespace, Name: "consumer_in_flight", Help: "Messages being processed right now by this consumer instance.",
+		}, []string{"channel"}),
 	}
-	reg.MustRegister(m.received, m.outcomes, m.providerDur, m.latency)
+	reg.MustRegister(m.received, m.outcomes, m.providerDur, m.latency, m.inFlight)
 	return m
 }
 
@@ -241,6 +245,14 @@ func (m *Consumer) ProviderCall(d time.Duration, ok bool) {
 		result = "error"
 	}
 	m.providerDur.WithLabelValues(m.channel, result).Observe(seconds(d))
+}
+
+// InFlight adds delta (+1 when a message starts, -1 when it ends) to the in-progress gauge.
+func (m *Consumer) InFlight(delta float64) {
+	if m == nil {
+		return
+	}
+	m.inFlight.WithLabelValues(m.channel).Add(delta)
 }
 
 // Latency records an end-to-end latency in seconds (event created to delivered).
