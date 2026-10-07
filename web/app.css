@@ -232,3 +232,12 @@ a.btn { display: inline-block; }
 .promises div { border-left: 3px solid var(--ok); padding: 2px 0 2px 12px; }
 .promises strong { display: block; font-size: 13.5px; }
 .promises span { color: var(--muted); font-size: 12.5px; }
+
+/* Start page, first section: both columns start and end together */
+.what-grid { align-items: stretch; }
+.what-text { display: flex; flex-direction: column; justify-content: space-between; gap: 18px; }
+.what-text .promises { margin-top: 0; }
+.path li { padding-bottom: 9px; }
+.path li strong { display: inline; }
+.path li span { margin-left: 8px; }
+.path li:not(:last-child)::after { top: 24px; bottom: 0; }
