@@ -358,7 +358,7 @@ During each dip the WAL flush was **3 to 5 times slower** and the number of flus
 
 **Not established:** *why* the flush is slow. The slowness is below Postgres, so the likely place is the storage path of Docker Desktop's Linux VM on Windows (the virtual disk and the host's flushing), whose roughly 2-minute rhythm I could not tie to anything I measured. That is an inference from elimination, not a measurement of the disk layer. A first attempt to time raw synchronous writes inside the container in an idle system showed none under 100 ms in 4,059 writes, but its resolution (whole milliseconds, one block rewritten) was too coarse to be evidence either way, so it is not used.
 
-**Consequences:** (1) the 3 to 4 s p99 tails in B2 and B3 are a property of this test environment's storage, not of the platform; medians are unaffected. (2) They explain why some repetitions look unstable while others (the same configuration) are clean. (3) The deployment benchmark on a Linux VM (a later step) is the natural test: if the same pattern is absent there, the environment is confirmed as the cause.
+**Consequences:** (1) the 3 to 4 s p99 tails in B2 and B3 are a property of this test environment's storage, not of the platform; medians are unaffected. (2) They explain why some repetitions look unstable while others (the same configuration) are clean. (3) A repeat on a native Linux machine would be the natural test (if the same pattern is absent there, the environment is confirmed as the cause). **That comparison was not made**, so the explanation remains an inference from elimination, and every figure in this document describes one Windows laptop running Docker Desktop.
 
 ### Notes on how the data was produced
 

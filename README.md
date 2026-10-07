@@ -46,7 +46,7 @@ Live histograms are approximate by design; benchmark figures in
 
 ## Deployment
 
-One VM running the same Compose stack behind Caddy (automatic HTTPS): see [docs/deployment.md](docs/deployment.md).
+A production setup (the same Compose stack behind Caddy with automatic HTTPS) is included and was smoke-tested locally; it has not been deployed to a public server. See [docs/deployment.md](docs/deployment.md).
 `scripts/deploy.sh` checks the configuration, starts everything and runs `scripts/smoke.sh`; fault injection is
 off by default and no database or broker port is ever published beyond the machine.
 

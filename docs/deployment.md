@@ -1,5 +1,7 @@
 # Deployment
 
+> **Status: verified locally, not deployed.** The production setup below (Compose overlay, Caddy with automatic HTTPS, `scripts/deploy.sh`, `scripts/smoke.sh`) was built and tested on a development machine, with Caddy using its own local certificate authority on test ports, and the smoke test passed. It has **not** been run on a public server with a real domain and a Let's Encrypt certificate, and no benchmarks were run on a cloud VM. Treat the steps for a real server as a runbook that has not been exercised end to end.
+
 One Linux VM runs the same Docker Compose stack as local development, with Caddy in front for automatic HTTPS. The VM is the only thing obtained from outside: both databases, the broker, the mock provider and Prometheus run on it as containers.
 
 ## What runs where
