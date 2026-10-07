@@ -131,6 +131,24 @@ Workers are ephemeral, so health is defined per role rather than per instance.
 - Pausing a role (fault points `relay.pause`, `consumer.<channel>.pause`) makes it stop taking new work. Nothing is lost: work waits in the outbox (relay) or in the broker (consumers) until the role is resumed. A worker reports PAUSED only after its own loop has stopped, not merely when the pause was requested.
 - `GET /api/health` combines role status, the outbox and per-channel delivery backlog from the database (counted through the partial indexes), and the broker's own backlog per channel (messages waiting, in flight, redelivered). Each part degrades independently if its source is unreachable.
 
+## Observability (D9)
+
+**Structured logs.** Every process writes one JSON line per action to stdout with `event_id`, `event_type`, `consumer` or `worker`, `attempt` and `status` where they apply. The event id is the correlation id: `grep` it across the API, relay and consumer logs to follow one event.
+
+**Metrics.** Every process exposes Prometheus metrics at `/metrics` (API and provider on their HTTP ports; relay and consumers on port 9100). Prometheus discovers every replica through Compose DNS. Where each kind of metric is recorded:
+
+| Kind | Recorded by | Examples |
+|---|---|---|
+| Counters and histograms of work done | the process doing the work (Prometheus sums replicas) | events created, relay published, claimed and fenced-out, consumer outcomes (delivered, retried, dead_lettered, duplicate_ignored), provider requests (executed, replayed, injected_failure) |
+| Durations | same | create transaction, relay claim / publish / finish, provider call, delivery latency (created to delivered) |
+| **Backlog and health gauges** | **the API, computed at scrape time** from Postgres and the broker | outbox waiting, deliveries waiting and dead per channel, broker pending and in flight per channel, role up / paused / live instances |
+| Runtime | every process | CPU, memory, goroutines (to check that a benchmark measures the infrastructure, not the Go processes) |
+
+Design rules: labels are low-cardinality only (`channel`, `event_type`, `outcome`, `result`, `reason`, `role`; never an event id, enforced by a test); gauges are computed in one place so several relays never double-count; if the API cannot read Postgres it emits **no** backlog gauges plus an error counter, because zeros would look like "all clear" exactly when we are blind; live histograms are bucketed and approximate, and benchmark percentiles come from exact database timestamps instead.
+
+**Delivery latency** is computed by the database in the same `UPDATE` that marks a delivery `DELIVERED` (`delivered_at - created_at`, database clock), and only on the first transition, so a repeated delivery cannot double-count.
+
+**Grafana** (optional profile) is provisioned with a dashboard covering throughput, backlog, dead letters, role health, consumer outcomes, duplicates handled, relay stage latencies, delivery latency, provider traffic, and CPU and memory per process.
+
 ## Planned (decided, not yet built)
-- Prometheus metrics (structured logs already carry event id, type, channel, attempt, status and worker)
 - Benchmarks and the optimization exercise (Slice 7), deployment on one VM (D10, Slice 8)

@@ -61,6 +61,7 @@ CPU snapshot taken about one second after the backlog became due (CPU% is relati
 - The relay stage only. End-to-end throughput and latency (committed to delivered) are measured separately in a later benchmark with consumers running.
 - Events were seeded in bulk, not created through the API.
 - The CPU figures are single snapshots, not time series.
+- These figures were measured **before** the Prometheus instrumentation was added to the relay (Slice 6). The instrumented relay adds a small amount of work per event, so the baseline will be measured again with metrics enabled before any optimization is compared against it.
 - This is a baseline of the simple implementation: one claim per 10 events, one `UPDATE` per event to finish it. No optimization has been applied. The optimization exercise will be driven by measurements and compared against these numbers.
 
 ### Notes on how the data was produced

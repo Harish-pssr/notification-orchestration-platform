@@ -26,16 +26,33 @@ Open http://localhost:8080 for the dashboard (create events, watch them flow).
 you set `FAULTS_ENABLED=true` and `ADMIN_TOKEN` in `.env`.
 
 Local-only ports: Postgres 15433 (platform) and 15434 (provider), NATS 4222/8222,
-API and dashboard 8080, provider 9090. Postgres uses 15433/15434 because Windows reserves 5317-5816.
+API and dashboard 8080, provider 9090, Prometheus 9091, Grafana 3000.
+Postgres uses 15433/15434 because Windows reserves 5317-5816.
+
+## Metrics
+
+Every process exposes Prometheus metrics (`/metrics`): the API and provider on their
+HTTP ports, the relay and each consumer on port 9100. Prometheus is part of the stack
+and finds every replica automatically. Grafana with a provisioned dashboard is
+optional:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile grafana up -d
+# Prometheus: http://localhost:9091    Grafana (dev, no login): http://localhost:3000
+```
+
+Live histograms are approximate by design; benchmark figures in
+[docs/benchmarks.md](docs/benchmarks.md) are computed from exact database timestamps.
 
 ## Layout
 
 ```text
-cmd/        one folder per binary (api, migrate; relay, consumer, provider, loadgen later)
+cmd/        one folder per binary (api, relay, consumer, provider, migrate, loadgen)
 internal/   shared code
 migrations/ SQL for the platform and provider databases (embedded in the binaries)
-deploy/     Dockerfile and deployment config
-scripts/    bash helpers (the same scripts run locally and on the VM)
+web/        the dashboard (embedded in the API binary)
+deploy/     Dockerfile, Prometheus and Grafana configuration
+scripts/    bash and PowerShell helpers
 test/       integration and failure-scenario tests
-docs/       architecture, decisions, failure scenarios, benchmarks
+docs/       architecture, failure scenarios, benchmarks
 ```
