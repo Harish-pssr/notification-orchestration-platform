@@ -1,0 +1,53 @@
+
+PostgreSQL Database directory appears to contain a database; Skipping initialization
+
+2026-10-07 14:16:03.656 UTC [1] LOG:  starting PostgreSQL 17.11 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+2026-10-07 14:16:03.656 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-10-07 14:16:03.656 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-10-07 14:16:03.662 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-10-07 14:16:03.670 UTC [30] FATAL:  the database system is starting up
+2026-10-07 14:16:03.670 UTC [29] LOG:  database system was shut down at 2026-10-07 14:16:02 UTC
+2026-10-07 14:16:03.670 UTC [31] FATAL:  the database system is starting up
+2026-10-07 14:16:03.671 UTC [32] FATAL:  the database system is starting up
+2026-10-07 14:16:03.671 UTC [33] FATAL:  the database system is starting up
+2026-10-07 14:16:03.671 UTC [34] FATAL:  the database system is starting up
+2026-10-07 14:16:03.672 UTC [36] FATAL:  the database system is starting up
+2026-10-07 14:16:03.672 UTC [37] FATAL:  the database system is starting up
+2026-10-07 14:16:03.673 UTC [38] FATAL:  the database system is starting up
+2026-10-07 14:16:03.673 UTC [39] FATAL:  the database system is starting up
+2026-10-07 14:16:03.674 UTC [35] FATAL:  the database system is starting up
+2026-10-07 14:16:03.674 UTC [40] FATAL:  the database system is starting up
+2026-10-07 14:16:03.675 UTC [41] FATAL:  the database system is starting up
+2026-10-07 14:16:03.675 UTC [42] FATAL:  the database system is starting up
+2026-10-07 14:16:03.676 UTC [43] FATAL:  the database system is starting up
+2026-10-07 14:16:03.677 UTC [45] FATAL:  the database system is starting up
+2026-10-07 14:16:03.677 UTC [46] FATAL:  the database system is starting up
+2026-10-07 14:16:03.677 UTC [44] FATAL:  the database system is starting up
+2026-10-07 14:16:03.678 UTC [47] FATAL:  the database system is starting up
+2026-10-07 14:16:03.679 UTC [50] FATAL:  the database system is starting up
+2026-10-07 14:16:03.679 UTC [51] FATAL:  the database system is starting up
+2026-10-07 14:16:03.679 UTC [48] FATAL:  the database system is starting up
+2026-10-07 14:16:03.679 UTC [52] FATAL:  the database system is starting up
+2026-10-07 14:16:03.681 UTC [53] FATAL:  the database system is starting up
+2026-10-07 14:16:03.682 UTC [54] FATAL:  the database system is starting up
+2026-10-07 14:16:03.683 UTC [55] FATAL:  the database system is starting up
+2026-10-07 14:16:03.683 UTC [49] FATAL:  the database system is starting up
+2026-10-07 14:16:03.683 UTC [56] FATAL:  the database system is starting up
+2026-10-07 14:16:03.685 UTC [57] FATAL:  the database system is starting up
+2026-10-07 14:16:03.686 UTC [1] LOG:  database system is ready to accept connections
+2026-10-07 14:16:27.471 UTC [63] ERROR:  deadlock detected
+2026-10-07 14:16:27.471 UTC [63] DETAIL:  Process 63 waits for RowExclusiveLock on relation 16432 of database 16384; blocked by process 215.
+	Process 215 waits for AccessExclusiveLock on relation 16464 of database 16384; blocked by process 63.
+	Process 63: INSERT INTO outbox_events (id, event_type, aggregate_type, aggregate_id, payload)
+			 VALUES ($1, $2, $3, $4, $5)
+	Process 215: TRUNCATE channel_deliveries, outbox_events, api_idempotency, payments, bookings, password_changes
+2026-10-07 14:16:27.471 UTC [63] HINT:  See server log for query details.
+2026-10-07 14:16:27.471 UTC [63] STATEMENT:  INSERT INTO outbox_events (id, event_type, aggregate_type, aggregate_id, payload)
+			 VALUES ($1, $2, $3, $4, $5)
+2026-10-07 14:21:03.208 UTC [27] LOG:  checkpoint starting: time
+2026-10-07 14:25:33.688 UTC [27] LOG:  checkpoint complete: wrote 7890 buffers (48.2%); 0 WAL file(s) added, 0 removed, 20 recycled; write=269.798 s, sync=0.296 s, total=270.481 s; sync files=67, longest=0.031 s, average=0.005 s; distance=330839 kB, estimate=330839 kB; lsn=3/39554BF0, redo lsn=3/24BCB128
+2026-10-07 14:26:03.715 UTC [27] LOG:  checkpoint starting: time
+2026-10-07 14:30:33.449 UTC [27] LOG:  checkpoint complete: wrote 1708 buffers (10.4%); 0 WAL file(s) added, 0 removed, 22 recycled; write=269.266 s, sync=0.138 s, total=269.734 s; sync files=60, longest=0.018 s, average=0.003 s; distance=356979 kB, estimate=356979 kB; lsn=3/45737730, redo lsn=3/3A867F58
+2026-10-07 14:31:03.475 UTC [27] LOG:  checkpoint starting: time
+2026-10-07 14:35:33.354 UTC [27] LOG:  checkpoint complete: wrote 5884 buffers (35.9%); 0 WAL file(s) added, 0 removed, 12 recycled; write=269.568 s, sync=0.117 s, total=269.879 s; sync files=35, longest=0.016 s, average=0.004 s; distance=196624 kB, estimate=340944 kB; lsn=3/50C8D360, redo lsn=3/4686C0F0
+2026-10-07 14:36:03.378 UTC [27] LOG:  checkpoint starting: time

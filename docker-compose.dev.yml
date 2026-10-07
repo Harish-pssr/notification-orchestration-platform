@@ -20,6 +20,7 @@ x-dev-consumer: &dev-consumer
 services:
   postgres-platform:
     ports: ["15433:5432"]
+    command: ["postgres", "-c", "max_connections=300", "-c", "log_checkpoints=on"]   # checkpoint timing is logged for stall investigations
   postgres-provider:
     ports: ["15434:5432"]
   nats:

@@ -1,0 +1,2 @@
+environment: 12th Gen Intel(R) Core(TM) i5-12500H, 16 logical CPUs, power ac (Balanced), clock 2500/2500 MHz, Docker VM 16 CPUs 7.6 GB
+rep 1: stall-r4c4  R=4 C=4  rate   150/s  achieved  150.0  API p99   89.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      34/    631/   2298 ms  sustained

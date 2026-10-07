@@ -151,7 +151,7 @@ Two things the confirmation stage caught that a single ramp would have reported 
 4. **Relay scaling:** with 8 consumers per channel, 1, 2, 4 and 8 relays sustain 156, 293, 313 and 313 events/s. One relay limits the system (it shares the database with everything else, so it manages about 150 events/s here, well below the 524 events/s it reached alone in B1 (relay stage only, nothing else competing)); from 2 relays on, adding relays changes little.
 5. **The ceiling is about 313 events/s (about 940 deliveries/s) and it is a limit of the shared resources, not of one component.** At the ceiling the whole VM is about 60% busy (941 to 989 of 1,600), the platform's Postgres is the hottest component (222 to 238), the mock provider plus its own Postgres take about 290 (roughly 30% of everything), the consumers about 205, and the relay only 45 to 52. The ceiling is the same with 4 or 8 relays and with 4 or 8 consumers. On this hybrid CPU, hyperthread siblings and efficiency cores share compute, so the machine saturates well below 100% of its logical capacity.
 6. **Latency at 70% load is low:** end-to-end p50 between 31 and 165 ms and p99 between 65 and 302 ms in the typical (median) repetition. It is best at 4 consumers per channel (p50 31 ms, p99 65 ms at 164 events/s). With one consumer, about 100 ms of the roughly 160 ms is the time from creation to publication by the relay (p50 98 ms), which is consistent with the relay's 200 ms idle polling interval (an event waits half a poll interval on average at low load). That explanation is a hypothesis to be tested in the optimization exercise, not yet verified.
-7. **Occasional multi-second stalls remain.** In 4 of 27 latency repetitions the p99 exceeded 2 s (up to 3.6 s), although the medians are tight. The same kind of intermittent stall was seen once in an earlier, battery-powered run. Its cause is **not yet identified**; autovacuum and CPU saturation were checked in that earlier investigation and did not explain it.
+7. **Occasional multi-second stalls remain.** In 4 of 27 latency repetitions the p99 exceeded 2 s (up to 3.6 s), although the medians are tight. The same kind of intermittent stall was seen once in an earlier, battery-powered run. Its cause was investigated afterwards (B6): periods of about 4 s, roughly every 2 minutes, in which Postgres' WAL fsync is 3 to 5 times slower (checkpoints, autovacuum and lock contention were ruled out); why the flush slows is not established, and the likely place is this environment's storage path.
 
 ### Limitations
 
@@ -202,7 +202,7 @@ The arrival rates differ between before and after because capacity differs, so t
 3. **The 4 relay, 4 consumer configuration reached 366 events/s (before: 234).** That is partly the expected scaling of the same effect (4 consumers now means 32 messages at a time). The step between 313 and 366 is **smaller than the 25% ladder step** and the two sweeps used different starting rates, so the data does not show that the ceiling itself moved; it shows 313 and 366 were each the highest rate in their own ladder that passed. Treat the ceiling as roughly 310 to 370 events/s.
 4. **1 relay, 1 consumer is now limited by the relay, not the consumer.** It reaches 153 events/s, essentially the 156 events/s that B2 measured for one relay with 8 consumers. The consumer is no longer the first bottleneck.
 5. **Latency:** low-load behaviour is unchanged where it was relay-bound (the roughly 100 ms created-to-published floor from the 200 ms poll, decision D14). Higher capacity does not by itself change latency at equal load; the like-for-like row (4 relays, 8 consumers, 219/s) is within a few milliseconds of before.
-6. **Intermittent stalls remain.** In 2 of 12 latency repetitions the p99 was 3.5 to 3.7 s while the median was normal (before: 4 of 27). The cause is still unidentified and this change did not address it.
+6. **Intermittent stalls remain.** In 2 of 12 latency repetitions the p99 was 3.5 to 3.7 s while the median was normal (before: 4 of 27). The cause was investigated afterwards (B6: slow WAL fsync episodes, likely this environment's storage) and this change did not address it.
 
 ### Limitations
 
@@ -309,3 +309,57 @@ An earlier version of the relay dead-lettered events during a broker outage: eve
 - One arrival rate (250/s) and one outage length (60 s); a longer outage means a proportionally larger backlog and longer recovery.
 - Recovery time is bounded by this machine's drain rate (about 435 events/s here, with the mock provider and its database sharing the CPU), so the absolute figures will differ elsewhere; the no-loss result does not depend on them.
 - The outage tests do not combine with injected duplicates and provider errors (B4 does that without outages).
+
+## B6. Investigation: the recurring multi-second latency stalls
+
+**Question:** B2 and B3 saw intermittent repetitions whose p99 end-to-end latency was 3 to 4 seconds while the median stayed normal (about 15% of repetitions). What causes them?
+
+### Method
+
+A 10-minute steady run at 150 events/s (4 relays, 4 consumers per channel, the same configuration and conditions as B4), repeated twice, with a one-second monitor of exact database counts (as in every other benchmark) plus, alongside it:
+
+- **Run 1:** a once-a-second sample of what Postgres was doing: running autovacuum workers, sessions waiting on locks, the wait events of active backends. `log_checkpoints` was switched on to record every checkpoint.
+- **Run 2:** Postgres' own WAL timing, sampled about every 1.3 s (`pg_stat_wal` with `track_wal_io_timing` on): the number of WAL fsyncs and the total time spent in them. `scripts/diagnostics/pg-wal-sampler.sh` collects it and `scripts/diagnostics/analyze-stalls.py` compares it with the throughput dips. The setting was reset afterwards because it adds overhead.
+
+A dip is a second in which deliveries completed at under 60% of the run's median rate. Raw data: `docs/data/2026-10-07-stall-investigation/`.
+
+### Results
+
+Both clean runs reproduced the tail: median end-to-end latency 32 to 34 ms, p95 107 to 631 ms, **p99 2.2 to 2.3 s**, with the API still answering (p99 51 to 89 ms). In the monitor data the cause is visible as **short dips: throughput falls to about a fifth for 3 to 4 seconds, then recovers on its own**, while arrivals continue and a backlog of up to about 1,300 deliveries builds and drains.
+
+| | Dips (seconds into the run) | Spacing |
+|---|---|---|
+| Run 1 | 20, 144, 266, 398, 542 | 122 to 144 s |
+| Run 2 | 163, 292, 413 | 121 to 129 s |
+
+What was ruled out:
+
+| Suspect | Evidence |
+|---|---|
+| Checkpoints | `log_checkpoints` showed two checkpoints in run 1, each spread over about 270 s with a total sync time of 0.12 to 0.14 s and a longest single sync of 0.02 s; the dips do not line up with their starts or ends |
+| Autovacuum | Autovacuum workers were running in 14 of 500 samples and none during any dip (autovacuum does run about every 60 s on each table, so it is not the periodic cause) |
+| Lock contention | Zero sessions waiting on a lock in all 500 samples |
+| The platform's own code | During the dips the active backends' wait events were almost all `WALWrite` and `WalSync`: every commit waiting for the WAL flush, with nothing else going on |
+
+What was found, from Postgres' own timing in run 2:
+
+| | WAL fsync count per sample | Average fsync time |
+|---|---|---|
+| Whole run | about 500 per sample (400 per second) | **2.2 ms** (99th percentile of sample averages 21 ms) |
+| Dip at 163 to 167 s | 101 | **7.1 ms** (worst sample average 28.7 ms) |
+| Dip at 292 to 295 s | 78 | **10.2 ms** (worst 21.2 ms) |
+| Dip at 413 to 417 s | 104 | **6.8 ms** (worst 23.4 ms) |
+
+During each dip the WAL flush was **3 to 5 times slower** and the number of flushes completed per sample fell by about the same factor. Every event needs several synchronous commits (the create transaction, the relay's claim and finish, the consumer's update, the provider's own commit), so the whole pipeline is commit-bound, and commits that take 3 to 5 times longer produce exactly this throughput dip. Latency then grows for the events in flight during the dip, which is the p99.
+
+### Conclusion, and how far it goes
+
+**Established:** the stalls are periods of about 4 seconds, roughly every 2 minutes, in which the WAL fsync is several times slower than usual, and that explains the throughput dips and the latency tail. They are not caused by checkpoints, autovacuum or lock contention, and not by anything the platform's code does while they last (the processes are simply waiting on commits).
+
+**Not established:** *why* the flush is slow. The slowness is below Postgres, so the likely place is the storage path of Docker Desktop's Linux VM on Windows (the virtual disk and the host's flushing), whose roughly 2-minute rhythm I could not tie to anything I measured. That is an inference from elimination, not a measurement of the disk layer. A first attempt to time raw synchronous writes inside the container in an idle system showed none under 100 ms in 4,059 writes, but its resolution (whole milliseconds, one block rewritten) was too coarse to be evidence either way, so it is not used.
+
+**Consequences:** (1) the 3 to 4 s p99 tails in B2 and B3 are a property of this test environment's storage, not of the platform; medians are unaffected. (2) They explain why some repetitions look unstable while others (the same configuration) are clean. (3) The deployment benchmark on a Linux VM (a later step) is the natural test: if the same pattern is absent there, the environment is confirmed as the cause.
+
+### Notes on how the data was produced
+
+A first attempt at this investigation was **discarded**: two benchmark processes were accidentally running at the same time (the command I used to launch the first one was chained in a way that started it unexpectedly), so the arrival rate was about 300 events/s (near this configuration's capacity), not 150. The two clean runs above were made after confirming that exactly one benchmark process was running. Switching on `log_checkpoints` is kept in the dev Compose file (`docker-compose.dev.yml`); the other instrumentation was temporary.

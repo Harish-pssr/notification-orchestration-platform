@@ -1,0 +1,801 @@
+epoch,autovacuum_workers,autovacuum_targets,lock_waiters,wait_events,longest_active_ms,longest_query
+1791383288.50,0,,0,Client:ClientRead|LWLock:WALWrite,-20, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383289.79,0,,0,Client:ClientRead|IO:WalSync,-20, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383291.00,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12,commit
+1791383292.14,0,,0,IO:WalSync|LWLock:WALWrite,-11, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383293.28,0,,0,Client:ClientRead,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383294.50,0,,0,Client:ClientRead,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383295.69,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383296.84,0,,0,Client:ClientRead|IO:WalSync,-17,commit
+1791383298.10,0,,0,Client:ClientRead|IO:WalSync,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383299.32,0,,0,Client:ClientRead|IO:WalSync,-11,commit
+1791383300.87,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-22, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383302.11,0,,0,Client:ClientRead|IO:WalSync,-8,commit
+1791383303.25,0,,0,Client:ClientRead|IO:WalSync,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383304.41,0,,0,Client:ClientRead,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383305.70,0,,0,IO:WalSync|LWLock:WALWrite,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383307.49,0,,0,LWLock:WALWrite,-17, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383309.27,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,58, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383310.56,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383311.93,0,,0,IO:WalSync|LWLock:WALWrite,-10, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383313.37,0,,0,Client:ClientRead|IO:WalSync,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383314.71,0,,0,IO:WalSync,-19, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383316.30,0,,0,Client:ClientRead|LWLock:WALWrite,-22, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383318.32,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-39, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383319.73,0,,0,Client:ClientRead,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383320.87,0,,0,LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383322.00,0,,0,,0,
+1791383323.12,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383324.25,1,api_idempotency,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383325.37,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383326.46,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383327.68,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383328.80,0,,0,Client:ClientRead|LWLock:WALWrite,-12,commit
+1791383329.89,0,,0,IO:WalSync,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383331.02,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383332.10,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383333.29,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383334.39,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383335.50,0,,0,IO:WalSync|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383336.59,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383337.78,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383338.89,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383340.00,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-6,commit
+1791383341.12,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383342.25,0,,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383343.46,0,,0,Client:ClientRead|LWLock:WALWrite,-14, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383344.67,0,,0,Client:ClientRead|LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383345.91,0,,0,Client:ClientRead,-17, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383347.18,0,,0,Client:ClientRead|LWLock:WALWrite,-20,commit
+1791383348.41,0,,0,Client:ClientRead|IO:WalSync,-14,INSERT INTO channel_deliveries (event_id, channel) SELECT $1
+1791383349.71,0,,0,Client:ClientRead|LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383350.89,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383352.12,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383353.32,0,,0,Client:ClientRead,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383354.53,0,,0,IO:WalSync|LWLock:WALWrite,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383355.72,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383356.93,0,,0,Client:ClientRead,-14, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383358.12,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8,commit
+1791383359.29,0,,0,Client:ClientRead,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383360.47,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383361.60,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383362.81,0,,0,Client:ClientRead,-18,commit
+1791383363.99,0,,0,,0,
+1791383365.29,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383366.48,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383367.69,0,,0,Client:ClientRead,-20,commit
+1791383368.90,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383370.09,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383371.27,0,,0,Client:ClientRead,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383372.42,0,,0,IO:WalSync|LWLock:WALWrite,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383373.61,0,,0,IO:WalSync,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383374.77,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383375.89,0,,0,Client:ClientRead|IO:WalSync,-8,commit
+1791383377.08,0,,0,Client:ClientRead|IO:WalSync,-12,commit
+1791383378.24,0,,0,,0,
+1791383379.39,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383380.60,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383381.73,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383382.86,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383384.02,1,channel_deliveries,0,LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383385.15,0,,0,IO:WalSync,-11, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383386.27,0,,0,,0,
+1791383387.52,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383388.64,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383389.81,0,,0,LWLock:WALWrite,-21,UPDATE api_idempotency SET status_code = $2, response = $3 W
+1791383391.03,0,,0,LWLock:WALWrite,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383392.09,0,,0,IO:WalSync|LWLock:WALWrite,18, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383393.12,0,,0,IO:WalSync|LWLock:WALWrite,41, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383394.14,0,,0,IO:WalSync|LWLock:WALWrite,2, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383395.15,0,,0,IO:WalSync|LWLock:WALWrite,14,commit
+1791383396.47,0,,0,IO:WalSync|LWLock:WALWrite,2, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383397.68,0,,0,Client:ClientRead|LWLock:WALWrite,-12,commit
+1791383398.87,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383400.00,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383401.17,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383402.31,0,,0,LWLock:WALWrite,-10,commit
+1791383403.47,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383404.66,0,,0,Client:ClientRead|IO:WalSync,-16,commit
+1791383405.82,0,,0,IO:WalSync,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383406.94,0,,0,Client:ClientRead|IO:WalSync,0, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383408.14,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383409.34,0,,0,IO:WalSync|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383410.49,0,,0,Client:ClientRead,-12,commit
+1791383411.64,0,,0,Client:ClientRead,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383412.81,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7,commit
+1791383413.99,0,,0,Client:ClientRead|LWLock:WALWrite,-8,commit
+1791383415.16,0,,0,Client:ClientRead,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383416.35,0,,0,Client:ClientRead,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383417.63,0,,0,Client:ClientRead|LWLock:WALWrite,-21, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383418.85,0,,0,Client:ClientRead|IO:WalSync,-9,commit
+1791383420.07,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383421.30,0,,0,LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383422.44,0,,0,LWLock:WALWrite,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383423.59,0,,0,Client:ClientRead|IO:WalSync,-9,commit
+1791383424.81,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383425.99,0,,0,Client:ClientRead|IO:WalSync,-10,commit
+1791383427.21,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-19,commit
+1791383428.48,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383429.63,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383430.83,0,,0,IO:WalSync,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383432.00,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383433.12,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383434.23,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383435.35,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383436.46,0,,0,Client:ClientRead|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383437.65,0,,0,,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383438.79,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383439.94,0,,0,IO:WalSync|LWLock:WALWrite,-9, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383441.11,0,,0,Client:ClientRead,-12,commit
+1791383442.26,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383443.40,0,,0,Client:ClientRead|IO:WalSync,-18, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383444.62,1,outbox_events,0,Client:ClientRead|LWLock:WALWrite,-20, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383445.80,0,,0,Client:ClientRead|LWLock:WALWrite,-10,commit
+1791383447.03,0,,0,Client:ClientRead|IO:WalSync,-18,commit
+1791383448.32,0,,0,IO:WalSync|LWLock:WALWrite,-30, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383449.57,0,,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383450.74,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383451.94,0,,0,Client:ClientRead|LWLock:WALWrite,-2, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383453.14,0,,0,Client:ClientRead|LWLock:WALWrite,-15,commit
+1791383454.30,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383455.51,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383456.67,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383457.89,0,,0,Client:ClientRead|LWLock:WALWrite,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383459.09,0,,0,LWLock:WALWrite,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383460.29,0,,0,Client:ClientRead|LWLock:WALWrite,-11,commit
+1791383461.51,0,,0,Client:ClientRead,-17, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383462.66,0,,0,IO:WalSync|LWLock:WALWrite,-6, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383463.82,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383465.06,0,,0,Client:ClientRead,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383466.22,0,,0,Client:ClientRead,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383467.55,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383468.80,0,,0,IO:WalSync|LWLock:WALWrite,-12, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383470.04,0,,0,IO:WalSync,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383471.24,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12,commit
+1791383472.42,0,,0,Client:ClientRead,-12,commit
+1791383473.57,0,,0,Client:ClientRead,-6, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383474.75,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383476.06,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383477.30,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-16, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383478.48,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383479.63,0,,0,,0,
+1791383480.77,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383481.92,0,,0,Client:ClientRead,-12,commit
+1791383483.06,0,,0,Client:ClientRead,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383484.22,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383485.37,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383486.62,0,,0,Client:ClientRead,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383487.91,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383489.17,0,,0,Client:ClientRead|LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383490.36,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383491.58,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383492.77,0,,0,Client:ClientRead|IO:WalSync,-6,commit
+1791383493.91,0,,0,Client:ClientRead|IO:WalSync,-11, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383495.06,0,,0,Client:ClientRead,-8,commit
+1791383496.32,0,,0,IO:WalSync|LWLock:WALWrite,-12, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383497.57,0,,0,LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383498.72,0,,0,LWLock:WALWrite,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383499.89,0,,0,Client:ClientRead|IO:WalSync,-8,commit
+1791383501.04,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383502.19,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383503.37,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383504.59,1,outbox_events,0,Client:ClientRead|IO:WalSync,-17,commit
+1791383505.75,0,,0,LWLock:WALWrite,-14, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383506.90,0,,0,LWLock:WALWrite,-10,INSERT INTO outbox_events (id, event_type, aggregate_type, a
+1791383508.12,0,,0,Client:ClientRead|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383509.41,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-25, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383510.62,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383511.91,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383513.18,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383514.28,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,22, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383515.31,0,,0,IO:WalSync|LWLock:WALWrite,16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383516.45,0,,0,IO:WalSync|LWLock:WALWrite,31,commit
+1791383517.53,0,,0,IO:WalSync|LWLock:WALWrite,721, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383518.60,0,,0,IO:WalSync|LWLock:WALWrite,26, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383519.98,0,,0,Client:ClientRead|LWLock:WALWrite,33, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383521.40,0,,0,Client:ClientRead|LWLock:WALWrite,-22, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383522.58,0,,0,,0,
+1791383523.92,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-19, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383525.34,0,,0,Client:ClientRead|LWLock:WALWrite,-19, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383526.80,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-18, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383528.15,0,,0,Client:ClientRead|LWLock:WALWrite,-17, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383529.48,0,,0,IO:WalSync,-18, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383530.73,0,,0,IO:WalSync,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383531.86,0,,0,Client:ClientRead|LWLock:WALWrite,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383533.02,0,,0,Client:ClientRead|IO:WalSync,-10,commit
+1791383534.03,0,,0,IO:WalSync|LWLock:WALWrite,47, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383535.22,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383536.36,0,,0,Client:ClientRead,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383537.58,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383538.72,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383539.85,0,,0,,0,
+1791383540.98,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383542.10,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383543.20,0,,0,Client:ClientRead|IO:WalSync,-10,commit
+1791383544.31,0,,0,Client:ClientRead|IO:WalSync,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383545.42,0,,0,LWLock:WALWrite,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383546.53,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8,commit
+1791383547.72,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383548.82,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383549.94,0,,0,Client:ClientRead|LWLock:WALWrite,3, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383551.08,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383552.18,0,,0,Client:ClientRead,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383553.29,0,,0,IO:WalSync,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383554.54,0,,0,Client:ClientRead|IO:WalSync,-14, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383555.81,0,,0,IO:WalSync|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383557.01,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383558.22,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383559.36,0,,0,IO:WalSync,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383560.48,0,,0,Client:ClientRead|IO:WalSync,-6, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383561.62,0,,0,Client:ClientRead|IO:WalSync,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383562.79,0,,0,Client:ClientRead,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383564.06,1,channel_deliveries,0,Client:ClientRead|IO:WalSync,-19, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383565.36,1,api_idempotency,0,Client:ClientRead|LWLock:WALWrite,-18, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383566.63,0,,0,LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383567.94,0,,0,Client:ClientRead|LWLock:WALWrite,-1, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383569.19,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383570.39,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383571.56,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383572.72,0,,0,Client:ClientRead,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383573.85,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383575.00,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383576.12,0,,0,Client:ClientRead,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383577.32,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383578.47,0,,0,Client:ClientRead,-9,commit
+1791383579.58,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383580.69,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383581.82,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383582.94,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,2, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383584.07,0,,0,Client:ClientRead,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383585.19,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383586.30,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383587.55,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383588.70,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383589.84,0,,0,IO:WalSync|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383590.97,0,,0,Client:ClientRead|IO:WalSync,22, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383592.10,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383593.22,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383594.34,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383595.49,0,,0,IO:WalSync|LWLock:WALWrite,15, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383596.61,0,,0,Client:ClientRead|IO:WalSync,-8,commit
+1791383597.85,0,,0,Client:ClientRead,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383599.05,0,,0,Client:ClientRead|IO:WalSync,-9,commit
+1791383600.20,0,,0,Client:ClientRead,-9, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383601.38,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383602.56,0,,0,Client:ClientRead|LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383603.75,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383604.93,0,,0,Client:ClientRead|IO:WalSync,-5, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383606.10,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383607.34,0,,0,Client:ClientRead,-15,commit
+1791383608.62,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383609.75,0,,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383610.88,0,,0,IO:WalSync,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383612.00,0,,0,Client:ClientRead|LWLock:WALWrite,-10,commit
+1791383613.13,0,,0,Client:ClientRead,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383614.25,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383615.40,0,,0,Client:ClientRead,-11, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383616.52,0,,0,LWLock:WALWrite,-11, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383617.71,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383618.85,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8,commit
+1791383619.95,0,,0,Client:ClientRead,9, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383621.06,0,,0,Client:ClientRead|IO:WalSync,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383622.18,0,,0,IO:WalSync,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383623.34,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383624.48,1,outbox_events,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383625.67,0,,0,,-16, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383626.85,0,,0,,-9,commit
+1791383628.00,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383629.19,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383630.40,0,,0,Client:ClientRead|IO:WalSync,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383631.61,0,,0,Client:ClientRead|LWLock:WALWrite,-18, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383632.75,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383634.03,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383635.22,0,,0,,0,
+1791383636.37,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8,commit
+1791383637.62,0,,0,Client:ClientRead|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383638.79,0,,0,IO:WalSync|LWLock:WALWrite,-8,commit
+1791383640.06,0,,0,Client:ClientRead,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383641.23,0,,0,IO:WalSync,-12,INSERT INTO channel_deliveries (event_id, channel) SELECT $1
+1791383642.42,0,,0,Client:ClientRead|LWLock:WALWrite,-11, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383643.60,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383645.03,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-319,commit
+1791383646.42,0,,0,IO:WalSync|LWLock:WALWrite,432, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383647.52,0,,0,IO:WalSync|LWLock:WALWrite,35, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383648.58,0,,0,IO:WalSync|LWLock:WALWrite,44, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383649.88,0,,0,Client:ClientRead|LWLock:WALWrite,-15,commit
+1791383651.19,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383652.35,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383653.49,0,,0,,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383654.63,0,,0,Client:ClientRead|IO:WalSync,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383655.82,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383657.09,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10,commit
+1791383658.38,0,,0,LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383659.58,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383660.80,0,,0,LWLock:WALWrite,-3, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383662.03,0,,0,Client:ClientRead|IO:WalSync,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383663.16,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383664.33,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383665.54,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-13,commit
+1791383666.68,0,,0,Client:ClientRead|LWLock:WALWrite,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383667.91,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383669.22,0,,0,,60, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383670.35,0,,0,Client:ClientRead,-2,SELECT status, count(*) FROM outbox_events GROUP BY status
+1791383671.44,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383672.63,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383673.80,0,,0,Client:ClientRead,-30, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383674.94,0,,0,Client:ClientRead|IO:WalSync,6, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383676.06,0,,0,Client:ClientRead|IO:WalSync,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383677.16,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10,commit
+1791383678.32,0,,0,IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383679.53,0,,0,Client:ClientRead|LWLock:WALWrite,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383680.70,0,,0,Client:ClientRead,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383681.89,0,,0,Client:ClientRead,-14, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383683.07,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383684.17,1,channel_deliveries,0,Client:ClientRead,-10,commit
+1791383685.30,1,api_idempotency,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383686.40,0,,0,,-10,commit
+1791383687.62,0,,0,Client:ClientRead|IO:WalSync,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383688.86,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-14,commit
+1791383690.08,0,,0,IO:WalSync,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383691.25,0,,0,Client:ClientRead|IO:WalSync,-7, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383692.65,0,,0,IO:WalSync,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383693.85,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383695.10,0,,0,Client:ClientRead|LWLock:WALWrite,-6, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383696.27,0,,0,,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383697.73,0,,0,Client:ClientRead,-20, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383699.19,0,,0,Client:ClientRead|IO:WalSync,-42,commit
+1791383700.58,0,,0,Client:ClientRead|LWLock:WALWrite,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383701.96,0,,0,Client:ClientRead|LWLock:WALWrite,2, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383703.43,0,,0,Client:ClientRead,-24, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383704.69,0,,0,IO:WalSync,-10,commit
+1791383705.88,0,,0,Client:ClientRead|LWLock:WALWrite,-8,commit
+1791383707.01,0,,0,Client:ClientRead,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383708.04,0,,0,IO:WalSync|LWLock:WALWrite,98,commit
+1791383709.23,0,,0,Client:ClientRead,-11,commit
+1791383710.40,0,,0,Client:ClientRead,-10,commit
+1791383711.56,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383712.64,0,,0,Client:ClientRead|IO:WalSync,-8,commit
+1791383713.78,0,,0,Client:ClientRead,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383714.92,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383716.27,0,,0,IO:WalSync|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383717.49,0,,0,Client:ClientRead|LWLock:WALWrite,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383718.84,0,,0,Client:ClientRead|IO:WalSync,-15, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383720.02,0,,0,Client:ClientRead,-14,commit
+1791383721.36,0,,0,IO:WalSync,-12, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383722.52,0,,0,Client:ClientRead|IO:WalSync,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383723.84,0,,0,,0,
+1791383725.32,0,,0,IO:WalSync|LWLock:WALWrite,-19, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383726.61,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-21, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383727.99,0,,0,IO:WalSync|LWLock:WALWrite,40, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383729.39,0,,0,Client:ClientRead|IO:WalSync,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383730.76,0,,0,Client:ClientRead|LWLock:WALWrite,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383732.04,0,,0,LWLock:WALWrite,97, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383733.23,0,,0,Client:ClientRead,-11, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383734.56,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-13, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383735.73,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383736.95,0,,0,Client:ClientRead|IO:WalSync,1, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383738.92,0,,0,Client:ClientRead|LWLock:WALWrite,-21, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383740.24,0,,0,Client:ClientRead|LWLock:WALWrite,-20, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383741.76,0,,0,,-37, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383743.16,0,,0,Client:ClientRead,-26, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383745.02,1,outbox_events,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,16, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383746.59,1,api_idempotency,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-21, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383747.87,0,,0,IO:WalSync,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383749.10,0,,0,Client:ClientRead,-22,commit
+1791383750.30,0,,0,Client:ClientRead|LWLock:WALWrite,-11,commit
+1791383751.63,0,,0,,0,
+1791383752.92,0,,0,LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383754.08,0,,0,Client:ClientRead|IO:WalSync,-11, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383755.21,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383756.45,0,,0,Client:ClientRead|LWLock:WALWrite,-11,commit
+1791383757.77,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383758.94,0,,0,LWLock:WALWrite,-2, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383760.11,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383761.43,0,,0,Client:ClientRead,-26, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383762.77,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-18,commit
+1791383764.23,0,,0,IO:WalSync|LWLock:WALWrite,-20, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383765.67,0,,0,Client:ClientRead|LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383766.96,0,,0,Client:ClientRead,18, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383768.31,0,,0,LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383769.47,0,,0,Client:ClientRead,-14, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383770.69,0,,0,IO:WalSync,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383772.38,0,,0,Client:ClientRead|IO:WalSync,-23, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383773.71,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383774.94,0,,0,IO:WalSync|LWLock:WALWrite,-6, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383776.16,0,,0,Client:ClientRead|IO:WalSync,-7,commit
+1791383777.59,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-28,commit
+1791383778.90,0,,0,Client:ClientRead|IO:WalSync,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383780.05,0,,0,Client:ClientRead,-13, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383781.21,0,,0,Client:ClientRead,-12,commit
+1791383782.36,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383783.63,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-15, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383784.83,0,,0,Client:ClientRead|IO:WalSync,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383786.00,0,,0,Client:ClientRead|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383787.20,0,,0,Client:ClientRead|LWLock:WALWrite,-10,commit
+1791383788.44,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383789.53,0,,0,IO:WalSync|LWLock:WALWrite,8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383790.72,0,,0,IO:WalSync|LWLock:WALWrite,33, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383792.02,0,,0,IO:WalSync|LWLock:WALWrite,89, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383793.99,0,,0,IO:WalSync|LWLock:WALWrite,40, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383795.02,0,,0,IO:WalSync|LWLock:WALWrite,10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383796.04,0,,0,IO:WalSync|LWLock:WALWrite,32, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383797.22,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383798.32,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383799.39,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-6, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383800.44,0,,0,IO:WalSync|LWLock:WALWrite,-8,commit
+1791383801.59,0,,0,Client:ClientRead,-9, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383802.78,0,,0,Client:ClientRead,-14, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383804.43,1,channel_deliveries,0,Client:ClientRead|LWLock:WALWrite,-30, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383805.76,1,outbox_events,0,Client:ClientRead|LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383806.93,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383808.09,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383809.24,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9,commit
+1791383810.44,0,,0,,0,
+1791383811.63,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383812.72,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383813.85,0,,0,Client:ClientRead|IO:WalSync,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383815.05,0,,0,Client:ClientRead,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383816.21,0,,0,LWLock:WALWrite,-4, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383817.35,0,,0,LWLock:WALWrite,-21,INSERT INTO channel_deliveries (event_id, channel) SELECT $1
+1791383818.52,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7,commit
+1791383819.65,0,,0,IO:WalSync|LWLock:WALWrite,-8, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383820.80,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8,commit
+1791383821.92,0,,0,Client:ClientRead,29,SELECT channel, status, count(*) FROM channel_deliveries GRO
+1791383823.05,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383824.15,0,,0,Client:ClientRead,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383825.36,0,,0,Client:ClientRead|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383826.53,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,77, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383827.74,0,,0,IO:WalSync,-10,commit
+1791383828.84,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383829.96,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,17, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383831.11,0,,0,LWLock:WALWrite,-13, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383832.22,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383833.30,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-7,commit
+1791383834.43,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383835.59,0,,0,IO:WalSync|LWLock:WALWrite,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383836.66,0,,0,,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383837.83,0,,0,IO:WalSync,-7, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383838.94,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-2, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383840.08,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-10,commit
+1791383841.27,0,,0,Client:ClientRead|LWLock:WALWrite,-16, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383842.37,0,,0,Client:ClientRead|LWLock:WALWrite,-9, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383843.53,0,,0,Client:ClientRead|IO:WalSync|LWLock:WALWrite,-8, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383844.69,0,,0,IO:WalSync,-10, 		UPDATE outbox_events 		SET status = 'PUBLISHED', publishe
+1791383845.83,0,,0,Client:ClientRead|IO:WalSync,-10, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383846.98,0,,0,IO:WalSync|LWLock:WALWrite,37, 			SELECT extract(epoch FROM clock_timestamp()), 			       
+1791383848.16,0,,0,Client:ClientRead,-10, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383849.38,0,,0,Client:ClientRead|LWLock:WALWrite,-12, 		UPDATE channel_deliveries d 		SET status = 'DELIVERED', a
+1791383850.53,0,,0,,103, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383851.50,0,,0,Client:ClientRead,122, 	WITH ev AS (SELECT id, created_at FROM outbox_events WHERE
+1791383852.41,0,,0,,0,
+1791383853.30,0,,0,,0,
+1791383854.20,0,,0,,0,
+1791383855.14,0,,0,,0,
+1791383856.02,0,,0,,0,
+1791383856.91,0,,0,,0,
+1791383857.83,0,,0,,0,
+1791383858.78,0,,0,,0,
+1791383859.73,0,,0,,0,
+1791383860.61,0,,0,,0,
+1791383861.50,0,,0,,0,
+1791383862.43,0,,0,IPC:HashBuildHashInner,13, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383863.37,0,,0,,0,
+1791383864.28,1,outbox_events,0,,0,
+1791383865.19,0,,0,,0,
+1791383866.05,0,,0,,0,
+1791383867.00,0,,0,,0,
+1791383867.89,0,,0,,0,
+1791383868.78,0,,0,,0,
+1791383869.72,0,,0,,0,
+1791383870.67,0,,0,,0,
+1791383871.68,0,,0,,0,
+1791383872.67,0,,0,,0,
+1791383873.66,0,,0,,0,
+1791383874.64,0,,0,,0,
+1791383875.60,0,,0,,0,
+1791383876.52,0,,0,,0,
+1791383877.51,0,,0,,88, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383878.44,0,,0,,0,
+1791383879.35,0,,0,,0,
+1791383880.25,0,,0,,0,
+1791383881.16,0,,0,,0,
+1791383882.16,0,,0,,0,
+1791383883.04,0,,0,,0,
+1791383883.93,0,,0,,0,
+1791383884.79,0,,0,,0,
+1791383885.67,0,,0,,0,
+1791383886.60,0,,0,,0,
+1791383887.59,0,,0,,0,
+1791383888.50,0,,0,,0,
+1791383889.43,0,,0,,15, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383890.35,0,,0,,0,
+1791383891.26,0,,0,,0,
+1791383892.15,0,,0,,0,
+1791383893.03,0,,0,,0,
+1791383893.98,0,,0,IPC:BgworkerShutdown,66, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383894.86,0,,0,,0,
+1791383895.76,0,,0,,0,
+1791383896.70,0,,0,,0,
+1791383897.66,0,,0,,0,
+1791383898.61,0,,0,,0,
+1791383899.52,0,,0,,0,
+1791383900.40,0,,0,,0,
+1791383901.26,0,,0,,0,
+1791383902.16,0,,0,,0,
+1791383903.06,0,,0,,0,
+1791383903.93,0,,0,,0,
+1791383904.81,0,,0,,0,
+1791383905.69,0,,0,,0,
+1791383906.57,0,,0,,0,
+1791383907.57,0,,0,,0,
+1791383908.47,0,,0,,0,
+1791383909.37,0,,0,,0,
+1791383910.27,0,,0,,0,
+1791383911.15,0,,0,Client:ClientRead,-6, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383912.05,0,,0,,0,
+1791383912.94,0,,0,,0,
+1791383913.83,0,,0,,0,
+1791383914.74,0,,0,,0,
+1791383915.63,0,,0,,0,
+1791383916.52,0,,0,,0,
+1791383917.45,0,,0,Client:ClientRead,-7, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383918.36,0,,0,,0,
+1791383919.24,0,,0,,0,
+1791383920.12,0,,0,,0,
+1791383921.04,0,,0,,0,
+1791383921.91,0,,0,,0,
+1791383922.79,0,,0,,0,
+1791383923.68,0,,0,,0,
+1791383924.54,0,,0,,0,
+1791383925.47,0,,0,,0,
+1791383926.34,0,,0,,0,
+1791383927.24,0,,0,,0,
+1791383928.14,0,,0,,0,
+1791383929.03,0,,0,,0,
+1791383929.93,0,,0,,26, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383930.82,0,,0,Client:ClientRead,-6, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383931.71,0,,0,,0,
+1791383932.60,0,,0,,0,
+1791383933.49,0,,0,,0,
+1791383934.39,0,,0,,-3, 		SELECT count(*), 		       coalesce(percentile_cont(0.5)  
+1791383935.27,0,,0,,0,
+1791383936.17,0,,0,,0,
+1791383937.04,0,,0,,0,
+1791383937.94,0,,0,,0,
+1791383938.82,0,,0,,0,
+1791383939.71,0,,0,,0,
+1791383940.61,0,,0,,0,
+1791383941.47,0,,0,,0,
+1791383942.36,0,,0,,0,
+1791383943.24,0,,0,,0,
+1791383944.15,0,,0,,0,
+1791383945.05,0,,0,,0,
+1791383945.92,0,,0,,0,
+1791383946.81,0,,0,,0,
+1791383947.70,0,,0,,0,
+1791383948.60,0,,0,,0,
+1791383949.49,0,,0,,0,
+1791383950.35,0,,0,,0,
+1791383951.22,0,,0,,0,
+1791383952.09,0,,0,,0,
+1791383952.98,0,,0,,0,
+1791383953.85,0,,0,,0,
+1791383954.75,0,,0,,0,
+1791383955.69,0,,0,,0,
+1791383956.58,0,,0,Client:ClientRead,-4, 		INSERT INTO workers (name, role, state, config) VALUES ($
+1791383957.52,0,,0,,0,
+1791383958.42,0,,0,,0,
+1791383959.30,0,,0,,0,
+1791383960.16,0,,0,,0,
+1791383961.03,0,,0,,0,
+1791383961.98,0,,0,,0,
+1791383962.88,0,,0,,0,
+1791383963.79,0,,0,,0,
+1791383964.69,0,,0,,0,
+1791383965.59,0,,0,,0,
+1791383966.48,0,,0,,0,
+1791383967.42,0,,0,,0,
+1791383968.32,0,,0,,0,
+1791383969.21,0,,0,,0,
+1791383970.09,0,,0,,0,
+1791383970.98,0,,0,,0,
+1791383971.86,0,,0,,0,
+1791383972.75,0,,0,,0,
+1791383973.65,0,,0,,0,
+1791383974.53,0,,0,,0,
+1791383975.41,0,,0,,0,
+1791383976.29,0,,0,Client:ClientRead,-7, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791383977.18,0,,0,,0,
+1791383978.06,0,,0,,0,
+1791383978.95,0,,0,,0,
+1791383979.83,0,,0,,0,
+1791383980.72,0,,0,,0,
+1791383981.59,0,,0,,0,
+1791383982.48,0,,0,,0,
+1791383983.36,0,,0,,0,
+1791383984.23,0,,0,,0,
+1791383985.09,0,,0,,0,
+1791383985.99,0,,0,,0,
+1791383986.88,0,,0,,0,
+1791383987.79,0,,0,,0,
+1791383988.68,0,,0,,0,
+1791383989.59,0,,0,,0,
+1791383990.49,0,,0,,0,
+1791383991.38,0,,0,,0,
+1791383992.27,0,,0,,0,
+1791383993.15,0,,0,,0,
+1791383994.03,0,,0,,0,
+1791383994.91,0,,0,,0,
+1791383995.80,0,,0,,0,
+1791383996.68,0,,0,,0,
+1791383997.60,0,,0,,0,
+1791383998.51,0,,0,,0,
+1791383999.43,0,,0,,0,
+1791384000.35,0,,0,,0,
+1791384001.27,0,,0,,0,
+1791384002.22,0,,0,,0,
+1791384003.17,0,,0,,0,
+1791384004.07,0,,0,,0,
+1791384004.95,0,,0,,0,
+1791384005.87,0,,0,,0,
+1791384006.74,0,,0,,0,
+1791384007.67,0,,0,,0,
+1791384008.55,0,,0,,0,
+1791384009.43,0,,0,,0,
+1791384010.34,0,,0,,0,
+1791384011.24,0,,0,,0,
+1791384012.15,0,,0,,0,
+1791384013.03,0,,0,,0,
+1791384013.91,0,,0,,0,
+1791384014.79,0,,0,,0,
+1791384015.68,0,,0,,0,
+1791384016.57,0,,0,,0,
+1791384017.51,0,,0,,0,
+1791384018.40,0,,0,,0,
+1791384019.28,0,,0,,0,
+1791384020.17,0,,0,,0,
+1791384021.06,0,,0,,0,
+1791384021.94,0,,0,,0,
+1791384022.84,0,,0,,0,
+1791384023.73,0,,0,,0,
+1791384024.62,0,,0,Client:ClientRead,-8, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791384025.52,0,,0,,0,
+1791384026.41,0,,0,,0,
+1791384027.29,0,,0,,0,
+1791384028.19,0,,0,,0,
+1791384029.07,0,,0,,0,
+1791384029.97,0,,0,,0,
+1791384030.84,0,,0,,0,
+1791384031.72,0,,0,,0,
+1791384032.61,0,,0,,0,
+1791384033.49,0,,0,Client:ClientRead,-6, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791384034.37,0,,0,,0,
+1791384035.25,0,,0,,0,
+1791384036.14,0,,0,,0,
+1791384037.03,0,,0,,0,
+1791384037.92,0,,0,,0,
+1791384038.82,0,,0,,0,
+1791384039.73,0,,0,Client:ClientRead,-6, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791384040.62,0,,0,,0,
+1791384041.51,0,,0,,0,
+1791384042.39,0,,0,,0,
+1791384043.27,0,,0,,0,
+1791384044.16,0,,0,,0,
+1791384045.04,0,,0,,0,
+1791384045.91,0,,0,,0,
+1791384046.79,0,,0,,0,
+1791384047.71,0,,0,,0,
+1791384048.63,0,,0,,0,
+1791384049.53,0,,0,,0,
+1791384050.42,0,,0,,0,
+1791384051.33,0,,0,,0,
+1791384052.21,0,,0,,0,
+1791384053.10,0,,0,,0,
+1791384053.99,0,,0,,0,
+1791384054.88,0,,0,,0,
+1791384055.77,0,,0,,0,
+1791384056.66,0,,0,,0,
+1791384057.59,0,,0,,0,
+1791384058.47,0,,0,,0,
+1791384059.39,0,,0,,0,
+1791384060.29,0,,0,,0,
+1791384061.18,0,,0,,0,
+1791384062.05,0,,0,,0,
+1791384062.94,0,,0,,0,
+1791384063.84,0,,0,,0,
+1791384064.72,0,,0,,0,
+1791384065.60,0,,0,,0,
+1791384066.48,0,,0,,0,
+1791384067.37,0,,0,,0,
+1791384068.28,0,,0,,0,
+1791384069.15,0,,0,,0,
+1791384070.02,0,,0,,0,
+1791384070.90,0,,0,,0,
+1791384071.79,0,,0,,0,
+1791384072.69,0,,0,,0,
+1791384073.57,0,,0,,0,
+1791384074.45,0,,0,,0,
+1791384075.33,0,,0,,0,
+1791384076.21,0,,0,,0,
+1791384077.11,0,,0,,0,
+1791384078.00,0,,0,,0,
+1791384078.90,0,,0,,0,
+1791384079.78,0,,0,,0,
+1791384080.68,0,,0,,0,
+1791384081.56,0,,0,,0,
+1791384082.44,0,,0,,0,
+1791384083.33,0,,0,,0,
+1791384084.22,0,,0,,0,
+1791384085.11,0,,0,,0,
+1791384085.98,0,,0,,0,
+1791384086.86,0,,0,,0,
+1791384087.81,0,,0,,0,
+1791384088.70,0,,0,,0,
+1791384089.61,0,,0,,0,
+1791384090.52,0,,0,,0,
+1791384091.41,0,,0,,0,
+1791384092.30,0,,0,,0,
+1791384093.19,0,,0,,0,
+1791384094.06,0,,0,,0,
+1791384094.94,0,,0,,0,
+1791384095.83,0,,0,,0,
+1791384096.72,0,,0,,0,
+1791384097.66,0,,0,,0,
+1791384098.55,0,,0,,0,
+1791384099.44,0,,0,Client:ClientRead,-6, 		UPDATE outbox_events o 		SET status = 'PROCESSING', 		   
+1791384100.33,0,,0,,0,
+1791384101.22,0,,0,,0,
+1791384102.11,0,,0,,0,
+1791384102.99,0,,0,,0,
+1791384103.87,0,,0,,0,
+1791384104.76,0,,0,,0,
+1791384105.64,0,,0,,0,
+1791384106.54,0,,0,,0,
+1791384107.44,0,,0,,0,
+1791384108.34,0,,0,,0,
+1791384109.24,0,,0,,0,
+1791384110.14,0,,0,,0,
+1791384111.05,0,,0,,0,
+1791384111.95,0,,0,,0,
+1791384112.85,0,,0,,0,
+1791384113.74,0,,0,,0,
+1791384114.62,0,,0,,0,
+1791384115.53,0,,0,,0,
+1791384116.42,0,,0,,0,
+1791384117.29,0,,0,,0,
+1791384118.18,0,,0,,0,
+1791384119.08,0,,0,,0,
+1791384119.97,0,,0,,0,
+1791384120.89,0,,0,,0,
+1791384121.77,0,,0,,0,
+1791384122.65,0,,0,,0,
+1791384123.55,0,,0,,0,
+1791384124.43,0,,0,,0,
+1791384125.31,0,,0,,0,
+1791384126.20,0,,0,,0,
+1791384127.08,0,,0,,0,
+1791384127.97,0,,0,,0,
+1791384128.87,0,,0,,0,
+1791384129.76,0,,0,,0,
+1791384130.66,0,,0,,0,
+1791384131.56,0,,0,,0,
+1791384132.43,0,,0,,0,
+1791384133.32,0,,0,,0,
+1791384134.19,0,,0,,0,
+1791384135.06,0,,0,,0,
+1791384135.99,0,,0,,0,
+1791384136.88,0,,0,,0,
+1791384137.88,0,,0,,0,
+1791384138.80,0,,0,,0,
+1791384139.77,0,,0,,0,
+1791384140.70,0,,0,,0,
+1791384141.62,0,,0,,0,
+1791384142.50,0,,0,,0,
+1791384143.39,0,,0,,0,
+1791384144.27,0,,0,,0,
+1791384145.14,0,,0,,0,
+1791384146.05,0,,0,,0,
+1791384146.95,0,,0,,0,
+1791384147.86,0,,0,,0,
+1791384148.76,0,,0,,0,
+1791384149.67,0,,0,,0,
