@@ -8,12 +8,8 @@ bin/
 # Scratch output of benchmark runs. Curated results live in docs/benchmarks.md and docs/data/.
 benchmark-results*/
 
-# Local working notes and tool settings: kept on the developer's machine, not part of the
-# repository (the repository holds code, documentation and results).
-/docs/decisions.md
-/docs/tasks.md
-/slices.md
-/project_description.md
-/engineering_project_execution_playbook.md
+# Everything private lives in notes/ (design notes, study guide, planning, scratch results) and in
+# .claude/ (tool settings): kept on the developer's machine, not part of the repository (the
+# repository holds code, documentation and results).
+/notes/
 /.claude/
-/docs/walkthrough.md
