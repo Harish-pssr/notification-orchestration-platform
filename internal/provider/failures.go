@@ -2,6 +2,7 @@ package provider
 
 import (
 	"encoding/json"
+	"math/rand/v2"
 	"net/http"
 	"strconv"
 	"sync"
@@ -17,6 +18,10 @@ type failure struct {
 	Delay     time.Duration `json:"-"`
 	DelayMs   int           `json:"delay_ms"`
 	Remaining *int          `json:"remaining"`
+	// Probability is the chance (0 to 1] that a request is affected. It models a
+	// provider that fails some fraction of calls, which is what real transient errors
+	// look like. 1 (the default) affects every request.
+	Probability float64 `json:"probability"`
 }
 
 // failures holds the provider's own fault state. It lives in memory: the provider is
@@ -24,9 +29,12 @@ type failure struct {
 type failures struct {
 	mu     sync.Mutex
 	byChan map[events.Channel]*failure
+	rnd    func() float64 // returns [0, 1); replaced in tests
 }
 
-func newFailures() *failures { return &failures{byChan: map[events.Channel]*failure{}} }
+func newFailures() *failures {
+	return &failures{byChan: map[events.Channel]*failure{}, rnd: rand.Float64}
+}
 
 // take returns the failure that applies to this request, consuming one use of a
 // limited failure. It returns nil when the channel behaves normally.
@@ -35,6 +43,10 @@ func (f *failures) take(ch events.Channel) *failure {
 	defer f.mu.Unlock()
 	cur, ok := f.byChan[ch]
 	if !ok {
+		return nil
+	}
+	// A request that escapes the probability is not affected and does not use up a count.
+	if cur.Probability > 0 && cur.Probability < 1 && f.rnd() >= cur.Probability {
 		return nil
 	}
 	applied := *cur
@@ -78,12 +90,19 @@ func (p *Provider) setFailure(w http.ResponseWriter, r *http.Request) {
 		Status    int            `json:"status"`
 		DelayMs   int            `json:"delay_ms"`
 		Remaining *int           `json:"remaining"`
+		// Probability is optional: omitted or 0 means every request.
+		Probability float64 `json:"probability"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&in); err != nil {
 		http.Error(w, "invalid JSON body", http.StatusBadRequest)
 		return
 	}
+	if in.Probability == 0 {
+		in.Probability = 1
+	}
 	switch {
+	case in.Probability < 0 || in.Probability > 1:
+		http.Error(w, "probability must be in (0, 1]", http.StatusBadRequest)
 	case !in.Channel.Valid():
 		http.Error(w, "channel must be email, push or webhook", http.StatusBadRequest)
 	case in.Status != 0 && (in.Status < 400 || in.Status > 599):
@@ -95,7 +114,7 @@ func (p *Provider) setFailure(w http.ResponseWriter, r *http.Request) {
 	case in.Remaining != nil && *in.Remaining < 1:
 		http.Error(w, "remaining must be at least 1", http.StatusBadRequest)
 	default:
-		p.fails.set(in.Channel, failure{Status: in.Status, DelayMs: in.DelayMs, Remaining: in.Remaining})
+		p.fails.set(in.Channel, failure{Status: in.Status, DelayMs: in.DelayMs, Remaining: in.Remaining, Probability: in.Probability})
 		p.log.Warn("provider failure injected", "channel", in.Channel, "status", in.Status, "delay_ms", in.DelayMs)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(p.fails.snapshot())
