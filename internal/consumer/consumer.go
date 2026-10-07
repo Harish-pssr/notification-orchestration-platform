@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -48,6 +49,7 @@ type Consumer struct {
 	http   *http.Client
 	log    *slog.Logger
 	faults *faults.Registry // nil means no fault injection
+	paused atomic.Bool      // true while the run loop is idle because of a pause fault
 }
 
 // New builds a consumer. cons is the durable pull consumer for cfg.Channel.
@@ -70,10 +72,31 @@ func (c *Consumer) skipCheckDisabled() bool {
 	return off
 }
 
+// pauseRequested reports whether a pause fault is in force for this channel.
+func (c *Consumer) pauseRequested() bool {
+	_, paused := c.faults.Active("consumer." + string(c.cfg.Channel) + ".pause")
+	return paused
+}
+
+// Paused reports whether this consumer has actually stopped taking work. It is set by
+// the run loop itself, not by the fault: an outstanding fetch request can still
+// deliver a message for a moment after the pause is requested, and the heartbeat must
+// not claim "paused" before that window has closed.
+func (c *Consumer) Paused() bool { return c.paused.Load() }
+
 // Run fetches and handles messages until ctx is cancelled.
 func (c *Consumer) Run(ctx context.Context) error {
 	c.log.Info("consumer started", "max_attempts", c.cfg.MaxAttempts)
 	for ctx.Err() == nil {
+		if c.pauseRequested() {
+			// Paused by a fault (D8): stop asking for work. Messages wait safely in the
+			// broker, which is exactly what the "consumer down" demo shows. Only now,
+			// with no fetch outstanding, do we report ourselves as paused.
+			c.paused.Store(true)
+			sleep(ctx, 500*time.Millisecond)
+			continue
+		}
+		c.paused.Store(false)
 		// Fetch sends a request that stays open at the broker: messages are handed
 		// over as they arrive, and an empty wait simply times out and loops.
 		batch, err := c.cons.Fetch(c.cfg.Batch, jetstream.FetchMaxWait(c.cfg.FetchWait))

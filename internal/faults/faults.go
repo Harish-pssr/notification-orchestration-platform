@@ -27,6 +27,7 @@ const (
 	Crash     Action = "crash"     // exit the process abruptly (os.Exit(137), no cleanup)
 	Duplicate Action = "duplicate" // publish the messages a second time, bypassing broker dedup
 	Disable   Action = "disable"   // a state fault: switch an optimisation off while active
+	Pause     Action = "pause"     // a state fault: a worker role stops taking new work while active
 )
 
 // Known lists every injection point and the actions it supports. The admin API
@@ -34,6 +35,12 @@ const (
 var Known = map[string][]Action{
 	"relay.after_publish":           {Crash, Duplicate},
 	"consumer.skip_delivered_check": {Disable},
+	// Pausing stops a role from claiming or fetching. Nothing is lost: work simply
+	// waits in the outbox (relay) or in the broker (consumers) until it is resumed.
+	"relay.pause":            {Pause},
+	"consumer.email.pause":   {Pause},
+	"consumer.push.pause":    {Pause},
+	"consumer.webhook.pause": {Pause},
 }
 
 // Fault is one row of fault_config.

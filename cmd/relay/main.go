@@ -17,6 +17,7 @@ import (
 	"notifplatform/internal/broker"
 	"notifplatform/internal/config"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/health"
 	"notifplatform/internal/outbox"
 	"notifplatform/internal/relay"
 )
@@ -74,6 +75,15 @@ func run() error {
 		config.GetenvDuration("FAULT_POLL_INTERVAL", time.Second), log)
 	go fr.Run(ctx)
 	r.SetFaults(fr)
+
+	// Heartbeats feed the dashboard's health panel (D9).
+	go health.Run(ctx, pool, config.Getenv("RELAY_NAME", name), "relay",
+		config.GetenvDuration("HEARTBEAT_INTERVAL", 3*time.Second), func() string {
+			if r.Paused() {
+				return health.StatePaused
+			}
+			return health.StateRunning
+		}, log)
 
 	return r.Run(ctx)
 }

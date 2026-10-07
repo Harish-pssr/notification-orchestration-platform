@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,6 +39,7 @@ type Relay struct {
 	js     jetstream.JetStream
 	log    *slog.Logger
 	faults *faults.Registry // nil means no fault injection
+	paused atomic.Bool      // true while the run loop is idle because of a pause fault
 }
 
 // SetFaults attaches the fault registry (D8). Call it before Run.
@@ -48,10 +50,31 @@ func New(cfg Config, store *outbox.Store, js jetstream.JetStream, log *slog.Logg
 	return &Relay{cfg: cfg, store: store, js: js, log: log.With("worker", cfg.Name)}
 }
 
+// pauseRequested reports whether a pause fault is in force for the relay role.
+func (r *Relay) pauseRequested() bool {
+	_, paused := r.faults.Active("relay.pause")
+	return paused
+}
+
+// Paused reports whether this relay has actually stopped claiming work. It is set by
+// the run loop after the batch in hand is finished, so "paused" is never reported
+// while a claim is still being processed.
+func (r *Relay) Paused() bool { return r.paused.Load() }
+
 // Run claims and publishes until ctx is cancelled.
 func (r *Relay) Run(ctx context.Context) error {
 	r.log.Info("relay started", "lease", r.cfg.Lease, "batch", r.cfg.Batch)
 	for ctx.Err() == nil {
+		if r.pauseRequested() {
+			// Paused by a fault (D8): claim nothing. Work waits safely in the outbox.
+			r.paused.Store(true)
+			select {
+			case <-ctx.Done():
+			case <-time.After(r.cfg.Poll):
+			}
+			continue
+		}
+		r.paused.Store(false)
 		n, err := r.RunOnce(ctx)
 		if err != nil {
 			r.log.Error("relay round failed", "error", err)

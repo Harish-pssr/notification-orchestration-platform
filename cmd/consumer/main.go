@@ -20,6 +20,7 @@ import (
 	"notifplatform/internal/consumer"
 	"notifplatform/internal/events"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/health"
 )
 
 func main() {
@@ -87,6 +88,15 @@ func run() error {
 		config.GetenvDuration("FAULT_POLL_INTERVAL", time.Second), log)
 	go fr.Run(ctx)
 	c.SetFaults(fr)
+
+	// Heartbeats feed the dashboard's health panel (D9).
+	go health.Run(ctx, pool, config.Getenv("CONSUMER_NAME", name), "consumer-"+string(channel),
+		config.GetenvDuration("HEARTBEAT_INTERVAL", 3*time.Second), func() string {
+			if c.Paused() {
+				return health.StatePaused
+			}
+			return health.StateRunning
+		}, log)
 
 	return c.Run(ctx)
 }
