@@ -25,6 +25,13 @@ function fmtTime(iso) {
   const d = new Date(iso);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
 }
+// "21:05:34": a plain clock time for labels. fmtTime (with milliseconds) is kept for the event timeline,
+// where the order of events within a second is the point.
+function fmtClock(iso) {
+  if (!iso) return "–";
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 function ago(iso) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
   if (s < 2) return "just now";
@@ -563,7 +570,7 @@ const sections = {
         ].join("");
       }
       $("#ex-chart").innerHTML = this.chart(x);
-      $("#ex-phases").innerHTML = x.markers.map((m) => `<li><div class="when">${fmtTime(m.created_at)}</div>${esc(m.label)}</li>`).join("");
+      $("#ex-phases").innerHTML = x.markers.map((m) => `<li><div class="when">${fmtClock(m.created_at)}</div>${esc(m.label)}</li>`).join("");
     },
     chart(x) {
       const pts = this.samples;
@@ -960,12 +967,12 @@ async function renderDrawer() {
     <div class="card"><div class="card-head"><h2>${esc(e.type)}</h2>${chip(e.status)}</div>
       <dl class="kv"><dt>Outbox attempts</dt><dd>${e.attempts}</dd>
       <dt>Last error</dt><dd>${e.last_error ? esc(e.last_error) : "<span class=muted>none</span>"}</dd>
-      <dt>Created</dt><dd>${fmtTime(e.created_at)} <span class="muted">(${ago(e.created_at)})</span></dd>
-      <dt>Published</dt><dd>${fmtTime(e.published_at)}</dd><dt>Aggregate</dt><dd class="mono">${esc(e.aggregate_id)}</dd></dl></div>
+      <dt>Created</dt><dd>${fmtClock(e.created_at)} <span class="muted">(${ago(e.created_at)})</span></dd>
+      <dt>Published</dt><dd>${fmtClock(e.published_at)}</dd><dt>Aggregate</dt><dd class="mono">${esc(e.aggregate_id)}</dd></dl></div>
     <div class="card"><div class="card-head"><h2>Channel deliveries</h2></div>
       <div class="table-wrap"><table><thead><tr><th>Channel</th><th>State</th><th>Attempts</th><th>Detail</th></tr></thead><tbody>
       ${e.deliveries.map((d) => `<tr><td>${esc(d.channel)}</td><td>${chip(d.status)}</td><td>${d.attempts}</td>
-        <td>${d.last_error ? esc(d.last_error) : d.delivered_at ? `delivered ${fmtTime(d.delivered_at)}` : "<span class=muted>–</span>"}${d.duplicate_count ? `<div class="muted small">${d.duplicate_count} duplicate message${d.duplicate_count > 1 ? "s" : ""} ignored</div>` : ""}</td></tr>`).join("")}
+        <td>${d.last_error ? esc(d.last_error) : d.delivered_at ? `delivered ${fmtClock(d.delivered_at)}` : "<span class=muted>–</span>"}${d.duplicate_count ? `<div class="muted small">${d.duplicate_count} duplicate message${d.duplicate_count > 1 ? "s" : ""} ignored</div>` : ""}</td></tr>`).join("")}
       </tbody></table></div></div>
     <div class="card"><div class="card-head"><h2>Timeline</h2></div>
       <ul class="timeline">${timeline.map((t) => `<li><div class="when">${fmtTime(t.at)}</div>${esc(t.text)}</li>`).join("")}</ul></div>
@@ -1001,6 +1008,17 @@ function show(route) {
   s.update.call(s);
 }
 
+// The status next to the Auto-refresh switch: how fresh the data is, in words.
+function renderUpdated() {
+  const el = $("#updated");
+  if (!state.live) { el.textContent = "Paused: not refreshing"; el.classList.add("is-paused"); return; }
+  el.classList.remove("is-paused");
+  if (state.error) { el.textContent = "Can't reach the server, retrying…"; return; }
+  if (!state.updated) { el.textContent = "Loading…"; return; }
+  const secs = Math.floor((Date.now() - state.updated.getTime()) / 1000);
+  el.textContent = secs < 3 ? "Updated just now" : secs < 60 ? `Updated ${secs} s ago` : `Updated ${Math.floor(secs / 60)} min ago`;
+}
+
 async function refresh() {
   try {
     const [sum, ev, ex] = await Promise.all([api("/api/summary"), api("/api/events?limit=100"), api("/api/experiment").catch(() => null)]);
@@ -1010,7 +1028,7 @@ async function refresh() {
     // The Experiment page is offered only while a run is active (or when you are already on it).
     $("#nav-experiment").hidden = !(state.experiment && state.experiment.active) && state.route !== "experiment";
   } catch (err) { state.error = err; }
-  $("#updated").textContent = state.error ? "Disconnected, retrying…" : "Updated " + fmtTime(state.updated.toISOString());
+  renderUpdated();
   const s = sections[state.route]; s.update.call(s);
   if (state.drawerId) renderDrawer();
 }
@@ -1025,7 +1043,7 @@ async function checkApi() {
   } catch { pill.className = "pill pill-bad"; text.textContent = "API unreachable"; }
 }
 
-$("#live").onchange = (e) => { state.live = e.target.checked; if (state.live) refresh(); };
+$("#live").onchange = (e) => { state.live = e.target.checked; renderUpdated(); if (state.live) refresh(); };
 $("#drawer-close").onclick = closeDrawer; $("#drawer-backdrop").onclick = closeDrawer;
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.drawerId) closeDrawer(); });
 // #/<section> or #/<section>/<event id>
@@ -1048,4 +1066,5 @@ navigate();
 refresh(); checkApi();
 api("/api/config").then((r) => { if (r.ok) state.config = r.body; });
 setInterval(() => { if (state.live && !document.hidden) refresh(); }, 1500);
+setInterval(renderUpdated, 1000); // keeps "Updated N s ago" honest between refreshes
 setInterval(() => { if (!document.hidden) checkApi(); }, 5000);
