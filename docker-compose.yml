@@ -27,6 +27,9 @@ x-app-env: &app-env
 services:
   postgres-platform:
     <<: *postgres
+    # Many relays and consumers each hold a few connections; the default of 100 could
+    # become the limit during scaling benchmarks, so it is raised (recorded in docs).
+    command: ["postgres", "-c", "max_connections=300"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-notif}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notif}
@@ -119,6 +122,15 @@ services:
     depends_on:
       migrate-platform: { condition: service_completed_successfully }
       nats: { condition: service_healthy }
+
+  # Benchmark load generator (D13). It runs inside the Compose network so Docker
+  # Desktop's host port forwarding is never in the measurement:
+  #   docker compose --profile bench run --rm loadgen run -url http://api:8080 -rate 200 -duration 60s
+  loadgen:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: loadgen } }
+    profiles: ["bench"]
+    environment: *app-env
+    restart: "no"
 
   # Metrics (D9). Prometheus finds every relay and consumer replica through Compose DNS.
   prometheus:
