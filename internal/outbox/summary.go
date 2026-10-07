@@ -52,6 +52,27 @@ func (s *Store) Backlog(ctx context.Context) (outboxWaiting int64, deliveries ma
 	return outboxWaiting, deliveries, rows.Err()
 }
 
+// DeadCounts returns the number of dead-lettered deliveries per channel. It matches
+// the DLQ partial index, so it stays cheap however many deliveries exist.
+func (s *Store) DeadCounts(ctx context.Context) (map[string]int64, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT channel, count(*) FROM channel_deliveries WHERE status = 'DLQ' GROUP BY channel`)
+	if err != nil {
+		return nil, fmt.Errorf("count dead deliveries: %w", err)
+	}
+	defer rows.Close()
+	out := map[string]int64{}
+	for rows.Next() {
+		var ch string
+		var n int64
+		if err := rows.Scan(&ch, &n); err != nil {
+			return nil, err
+		}
+		out[ch] = n
+	}
+	return out, rows.Err()
+}
+
 // DuplicateSummary returns how many deliveries completed and how many duplicate
 // messages the consumers recognised and ignored (D5).
 // With a non-nil eventID the counts cover only that event.

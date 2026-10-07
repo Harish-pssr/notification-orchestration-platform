@@ -22,6 +22,7 @@ import (
 	"notifplatform/internal/faults"
 	"notifplatform/internal/health"
 	"notifplatform/internal/httpapi"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/outbox"
 )
 
@@ -61,6 +62,39 @@ func brokerStats(ctx context.Context, js jetstream.JetStream) (httpapi.BrokerSta
 	return stats, nil
 }
 
+// snapshot reads the backlog and role health for the metrics gauges. A broker failure
+// leaves only the broker gauges absent: the database-derived ones are still reported.
+func snapshot(ctx context.Context, store *outbox.Store, pool *pgxpool.Pool, js jetstream.JetStream, staleAfter time.Duration) (metrics.Snapshot, error) {
+	s := metrics.Snapshot{
+		BrokerPending: map[string]uint64{}, BrokerInflight: map[string]int{},
+		RoleLive: map[string]int{}, RoleUp: map[string]bool{}, RolePaused: map[string]bool{},
+	}
+	var err error
+	if s.OutboxWaiting, s.DeliveriesWaiting, err = store.Backlog(ctx); err != nil {
+		return s, err
+	}
+	if s.DeliveriesDead, err = store.DeadCounts(ctx); err != nil {
+		return s, err
+	}
+	instances, err := health.List(ctx, pool)
+	if err != nil {
+		return s, err
+	}
+	for _, role := range health.Summarize(instances, staleAfter) {
+		s.RoleLive[role.Name] = role.Live
+		s.RoleUp[role.Name] = role.Status == health.Up
+		s.RolePaused[role.Name] = role.Status == health.Paused
+	}
+	if bs, err := brokerStats(ctx, js); err == nil {
+		s.BrokerStream = bs.StreamMessages
+		for ch, c := range bs.Channels {
+			s.BrokerPending[ch] = c.Pending
+			s.BrokerInflight[ch] = c.AckPending
+		}
+	}
+	return s, nil
+}
+
 func run() error {
 	// slog's JSON handler writes one structured log line per call to stdout (D9).
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -86,16 +120,30 @@ func run() error {
 		return fmt.Errorf("jetstream: %w", err)
 	}
 
+	store := outbox.NewStore(pool)
+	staleAfter := config.GetenvDuration("HEARTBEAT_STALE_AFTER", 10*time.Second)
+
+	// Metrics (D9): counters and histograms are recorded by the processes doing the work;
+	// the backlog and health gauges are computed here, once per scrape, so replicas never
+	// double-count them.
+	reg := metrics.NewRegistry()
+	apiMetrics := metrics.NewAPI(reg)
+	reg.MustRegister(metrics.NewStateCollector(func(ctx context.Context) (metrics.Snapshot, error) {
+		return snapshot(ctx, store, pool, js, staleAfter)
+	}, slog.Default()))
+
 	faultsEnabled := config.Getenv("FAULTS_ENABLED", "false") == "true"
 	handler := httpapi.NewHandler(httpapi.Deps{
-		Store:         outbox.NewStore(pool),
-		Workers:       func(ctx context.Context) ([]health.Instance, error) { return health.List(ctx, pool) },
-		Broker:        func(ctx context.Context) (httpapi.BrokerStats, error) { return brokerStats(ctx, js) },
-		StaleAfter:    config.GetenvDuration("HEARTBEAT_STALE_AFTER", 10*time.Second),
-		Faults:        faults.New(pool, faultsEnabled, time.Second, slog.Default()),
-		FaultsEnabled: faultsEnabled,
-		AdminToken:    os.Getenv("ADMIN_TOKEN"),
-		ProviderURL:   config.Getenv("PROVIDER_URL", "http://localhost:9090"),
+		Store:          store,
+		Metrics:        apiMetrics,
+		MetricsHandler: metrics.Handler(reg),
+		Workers:        func(ctx context.Context) ([]health.Instance, error) { return health.List(ctx, pool) },
+		Broker:         func(ctx context.Context) (httpapi.BrokerStats, error) { return brokerStats(ctx, js) },
+		StaleAfter:     staleAfter,
+		Faults:         faults.New(pool, faultsEnabled, time.Second, slog.Default()),
+		FaultsEnabled:  faultsEnabled,
+		AdminToken:     os.Getenv("ADMIN_TOKEN"),
+		ProviderURL:    config.Getenv("PROVIDER_URL", "http://localhost:9090"),
 		Checks: map[string]httpapi.Check{
 			"postgres": func(ctx context.Context) error { return pool.Ping(ctx) },
 			"nats": func(context.Context) error {

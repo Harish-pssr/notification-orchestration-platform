@@ -12,11 +12,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
 	"notifplatform/internal/events"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/outbox"
 )
 
@@ -27,7 +29,10 @@ type eventSpec struct {
 	decode func(body []byte) (outbox.BusinessWrite, error)
 }
 
-type eventsHandler struct{ store *outbox.Store }
+type eventsHandler struct {
+	store   *outbox.Store
+	metrics *metrics.API // nil means no metrics
+}
 
 const maxBody = 1 << 20
 
@@ -36,20 +41,24 @@ func (h *eventsHandler) create(spec eventSpec) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		key := strings.TrimSpace(r.Header.Get("Idempotency-Key"))
 		if key == "" {
+			h.metrics.Rejected("bad_request")
 			writeError(w, http.StatusBadRequest, "Idempotency-Key header is required")
 			return
 		}
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBody))
 		if err != nil {
+			h.metrics.Rejected("bad_request")
 			writeError(w, http.StatusBadRequest, "could not read request body")
 			return
 		}
 		write, err := spec.decode(body)
 		if err != nil {
+			h.metrics.Rejected("bad_request")
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
+		start := time.Now()
 		res, err := h.store.CreateEvent(r.Context(), outbox.CreateInput{
 			Key:         key,
 			RequestHash: requestHash(r.Method, r.URL.Path, body),
@@ -58,12 +67,18 @@ func (h *eventsHandler) create(spec eventSpec) http.HandlerFunc {
 		})
 		switch {
 		case errors.Is(err, outbox.ErrKeyReuse):
+			h.metrics.Rejected("key_reuse")
 			writeError(w, http.StatusUnprocessableEntity, "Idempotency-Key was already used with a different request")
 			return
 		case err != nil:
+			h.metrics.Rejected("error")
 			slog.Error("create event failed", "error", err, "event_type", spec.typ)
 			writeError(w, http.StatusInternalServerError, "could not create event")
 			return
+		case res.Replayed:
+			h.metrics.Replayed()
+		default:
+			h.metrics.Created(string(spec.typ), time.Since(start))
 		}
 
 		w.Header().Set("Content-Type", "application/json")

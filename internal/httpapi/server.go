@@ -10,6 +10,7 @@ import (
 	"notifplatform/internal/admin"
 	"notifplatform/internal/faults"
 	"notifplatform/internal/health"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/outbox"
 	"notifplatform/web"
 )
@@ -22,6 +23,10 @@ type Check func(ctx context.Context) error
 type Deps struct {
 	Checks map[string]Check
 	Store  *outbox.Store
+
+	// Metrics (D9): Prometheus scrapes MetricsHandler at GET /metrics.
+	Metrics        *metrics.API
+	MetricsHandler http.Handler
 
 	// Health (D9). Each is optional: a missing one is simply left out of the response.
 	Workers    func(ctx context.Context) ([]health.Instance, error)
@@ -40,7 +45,10 @@ func NewHandler(d Deps) http.Handler {
 	// Go 1.22+ lets a route pattern name the HTTP method and capture path parts.
 	mux.HandleFunc("GET /healthz", healthz(d.Checks))
 
-	e := &eventsHandler{store: d.Store}
+	e := &eventsHandler{store: d.Store, metrics: d.Metrics}
+	if d.MetricsHandler != nil {
+		mux.Handle("GET /metrics", d.MetricsHandler)
+	}
 	mux.HandleFunc("POST /api/events/payment-succeeded", e.create(paymentSucceeded))
 	mux.HandleFunc("POST /api/events/booking-confirmed", e.create(bookingConfirmed))
 	mux.HandleFunc("POST /api/events/password-changed", e.create(passwordChanged))
