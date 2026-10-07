@@ -106,7 +106,7 @@ const EVENT_TYPES = {
 // ---------- sections ----------
 const sections = {
   start: {
-    title: "Start here",
+    title: "Start",
     heading: "Getting started",
     desc: "What this project is, how one event travels through it, and a two-minute way to try it.",
     mount(root) {
@@ -262,7 +262,7 @@ const sections = {
   },
 
   create: {
-    title: "Create events",
+    title: "Create",
     heading: "Create events",
     desc: "Send an event to the API and watch it flow through. The API saves it, with a to-do record, in one database transaction; the relay then delivers it on every channel that event type is routed to.",
     mount(root) {
@@ -683,7 +683,7 @@ const sections = {
   },
 
   faults: {
-    title: "Failure controls",
+    title: "Failures",
     heading: "Failure injection",
     desc: "Break things on purpose and watch the guarantees hold. Each card is one kind of failure; the status bar shows what is currently injected.",
     mount(root) {
@@ -775,7 +775,7 @@ const sections = {
   },
 
   idempotency: {
-    title: "Idempotency",
+    title: "Duplicates",
     heading: "Duplicate protection",
     desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and proves that no duplicate notification was actually sent.",
     running: false,
@@ -936,12 +936,13 @@ async function openDrawer(id) {
   state.drawerId = id;
   history.replaceState(null, "", `#/${state.route}/${id}`); // shareable link; replaceState does not fire hashchange
   $("#drawer-title").textContent = id;
+  document.title = pageTitle();
   $("#drawer").hidden = false; $("#drawer-backdrop").hidden = false;
   $("#drawer-body").innerHTML = `<p class="muted">Loading…</p>`;
   await renderDrawer();
   $("#drawer-close").focus();
 }
-function closeDrawer() { state.drawerId = null; history.replaceState(null, "", `#/${state.route}`); $("#drawer").hidden = true; $("#drawer-backdrop").hidden = true; }
+function closeDrawer() { state.drawerId = null; history.replaceState(null, "", `#/${state.route}`); $("#drawer").hidden = true; $("#drawer-backdrop").hidden = true; document.title = pageTitle(); }
 
 async function renderDrawer() {
   if (!state.drawerId) return;
@@ -972,13 +973,20 @@ async function renderDrawer() {
 }
 
 // ---------- routing, polling ----------
+const APP_NAME = "Notification Platform";
+// The browser tab title: "<page heading> · Notification Platform", or the open event's short id.
+function pageTitle() {
+  if (state.drawerId) return `Event ${shortId(state.drawerId)} · ${APP_NAME}`;
+  const s = sections[state.route];
+  return s ? `${s.heading || s.title} · ${APP_NAME}` : APP_NAME;
+}
 const mounted = new Set();
 function show(route) {
   if (!sections[route]) route = "overview";
   state.route = route;
   if (route === "start") { try { localStorage.setItem("seen-start", "1"); } catch { /* ignore */ } }
   const s = sections[route];
-  document.title = `${s.title} · Notification Platform Console`;
+  document.title = pageTitle();
   $("#page-title").textContent = s.heading || s.title; $("#page-desc").textContent = s.desc;
   for (const a of document.querySelectorAll("#nav a")) {
     a.dataset.route === route ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
