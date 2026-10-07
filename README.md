@@ -44,10 +44,25 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile grafana
 Live histograms are approximate by design; benchmark figures in
 [docs/benchmarks.md](docs/benchmarks.md) are computed from exact database timestamps.
 
+## Benchmarks and failure experiments
+
+These reset all data, so they need the dev stack (`scripts/up.sh`) and refuse to run on battery power.
+Results, method and limitations are in [docs/benchmarks.md](docs/benchmarks.md).
+
+```bash
+go build -o bin/bench ./cmd/bench
+scripts/bench-capacity.sh      # capacity and latency by relay and consumer count (open-loop load through the API)
+scripts/bench-reliability.sh   # 100,000 events with duplicates, relay crashes and provider errors; negative control;
+                               # 60 s relay and broker outages
+```
+
+While an experiment runs, the dashboard shows an **Experiment** page: what is being varied, the current
+phase, and live counters that should converge.
+
 ## Layout
 
 ```text
-cmd/        one folder per binary (api, relay, consumer, provider, migrate, loadgen)
+cmd/        one folder per binary (api, relay, consumer, provider, migrate, loadgen, bench)
 internal/   shared code
 migrations/ SQL for the platform and provider databases (embedded in the binaries)
 web/        the dashboard (embedded in the API binary)
