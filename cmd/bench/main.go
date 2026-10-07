@@ -39,6 +39,8 @@ func main() {
 		err = ramp(ctx, os.Args[2:])
 	case "sustain":
 		err = sustain(ctx, os.Args[2:])
+	case "capacity":
+		err = capacity(ctx, os.Args[2:])
 	default:
 		usage()
 	}
@@ -49,7 +51,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain -confirm [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
+	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain|capacity -confirm [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
 	os.Exit(2)
 }
 
