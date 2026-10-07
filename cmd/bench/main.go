@@ -41,6 +41,10 @@ func main() {
 		err = sustain(ctx, os.Args[2:])
 	case "capacity":
 		err = capacity(ctx, os.Args[2:])
+	case "reliability":
+		err = reliability(ctx, os.Args[2:])
+	case "recovery":
+		err = recovery(ctx, os.Args[2:])
 	default:
 		usage()
 	}
@@ -51,7 +55,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain|capacity -confirm [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
+	fmt.Fprintln(os.Stderr, "usage: bench ramp|sustain|capacity|reliability|recovery -confirm [-relays R] [-consumers C] [-rate N | -start N] [-step 30s]")
 	os.Exit(2)
 }
 
@@ -62,6 +66,7 @@ type common struct {
 	api          *string
 	out          *string
 	allowBattery *bool
+	token        *string
 }
 
 func addCommon(fs *flag.FlagSet) common {
@@ -71,6 +76,7 @@ func addCommon(fs *flag.FlagSet) common {
 		api:          fs.String("api", "http://localhost:8080", "API URL as seen from this machine"),
 		out:          fs.String("out", "benchmark-results", "directory for raw results"),
 		allowBattery: fs.Bool("allow-battery", false, "benchmark even though the machine is on battery (results will be unreliable)"),
+		token:        fs.String("token", config.Getenv("ADMIN_TOKEN", "dev-token"), "admin token for fault injection (reliability and recovery runs)"),
 	}
 }
 
@@ -93,16 +99,24 @@ func (c common) open(ctx context.Context) (env, func(), error) {
 	if raw, err := json.MarshalIndent(machine, "", "  "); err == nil {
 		_ = os.WriteFile(filepath.Join(*c.out, "environment.json"), raw, 0o644)
 	}
-	pool, err := pgxpool.New(ctx, config.Load().PlatformDSN)
+	cfg := config.Load()
+	pool, err := pgxpool.New(ctx, cfg.PlatformDSN)
 	if err != nil {
+		return env{}, nil, err
+	}
+	providerPool, err := pgxpool.New(ctx, cfg.ProviderDSN)
+	if err != nil {
+		pool.Close()
 		return env{}, nil, err
 	}
 	wd, _ := os.Getwd()
 	return env{
-		stack:  bench.Stack{ComposeFiles: strings.Split(*c.compose, ","), Dir: wd, APIURL: *c.api},
-		pool:   pool,
-		outDir: *c.out,
-	}, pool.Close, nil
+		stack:    bench.Stack{ComposeFiles: strings.Split(*c.compose, ","), Dir: wd, APIURL: *c.api},
+		pool:     pool,
+		provider: providerPool,
+		admin:    bench.Admin{URL: *c.api, Token: *c.token},
+		outDir:   *c.out,
+	}, func() { pool.Close(); providerPool.Close() }, nil
 }
 
 func parseRates(s string) ([]float64, error) {

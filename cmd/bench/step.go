@@ -14,9 +14,11 @@ import (
 
 // env is everything a step needs: the stack to drive and the database to read.
 type env struct {
-	stack  bench.Stack
-	pool   *pgxpool.Pool
-	outDir string
+	stack    bench.Stack
+	pool     *pgxpool.Pool // platform database
+	provider *pgxpool.Pool // the mock provider's database
+	admin    bench.Admin   // fault injection through the API (reliability and recovery runs)
+	outDir   string
 }
 
 // stepResult is one fixed-rate step, fully measured (D13).

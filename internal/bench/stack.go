@@ -180,3 +180,23 @@ func serviceOf(container string) string {
 	}
 	return name
 }
+
+// ContainerNames lists the running containers of one Compose service.
+func (s Stack) ContainerNames(ctx context.Context, service string) ([]string, error) {
+	cmd := exec.CommandContext(ctx, "docker", "ps", "--filter", "label=com.docker.compose.service="+service,
+		"--filter", "status=running", "--format", "{{.Names}}")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("list %s containers: %w", service, err)
+	}
+	return strings.Fields(out.String()), nil
+}
+
+// Kill sends SIGKILL to one container: a real crash, with no chance to clean up.
+func (s Stack) Kill(ctx context.Context, container string) error {
+	if out, err := exec.CommandContext(ctx, "docker", "kill", container).CombinedOutput(); err != nil {
+		return fmt.Errorf("kill %s: %w\n%s", container, err, out)
+	}
+	return nil
+}
