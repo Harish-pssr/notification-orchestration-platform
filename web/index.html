@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notification Platform Console</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">N</div>
+      <div>
+        <div class="brand-name">Notification Platform</div>
+        <div class="brand-sub">Transactional outbox console</div>
+      </div>
+    </div>
+
+    <nav id="nav" class="nav">
+      <div class="nav-group">Observe</div>
+      <a href="#/overview" data-route="overview">Overview</a>
+      <a href="#/events" data-route="events">Events</a>
+      <a href="#/health" data-route="health">Health <span class="soon">soon</span></a>
+      <div class="nav-group">Operate</div>
+      <a href="#/create" data-route="create">Create events</a>
+      <a href="#/dlq" data-route="dlq">Dead letters</a>
+      <a href="#/faults" data-route="faults">Failure controls</a>
+      <div class="nav-group">Prove</div>
+      <a href="#/idempotency" data-route="idempotency">Idempotency</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div id="api-pill" class="pill pill-unknown"><span class="dot"></span><span id="api-pill-text">Checking API…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="page-title">Overview</h1>
+        <p id="page-desc" class="page-desc"></p>
+      </div>
+      <div class="topbar-actions">
+        <input type="password" id="admin-token" class="token" placeholder="Admin token" autocomplete="off" aria-label="Admin token">
+        <span id="updated" class="muted small" aria-live="polite"></span>
+        <label class="switch" title="Pause or resume automatic refresh">
+          <input type="checkbox" id="live" checked>
+          <span class="switch-track"></span>
+          <span class="switch-label">Live</span>
+        </label>
+      </div>
+    </header>
+
+    <div id="views"></div>
+  </main>
+</div>
+
+<div id="drawer-backdrop" class="backdrop" hidden></div>
+<aside id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+  <div class="drawer-head">
+    <div>
+      <div class="muted small">Event</div>
+      <h2 id="drawer-title" class="mono">—</h2>
+    </div>
+    <button class="btn btn-ghost" id="drawer-close" aria-label="Close details">Close</button>
+  </div>
+  <div id="drawer-body" class="drawer-body"></div>
+</aside>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<script src="/app.js"></script>
+</body>
+</html>
