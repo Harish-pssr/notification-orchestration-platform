@@ -6,6 +6,9 @@
 x-dev-faults: &dev-faults
   FAULTS_ENABLED: "true"
   ADMIN_TOKEN: dev-token
+  # Quick outage detection for demos (production defaults: 3s interval, 10s stale).
+  HEARTBEAT_INTERVAL: 1s
+  HEARTBEAT_STALE_AFTER: 4s
 
 # Short retry delays so a failing delivery reaches the dead-letter state in a few
 # seconds (the production defaults are 1s base and 30s cap).
