@@ -27,6 +27,13 @@ services:
   provider:
     ports: ["9090:9090"]
     environment: *dev-faults
+  prometheus:
+    ports: ["9091:9090"]   # 9090 is the provider
+  grafana:
+    ports: ["3000:3000"]
+    environment:   # local demo only: no login needed to view
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
   api:
     environment: *dev-faults
   relay:
