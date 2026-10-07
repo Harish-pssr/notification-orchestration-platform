@@ -124,9 +124,12 @@ func createPayment(t *testing.T) string {
 	return r.Body["event_id"].(string)
 }
 
-// Demo 4: the relay delivers every message twice. Each channel's consumer ignores the
-// second copy, so the provider sees exactly one request and one effect per channel.
-func TestDuplicateDeliveryIsIgnoredByConsumers(t *testing.T) {
+// Demo 4: the relay delivers every message twice. Each duplicate must be absorbed
+// without a second side effect. Which layer absorbs it depends on timing since
+// consumers process messages concurrently (D15): a copy that arrives after the first
+// finished is ignored by the consumer; a copy handled while the first is still in
+// progress reaches the provider, which suppresses it by its idempotency key.
+func TestDuplicateDeliveryIsAbsorbedWithoutASecondSideEffect(t *testing.T) {
 	if testing.Short() {
 		t.Skip("integration test")
 	}
@@ -137,14 +140,14 @@ func TestDuplicateDeliveryIsIgnoredByConsumers(t *testing.T) {
 
 	id := createPayment(t)
 	waitDelivered(t, id, 3)
-	waitFor(t, "3 duplicates to be ignored", 20*time.Second, func() bool { return ignoredDuplicates(t, id) == 3 })
+	waitFor(t, "all 3 duplicates to be absorbed", 20*time.Second, func() bool {
+		c := countProvider(t, id)
+		return ignoredDuplicates(t, id)+int(c.requests-c.effects) == 3
+	})
 
 	c := countProvider(t, id)
 	if c.effects != 3 || c.distinctEffectKeys != 3 {
-		t.Errorf("effects=%d distinct=%d, want 3 and 3", c.effects, c.distinctEffectKeys)
-	}
-	if c.requests != 3 {
-		t.Errorf("provider requests = %d, want 3 (the consumers should have stopped the duplicates)", c.requests)
+		t.Errorf("effects=%d distinct=%d, want 3 and 3 (no duplicate side effects)", c.effects, c.distinctEffectKeys)
 	}
 }
 
