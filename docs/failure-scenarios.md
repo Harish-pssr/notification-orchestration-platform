@@ -122,6 +122,27 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Test:** `TestReplayResetsDeadDeliveriesAndReturnsEventsToTheRelay`, `TestReplayCanBeNarrowedByChannelOrEvent`, `TestReplayEndpointRules`, `TestPendingChannelsSkipsFinishedDeliveries`.
 - **Observed:** passes.
 
+### F18. Relay down: events wait in the outbox, then recover (Demo 2)
+
+- **Failure:** the relay role is paused (fault `relay.pause`), so nothing claims outbox rows.
+- **Expected:** the dashboard and `/api/health` report the relay as `PAUSED`; new events commit normally but stay `PENDING` with 0 attempts, counted in the outbox backlog; after resuming, they are published and delivered without any manual step.
+- **Test:** `TestPausedRelayHoldsEventsInTheOutboxThenRecovers`.
+- **Observed:** passes. The event stayed `PENDING` with 0 attempts for the 3 seconds checked while paused, the outbox backlog was at least 1, and the event completed after resume.
+
+### F19. Consumer down: messages wait in the broker, other channels carry on
+
+- **Failure:** the webhook consumer is paused (fault `consumer.webhook.pause`).
+- **Expected:** email and push deliver normally; the webhook delivery stays `PENDING` while its message waits in the broker, visible as broker backlog for that channel; after resuming the backlog drains.
+- **Test:** `TestPausedConsumerBuildsBrokerBacklogThenDrains`; also driven through the dashboard's Health page (5 events created while paused: 5 waiting in the broker, 0 on the email consumer; 0 after resume).
+- **Observed:** passes, and stable over 5 consecutive repetitions of the pause tests. A bug found along the way: a role was reported `PAUSED` as soon as the pause was requested, while an outstanding fetch could still deliver a message. A worker now reports `PAUSED` only after its own loop has stopped taking work.
+
+### F20. Instance dies: the role is reported DOWN, then UP again after restart
+
+- **Failure:** a consumer container is stopped (a real outage, not a simulated pause).
+- **Expected:** with no fresh heartbeat the role shows `DOWN` while other roles stay `UP`; after restart it returns to `UP`.
+- **Test:** the logic is covered by `TestRoleGoesDownWhenHeartbeatsStop` (database-clock age, role status rules) and the unit tests in `internal/health`. The real container stop was checked manually, not in an automated test.
+- **Observed (manual, dev settings: 1 s heartbeats, 4 s stale threshold):** after stopping the webhook consumer the role showed `DOWN` within 2.4 s; relay, email and push stayed `UP`; after starting it again the role was `UP` within 0.5 s.
+
 ## Planned
 
-Scenarios arriving with later slices: broker down (real `docker compose stop nats`), consumer crash before ack (real crash rather than a simulated delivery count), consumer paused, outage and backlog recovery timing.
+Scenarios arriving with later slices: broker down (real `docker compose stop nats`), consumer crash before ack (real crash rather than a simulated delivery count), outage and backlog recovery timing.

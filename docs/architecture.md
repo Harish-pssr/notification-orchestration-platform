@@ -122,8 +122,15 @@ NATS owns the retry timing; the delivery row only mirrors the state for the dash
 
 Provider failure injection (status, delay, count per channel) is controlled through the provider's own admin endpoints.
 
-## Planned (decided, not yet built)
+## Health and pause (D9, D8)
 
-- Worker heartbeats, health panel, pause hooks (D8, D9, Slice 5)
-- Prometheus metrics and structured-log fields throughout (D9, Slice 6)
+Workers are ephemeral, so health is defined per role rather than per instance.
+
+- Every relay and consumer instance upserts a heartbeat row (`workers`: name, role, state, last seen) every few seconds. Age is computed with the database clock, so it does not depend on clocks agreeing.
+- A role is **UP** when at least one instance has a heartbeat within the stale threshold, **DOWN** when none has, and **PAUSED** when every live instance reports it was paused by an operator. Every known role always appears, so a role with no instances shows as DOWN.
+- Pausing a role (fault points `relay.pause`, `consumer.<channel>.pause`) makes it stop taking new work. Nothing is lost: work waits in the outbox (relay) or in the broker (consumers) until the role is resumed. A worker reports PAUSED only after its own loop has stopped, not merely when the pause was requested.
+- `GET /api/health` combines role status, the outbox and per-channel delivery backlog from the database (counted through the partial indexes), and the broker's own backlog per channel (messages waiting, in flight, redelivered). Each part degrades independently if its source is unreachable.
+
+## Planned (decided, not yet built)
+- Prometheus metrics (structured logs already carry event id, type, channel, attempt, status and worker)
 - Benchmarks and the optimization exercise (Slice 7), deployment on one VM (D10, Slice 8)
