@@ -54,7 +54,7 @@ function toast(msg, kind) {
 }
 
 // ---------- state ----------
-const state = { live: true, route: "overview", summary: null, events: [], updated: null, error: null, drawerId: null, filters: { q: "", state: "all", type: "all" }, config: { faults_enabled: false } };
+const state = { live: true, route: "overview", summary: null, events: [], updated: null, error: null, drawerId: null, filters: { q: "", state: "all", type: "all" }, config: { faults_enabled: false }, experiment: null };
 
 // ---------- admin token and helpers for operator actions (D8) ----------
 const tokenEl = $("#admin-token");
@@ -327,7 +327,7 @@ const sections = {
         <div class="card">
           <div class="card-head"><h2>Instances</h2><p id="hl-note" class="muted small"></p></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Instance</th><th>Role</th><th>State</th><th>Last heartbeat</th></tr></thead>
+            <thead><tr><th>Instance</th><th>Role</th><th>State</th><th>Settings</th><th>Last heartbeat</th></tr></thead>
             <tbody id="hl-instances"></tbody></table></div>
         </div>`;
       root.addEventListener("click", async (e) => {
@@ -375,10 +375,80 @@ const sections = {
       $("#hl-instances").innerHTML = all.length ? all.map((i) => `<tr>
           <td class="mono">${esc(i.name)}</td><td>${esc(i.role)}</td>
           <td>${i.fresh ? (i.state === "PAUSED" ? chip("RETRYING", "PAUSED") : chip("DELIVERED", "RUNNING")) : chip("DLQ", "GONE")}</td>
+          <td class="muted small">${esc(settingsText(i.config))}</td>
           <td class="muted">${i.age_s < 2 ? "just now" : Math.round(i.age_s) + " s ago"}</td></tr>`).join("")
-        : `<tr><td colspan="4" class="empty">No worker has sent a heartbeat yet.</td></tr>`;
+        : `<tr><td colspan="5" class="empty">No worker has sent a heartbeat yet.</td></tr>`;
       $("#hl-note").textContent = `Alive means a heartbeat within ${d.stale_after_s} s. Instances gone for over 5 minutes are hidden.` +
         (usable ? "" : " Pause and resume need the admin token and fault injection enabled.");
+    },
+  },
+
+  experiment: {
+    title: "Experiment",
+    desc: "Shown while a benchmark or reliability run is active: what is being varied, which phase the run is in, and live counts that should converge.",
+    samples: [],
+    provider: null,
+    mount(root) {
+      root.innerHTML = `
+        <div class="card" id="ex-banner"></div>
+        <div class="tiles" id="ex-tiles"></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-head"><h2>Backlog over time</h2><p class="muted small">Events not yet handed to the broker, sampled while this page is open. Dashed lines are phase changes.</p></div><div id="ex-chart"></div></div>
+          <div class="card"><div class="card-head"><h2>Phases</h2></div><ul class="timeline" id="ex-phases"></ul></div>
+        </div>`;
+    },
+    async update() {
+      const x = state.experiment;
+      if (!x || !x.run) {
+        $("#ex-banner").innerHTML = `<div class="empty">No experiment has been recorded. Run <span class="mono">bench reliability</span> or <span class="mono">bench recovery</span>.</div>`;
+        $("#ex-tiles").innerHTML = ""; $("#ex-chart").innerHTML = ""; $("#ex-phases").innerHTML = "";
+        return;
+      }
+      const r = await api("/api/idempotency").catch(() => null);
+      if (r && r.ok) this.provider = r.body;
+      this.render(x);
+    },
+    render(x) {
+      const startedMs = Date.parse(x.markers[0].created_at), last = x.markers[x.markers.length - 1];
+      const params = Object.assign({}, ...x.markers.map((m) => m.params || {}));
+      const elapsed = Math.max(0, Math.round(((x.active ? Date.now() : Date.parse(last.created_at)) - startedMs) / 1000));
+      const phase = [...x.markers].reverse().find((m) => m.kind !== "end") || last;
+      $("#ex-banner").innerHTML = `
+        <div class="card-head"><h2>${esc(x.run)}</h2>${x.active ? chip("RETRYING", "RUNNING") : chip("DELIVERED", "FINISHED")}</div>
+        <p style="margin:6px 0"><strong>Phase:</strong> ${esc(phase.label)} <span class="muted">· ${elapsed} s since start</span></p>
+        <p class="muted small" style="margin-bottom:6px">What is being varied in this run:</p>
+        <div>${Object.entries(params).map(([k, v]) => `<span class="chip s-PUBLISHED">${esc(k.replace(/_/g, " "))}: ${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join(" ") || "-"}</div>`;
+
+      const s = state.summary, d = this.provider || {}, p = d.provider || {};
+      if (s) {
+        const sum = (o) => Object.values(o || {}).reduce((a, b) => a + b, 0), ev = s.events;
+        const created = sum(ev), backlog = (ev.PENDING || 0) + (ev.PROCESSING || 0) + (ev.RETRYING || 0);
+        let delivered = 0, total = 0, dead = 0;
+        for (const ch of CHANNELS) { const c = s.channels[ch] || {}; delivered += c.DELIVERED || 0; total += sum(c); dead += c.DLQ || 0; }
+        if (x.active) { this.samples.push({ t: Date.now(), v: backlog }); if (this.samples.length > 300) this.samples.shift(); }
+        $("#ex-tiles").innerHTML = [
+          tile("Events created", num(created), "accepted by the API"),
+          tile("Deliveries completed", num(delivered), `of ${num(total)} planned (${total ? Math.round(100 * delivered / total) : 0}%)`),
+          tile("Backlog", num(backlog), "events not yet published"),
+          tile("Dead-lettered", num(dead), "deliveries", dead > 0),
+          tile("Duplicates absorbed", num((d.duplicates_ignored_by_consumers || 0) + (d.duplicate_requests_suppressed_by_provider || 0)), "stopped by consumers or the provider"),
+          tile("Duplicate side effects", num(p.duplicate_effects), "must stay at 0", (p.duplicate_effects || 0) > 0),
+        ].join("");
+      }
+      $("#ex-chart").innerHTML = this.chart(x);
+      $("#ex-phases").innerHTML = x.markers.map((m) => `<li><div class="when">${fmtTime(m.created_at)}</div>${esc(m.label)}</li>`).join("");
+    },
+    chart(x) {
+      const pts = this.samples;
+      if (pts.length < 2) return `<div class="empty">Collecting samples…</div>`;
+      const W = 520, H = 140, t0 = pts[0].t, t1 = pts[pts.length - 1].t, vmax = Math.max(1, ...pts.map((q) => q.v));
+      const X = (t) => ((t - t0) / Math.max(1, t1 - t0)) * W, Y = (v) => H - 8 - (v / vmax) * (H - 20);
+      const line = pts.map((q) => `${X(q.t).toFixed(1)},${Y(q.v).toFixed(1)}`).join(" ");
+      const marks = x.markers.map((m) => Date.parse(m.created_at)).filter((t) => t > t0 && t < t1)
+        .map((t) => `<line x1="${X(t).toFixed(1)}" x2="${X(t).toFixed(1)}" y1="0" y2="${H}" stroke="currentColor" stroke-dasharray="3 3" opacity=".4"/>`).join("");
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Backlog over time">${marks}
+        <polyline points="${line}" fill="none" stroke="currentColor" stroke-width="2"/>
+        <text x="4" y="12" font-size="11" fill="currentColor">peak ${num(vmax)}</text></svg>`;
     },
   },
 
@@ -658,7 +728,7 @@ const sections = {
       const received = p.effects + ignored + suppressed;
       const dupEffects = p.duplicate_effects;
       const explain = {
-        normal: "Each channel's consumer saw the second copy, found the delivery already complete, and ignored it. The provider never saw a duplicate.",
+        normal: "Each channel's consumer absorbed the second copy: if the first was already delivered it ignored the copy, and if both were in progress at the same moment the provider recognised the idempotency key and suppressed it. Either way no second side effect happened.",
         provider: "The consumer shortcut was off, so the second copies reached the provider. It recognised the idempotency keys and suppressed them: the provider's protection works on its own.",
         control: "Both protections were off, so the duplicates caused duplicate side effects. This proves the counters can detect duplicates, so the zeros in the other runs mean something. These experiment rows were removed afterwards.",
       }[mode];
@@ -677,6 +747,8 @@ const sections = {
 };
 
 // ---------- shared rendering ----------
+// An instance's settings as "key value" text, so what a run is configured with is visible (D16).
+const settingsText = (c) => Object.entries(c || {}).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ") || "-";
 const tile = (label, value, note, warn) => `<div class="tile${warn ? " attention" : ""}"><div class="tile-label">${label}</div><div class="tile-value">${value}</div><div class="tile-note">${note}</div></div>`;
 
 function channelChips(deliveries) {
@@ -761,9 +833,12 @@ function show(route) {
 
 async function refresh() {
   try {
-    const [sum, ev] = await Promise.all([api("/api/summary"), api("/api/events?limit=100")]);
+    const [sum, ev, ex] = await Promise.all([api("/api/summary"), api("/api/events?limit=100"), api("/api/experiment").catch(() => null)]);
     if (!sum.ok || !ev.ok) throw new Error("API returned " + (sum.ok ? ev.status : sum.status));
     state.summary = sum.body; state.events = ev.body; state.updated = new Date(); state.error = null;
+    state.experiment = ex && ex.ok ? ex.body : null;
+    // The Experiment page is offered only while a run is active (or when you are already on it).
+    $("#nav-experiment").hidden = !(state.experiment && state.experiment.active) && state.route !== "experiment";
   } catch (err) { state.error = err; }
   $("#updated").textContent = state.error ? "Disconnected, retrying…" : "Updated " + fmtTime(state.updated.toISOString());
   const s = sections[state.route]; s.update.call(s);
