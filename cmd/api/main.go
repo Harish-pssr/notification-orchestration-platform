@@ -19,6 +19,7 @@ import (
 	"notifplatform/internal/broker"
 	"notifplatform/internal/config"
 	"notifplatform/internal/events"
+	"notifplatform/internal/experiment"
 	"notifplatform/internal/faults"
 	"notifplatform/internal/health"
 	"notifplatform/internal/httpapi"
@@ -138,6 +139,7 @@ func run() error {
 		Metrics:        apiMetrics,
 		MetricsHandler: metrics.Handler(reg),
 		Workers:        func(ctx context.Context) ([]health.Instance, error) { return health.List(ctx, pool) },
+		Experiment:     func(ctx context.Context) (experiment.State, error) { return experiment.Current(ctx, pool) },
 		Broker:         func(ctx context.Context) (httpapi.BrokerStats, error) { return brokerStats(ctx, js) },
 		StaleAfter:     staleAfter,
 		Faults:         faults.New(pool, faultsEnabled, time.Second, slog.Default()),

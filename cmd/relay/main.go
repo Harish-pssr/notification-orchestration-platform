@@ -89,6 +89,11 @@ func run() error {
 				return health.StatePaused
 			}
 			return health.StateRunning
+		}, map[string]any{
+			"lease":        config.Getenv("RELAY_LEASE", "30s"),
+			"batch":        config.GetenvInt("RELAY_BATCH", 10),
+			"poll":         config.Getenv("RELAY_POLL", "200ms"),
+			"max_attempts": config.GetenvInt("MAX_ATTEMPTS", 5),
 		}, log)
 
 	return r.Run(ctx)

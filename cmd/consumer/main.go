@@ -110,6 +110,11 @@ func run() error {
 				return health.StatePaused
 			}
 			return health.StateRunning
+		}, map[string]any{
+			"concurrency":  concurrency,
+			"batch":        config.GetenvInt("CONSUMER_BATCH", 10),
+			"max_attempts": maxAttempts,
+			"call_timeout": config.Getenv("CALL_TIMEOUT", "5s"),
 		}, log)
 
 	return c.Run(ctx)

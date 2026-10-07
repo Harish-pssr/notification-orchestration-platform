@@ -6,6 +6,7 @@ package health
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -24,22 +25,35 @@ const (
 
 // Beat records one heartbeat for an instance (an upsert keyed by its name).
 func Beat(ctx context.Context, pool *pgxpool.Pool, name, role, state string) error {
-	_, err := pool.Exec(ctx, `
-		INSERT INTO workers (name, role, state) VALUES ($1, $2, $3)
-		ON CONFLICT (name) DO UPDATE SET role = $2, state = $3, last_seen = now()`,
-		name, role, state)
+	return BeatWithConfig(ctx, pool, name, role, state, nil)
+}
+
+// BeatWithConfig is Beat plus the instance's settings (concurrency, poll interval, ...),
+// which the dashboard shows so a reader can see what a run is configured with (D16).
+func BeatWithConfig(ctx context.Context, pool *pgxpool.Pool, name, role, state string, config map[string]any) error {
+	if config == nil {
+		config = map[string]any{}
+	}
+	raw, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+	_, err = pool.Exec(ctx, `
+		INSERT INTO workers (name, role, state, config) VALUES ($1, $2, $3, $4)
+		ON CONFLICT (name) DO UPDATE SET role = $2, state = $3, config = $4, last_seen = now()`,
+		name, role, state, raw)
 	return err
 }
 
 // Run sends a heartbeat every interval until ctx is cancelled. state reports the
 // instance's current state (RUNNING or PAUSED). Instances that vanished long ago are
 // removed once at start-up so the table does not grow without bound.
-func Run(ctx context.Context, pool *pgxpool.Pool, name, role string, interval time.Duration, state func() string, log *slog.Logger) {
+func Run(ctx context.Context, pool *pgxpool.Pool, name, role string, interval time.Duration, state func() string, config map[string]any, log *slog.Logger) {
 	if _, err := pool.Exec(ctx, `DELETE FROM workers WHERE last_seen < now() - interval '1 hour'`); err != nil {
 		log.Warn("could not purge old workers", "error", err)
 	}
 	for {
-		if err := Beat(ctx, pool, name, role, state()); err != nil && ctx.Err() == nil {
+		if err := BeatWithConfig(ctx, pool, name, role, state(), config); err != nil && ctx.Err() == nil {
 			log.Warn("heartbeat failed", "error", err)
 		}
 		select {
@@ -58,12 +72,14 @@ type Instance struct {
 	State      string    `json:"state"`
 	AgeSeconds float64   `json:"age_s"`
 	StartedAt  time.Time `json:"started_at"`
+	// Config is what the instance reports about its own settings.
+	Config map[string]any `json:"config"`
 }
 
 // List returns every recorded instance, most recently seen first.
 func List(ctx context.Context, pool *pgxpool.Pool) ([]Instance, error) {
 	rows, err := pool.Query(ctx, `
-		SELECT name, role, state, extract(epoch FROM (now() - last_seen)), started_at
+		SELECT name, role, state, extract(epoch FROM (now() - last_seen)), started_at, config
 		FROM workers ORDER BY last_seen DESC, name`)
 	if err != nil {
 		return nil, fmt.Errorf("list workers: %w", err)
@@ -72,9 +88,11 @@ func List(ctx context.Context, pool *pgxpool.Pool) ([]Instance, error) {
 	out := []Instance{}
 	for rows.Next() {
 		var i Instance
-		if err := rows.Scan(&i.Name, &i.Role, &i.State, &i.AgeSeconds, &i.StartedAt); err != nil {
+		var raw []byte
+		if err := rows.Scan(&i.Name, &i.Role, &i.State, &i.AgeSeconds, &i.StartedAt, &raw); err != nil {
 			return nil, err
 		}
+		_ = json.Unmarshal(raw, &i.Config)
 		out = append(out, i)
 	}
 	return out, rows.Err()
