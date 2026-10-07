@@ -1,6 +1,6 @@
 name: notifplatform
 
-# Same file locally and on the VM (D10). Postgres and NATS are not published to
+# Same file locally and on a server (D10). Postgres and NATS are not published to
 # the host here; docker-compose.dev.yml adds those ports for local development.
 
 x-postgres: &postgres

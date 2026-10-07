@@ -1,7 +1,7 @@
 # Dev ports 15433/15434 are used because Windows reserves 5317-5816 (Hyper-V/WSL).
 # Local development only: publishes the infrastructure ports so `go test` and
 # psql on the host can reach them, and turns fault injection on with a known
-# token. Never use this file on the VM.
+# token. Never use this file on a public server.
 # Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 x-dev-faults: &dev-faults
   FAULTS_ENABLED: "true"

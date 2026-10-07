@@ -1,6 +1,6 @@
 # Architecture
 
-Status: describes what is built (outbox, concurrent relays, concurrent idempotent consumers, retries, dead letters, replay, fault injection, metrics, a dashboard, benchmarks and failure experiments). What is deliberately not handled is in [limitations.md](limitations.md); what happens at each crash point is in [crash-analysis.md](crash-analysis.md). References like "D4" or "D7" in code comments and below are numbered design decisions kept in the maintainer's private notes.
+Status: describes what is built (outbox, concurrent relays, concurrent idempotent consumers, retries, dead letters, replay, fault injection, metrics, a dashboard, benchmarks and failure experiments). What is deliberately not handled is in [limitations.md](limitations.md); what happens at each crash point is in [crash-analysis.md](crash-analysis.md). References like "D4" or "D7" in code comments and below are numbered design decisions; [design-decisions.md](design-decisions.md) explains each.
 
 ## Goal
 

@@ -46,38 +46,119 @@ figures describe one machine and are not a promise about any other.
 
 ## Run locally
 
-Requires Go and Docker Desktop.
+**You need:** Docker (Docker Desktop on Windows or macOS; Docker Engine with the Compose plugin on Linux).
+Go 1.27 is needed only to run the tests or build the benchmark tools on your machine; the stack itself is
+built inside Docker.
 
 ```bash
-scripts/up.sh          # build and start Postgres x2, NATS, migrations, API
-curl localhost:8080/healthz
-scripts/test.sh        # vet + all tests (integration tests need the stack up)
-scripts/down.sh -v     # stop and delete data
+git clone <repository-url> && cd <repository-folder>
+scripts/up.sh            # Linux, macOS, or Git Bash on Windows
+# Windows PowerShell:    powershell -ExecutionPolicy Bypass -File scripts\up.ps1
 ```
 
-Open http://localhost:8080 for the dashboard (create events, watch them flow).
-`scripts/up.sh` enables fault injection locally with the admin token `dev-token`
-(enter it in the dashboard header). On any other deployment faults are off unless
-you set `FAULTS_ENABLED=true` and `ADMIN_TOKEN` in `.env`.
+The first run builds the images, which takes a few minutes. It starts two Postgres databases (the platform's and
+the mock provider's), NATS JetStream, the migrations, the provider, the API and dashboard, one relay, three
+consumers (email, push, webhook) and Prometheus.
 
-Local-only ports: Postgres 15433 (platform) and 15434 (provider), NATS 4222/8222,
-API and dashboard 8080, provider 9090, Prometheus 9091, Grafana 3000.
-Postgres uses 15433/15434 because Windows reserves 5317-5816.
+Then:
 
-## Metrics
+- **Dashboard:** http://localhost:8080. A first visit opens "Getting started". The pages that change things
+  (Failures, Duplicates experiment, Dead letters replay, Health pause) need the admin token **`dev-token`**, which
+  you type into the box at the top right. It is a local development token; the production setup requires a real one.
+- **Check it is alive:** `curl localhost:8080/healthz`
+- **Send an event without the UI** (any unique string works as the key):
 
-Every process exposes Prometheus metrics (`/metrics`): the API and provider on their
-HTTP ports, the relay and each consumer on port 9100. Prometheus is part of the stack
-and finds every replica automatically. Grafana with a provisioned dashboard is
-optional:
+  ```bash
+  curl -X POST localhost:8080/api/events/payment-succeeded \
+    -H "Idempotency-Key: demo-1" -H "Content-Type: application/json" \
+    -d '{"account_id":"acct-1","amount_cents":4999,"currency":"USD"}'
+  ```
+
+  Sending the same request again returns the same event instead of creating a second one.
+- **Run the tests:** `scripts/test.sh` (vet plus every test; the integration tests need the stack to be up).
+  Add `-short` to run only the tests that need no infrastructure.
+- **Stop:** `scripts/down.sh` keeps the data; `scripts/down.sh -v` deletes it for a clean slate.
+
+All published ports are bound to `127.0.0.1` (this machine only):
+
+| Port | What |
+|---|---|
+| 8080 | API and dashboard |
+| 15433 | platform Postgres (user `notif`, password `notif`, database `platform`) |
+| 15434 | provider Postgres (same credentials, database `provider`) |
+| 4222, 8222 | NATS client port and NATS monitoring |
+| 9090 | mock provider |
+| 9091 | Prometheus |
+| 3000 | Grafana (optional, see below) |
+
+Postgres uses 15433 and 15434 because Windows reserves the range 5317 to 5816.
+
+## Look inside (beyond the dashboard)
+
+Everything the dashboard shows comes from these places, which you can query directly.
+
+**Logs.** Every process writes one JSON line per action to its container's output. The fields are `event_id`,
+`event_type`, `worker` or `consumer`, `attempt` and `status` (for example `published`, `delivered`, `retrying`,
+`dlq`, `fence_lost`, `broker_unavailable`):
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile grafana up -d
-# Prometheus: http://localhost:9091    Grafana (dev, no login): http://localhost:3000
+DC="docker compose -f docker-compose.yml -f docker-compose.dev.yml"
+$DC logs -f relay consumer-email                                              # follow two services
+$DC logs api relay consumer-email consumer-push consumer-webhook | grep <event_id>   # follow one event everywhere
 ```
 
-Live histograms are approximate by design; benchmark figures in
-[docs/benchmarks.md](docs/benchmarks.md) are computed from exact database timestamps.
+**The platform database** (the source of truth):
+
+```bash
+$DC exec postgres-platform psql -U notif -d platform     # or: psql postgres://notif:notif@localhost:15433/platform
+```
+
+```sql
+SELECT status, count(*) FROM outbox_events GROUP BY status;                    -- where events are
+SELECT channel, status, count(*) FROM channel_deliveries GROUP BY 1, 2;        -- where each delivery is
+SELECT id, status, attempts, last_error, created_at, published_at
+  FROM outbox_events ORDER BY created_at DESC LIMIT 5;                         -- the newest events
+SELECT * FROM channel_deliveries WHERE event_id = '<event id>';                -- one event's deliveries
+SELECT name, role, state, config, last_seen FROM workers ORDER BY role, name;  -- who is running, with settings
+SELECT * FROM fault_config;                                                    -- injected faults
+```
+
+**The provider database** (the "external" system, separate on purpose). It is where duplicate side effects would
+show up:
+
+```bash
+$DC exec postgres-provider psql -U notif -d provider
+```
+
+```sql
+SELECT count(*) AS requests, count(DISTINCT key) AS distinct_keys FROM requests;
+SELECT count(*) AS effects, count(*) - count(DISTINCT key) AS duplicate_side_effects FROM effects;   -- must be 0
+```
+
+The same counts are available as `curl localhost:9090/stats`.
+
+**The broker:** `curl "localhost:8222/jsz?streams=true&consumers=true"` shows the `NOTIFY` stream and each
+channel's consumer (messages pending, awaiting acknowledgement, redelivered).
+
+**Metrics.** `curl localhost:8080/metrics` serves the API's counters and the backlog gauges. Prometheus at
+http://localhost:9091 scrapes every process (Status, Targets lists them); try `notif_outbox_waiting_events` or
+`sum(rate(notif_events_created_total[1m]))`. The relay and consumers serve metrics on port 9100 inside the Docker
+network. Grafana with a provisioned dashboard is optional:
+
+```bash
+$DC --profile grafana up -d      # Grafana at http://localhost:3000, no login in development
+```
+
+Live histograms are approximate by design; the benchmark figures in [docs/benchmarks.md](docs/benchmarks.md) are
+computed from exact database timestamps.
+
+**If something does not work:**
+
+- *`Permission denied` running a script:* `chmod +x scripts/*.sh`.
+- *The integration tests fail immediately:* the stack is not running; start it with `scripts/up.sh`.
+- *Docker errors about the engine or a pipe:* Docker Desktop is not running.
+- *A port is already in use:* stop whatever uses it, or change the published port in `docker-compose.dev.yml`.
+- *Start from scratch:* `scripts/down.sh -v && scripts/up.sh`.
 
 ## Deployment
 

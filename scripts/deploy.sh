@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start or update the production stack on the VM (D10): checks the configuration, builds and
+# Start or update the production stack on a server (D10): checks the configuration, builds and
 # starts everything behind Caddy, waits for HTTPS to come up and runs the smoke test.
 #
 #   git pull && scripts/deploy.sh
