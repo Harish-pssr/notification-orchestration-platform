@@ -17,6 +17,7 @@ import (
 	"notifplatform/internal/backoff"
 	"notifplatform/internal/events"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/outbox"
 )
 
@@ -34,13 +35,17 @@ type Config struct {
 
 // Relay is one relay worker. Run several instances for concurrency.
 type Relay struct {
-	cfg    Config
-	store  *outbox.Store
-	js     jetstream.JetStream
-	log    *slog.Logger
-	faults *faults.Registry // nil means no fault injection
-	paused atomic.Bool      // true while the run loop is idle because of a pause fault
+	cfg     Config
+	store   *outbox.Store
+	js      jetstream.JetStream
+	log     *slog.Logger
+	faults  *faults.Registry // nil means no fault injection
+	metrics *metrics.Relay   // nil means no metrics
+	paused  atomic.Bool      // true while the run loop is idle because of a pause fault
 }
+
+// SetMetrics attaches the relay's metrics. Call it before Run.
+func (r *Relay) SetMetrics(m *metrics.Relay) { r.metrics = m }
 
 // SetFaults attaches the fault registry (D8). Call it before Run.
 func (r *Relay) SetFaults(f *faults.Registry) { r.faults = f }
@@ -91,7 +96,12 @@ func (r *Relay) Run(ctx context.Context) error {
 
 // RunOnce claims one batch and processes it, returning how many rows it claimed.
 func (r *Relay) RunOnce(ctx context.Context) (int, error) {
+	claimStart := time.Now()
 	claimed, err := r.store.Claim(ctx, r.cfg.Name, r.cfg.Lease, r.cfg.Batch)
+	if err == nil && len(claimed) > 0 {
+		// Only rounds that found work are timed: idle polls would swamp the histogram.
+		r.metrics.Claimed(len(claimed), time.Since(claimStart))
+	}
 	if err != nil || len(claimed) == 0 {
 		return 0, err
 	}
@@ -122,7 +132,10 @@ func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox
 		return
 	}
 
-	if err := r.Publish(ctx, c, channels); err != nil {
+	publishStart := time.Now()
+	err := r.Publish(ctx, c, channels)
+	r.metrics.PublishDone(time.Since(publishStart), channelNames(channels), err)
+	if err != nil {
 		log.Warn("publish failed", "error", err, "status", "publish_failed")
 		r.finishFailed(ctx, log, c, err.Error(), c.Attempts >= r.cfg.MaxAttempts)
 		return
@@ -146,13 +159,16 @@ func (r *Relay) process(ctx context.Context, c outbox.Claimed, channels []outbox
 		}
 	}
 
+	finishStart := time.Now()
 	ok, err := r.store.MarkPublished(ctx, c, r.cfg.Name)
+	r.metrics.Finished(time.Since(finishStart), err == nil && ok)
 	switch {
 	case err != nil:
 		// The messages are already in the broker. The row stays PROCESSING and will
 		// be republished after the lease expires: a duplicate, absorbed downstream.
 		log.Error("mark published failed", "error", err)
 	case !ok:
+		r.metrics.FenceLost()
 		log.Warn("lease lost before finishing; another relay owns this event", "status", "fence_lost")
 	default:
 		log.Info("published", "status", "published", "channels", len(channels))
@@ -219,10 +235,21 @@ func (r *Relay) finishFailed(ctx context.Context, log *slog.Logger, c outbox.Cla
 	case err != nil:
 		log.Error("mark failed failed", "error", err)
 	case !ok:
+		r.metrics.FenceLost()
 		log.Warn("lease lost before recording failure", "status", "fence_lost")
 	case dlq:
+		r.metrics.DeadLettered()
 		log.Error("event dead-lettered", "status", "dlq", "reason", reason)
 	default:
 		log.Info("scheduled retry", "status", "retrying", "in", delay)
 	}
+}
+
+// channelNames lists the channels of a publish, for the per-channel message counter.
+func channelNames(pending []outbox.Pending) []string {
+	names := make([]string, len(pending))
+	for i, p := range pending {
+		names[i] = string(p.Channel)
+	}
+	return names
 }

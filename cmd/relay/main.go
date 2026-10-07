@@ -18,6 +18,7 @@ import (
 	"notifplatform/internal/config"
 	"notifplatform/internal/faults"
 	"notifplatform/internal/health"
+	"notifplatform/internal/metrics"
 	"notifplatform/internal/outbox"
 	"notifplatform/internal/relay"
 )
@@ -69,6 +70,11 @@ func run() error {
 		BackoffCap:     config.GetenvDuration("BACKOFF_CAP", 30*time.Second),
 		PublishTimeout: config.GetenvDuration("PUBLISH_TIMEOUT", 5*time.Second),
 	}, outbox.NewStore(pool), js, log)
+
+	// Metrics (D9): served on their own port because the relay has no HTTP server.
+	reg := metrics.NewRegistry()
+	r.SetMetrics(metrics.NewRelay(reg))
+	go metrics.Serve(ctx, config.Getenv("METRICS_ADDR", ":9100"), reg, log)
 
 	// Fault injection (D8): a no-op unless FAULTS_ENABLED=true.
 	fr := faults.New(pool, config.Getenv("FAULTS_ENABLED", "false") == "true",
