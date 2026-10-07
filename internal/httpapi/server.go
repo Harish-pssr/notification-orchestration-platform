@@ -9,6 +9,7 @@ import (
 
 	"notifplatform/internal/admin"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/health"
 	"notifplatform/internal/outbox"
 	"notifplatform/web"
 )
@@ -21,6 +22,11 @@ type Check func(ctx context.Context) error
 type Deps struct {
 	Checks map[string]Check
 	Store  *outbox.Store
+
+	// Health (D9). Each is optional: a missing one is simply left out of the response.
+	Workers    func(ctx context.Context) ([]health.Instance, error)
+	Broker     func(ctx context.Context) (BrokerStats, error)
+	StaleAfter time.Duration // a heartbeat older than this means the instance is gone
 
 	Faults        *faults.Registry
 	FaultsEnabled bool   // FAULTS_ENABLED: the admin endpoints exist only when true
@@ -41,6 +47,13 @@ func NewHandler(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/summary", e.summary)
 	mux.HandleFunc("GET /api/events", e.list)
 	mux.HandleFunc("GET /api/events/{id}", e.get)
+
+	staleAfter := d.StaleAfter
+	if staleAfter <= 0 {
+		staleAfter = 10 * time.Second
+	}
+	hh := &healthHandler{store: d.Store, workers: d.Workers, broker: d.Broker, staleAfter: staleAfter}
+	mux.HandleFunc("GET /api/health", hh.get)
 
 	mux.HandleFunc("GET /api/dead-letters", e.deadLetters)
 	// Replay is an operator action, not fault injection, so it needs the token but

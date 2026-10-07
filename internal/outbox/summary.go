@@ -26,6 +26,32 @@ type Summary struct {
 	} `json:"latency"`
 }
 
+// Backlog counts work that is still waiting: outbox events not yet published, and
+// deliveries not yet done per channel. Both queries match the partial indexes (D3),
+// so they stay cheap however many finished rows exist.
+func (s *Store) Backlog(ctx context.Context) (outboxWaiting int64, deliveries map[string]int64, err error) {
+	if err = s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM outbox_events WHERE status IN ('PENDING', 'RETRYING', 'PROCESSING')`).Scan(&outboxWaiting); err != nil {
+		return 0, nil, fmt.Errorf("count outbox backlog: %w", err)
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT channel, count(*) FROM channel_deliveries WHERE status IN ('PENDING', 'RETRYING') GROUP BY channel`)
+	if err != nil {
+		return 0, nil, fmt.Errorf("count delivery backlog: %w", err)
+	}
+	defer rows.Close()
+	deliveries = map[string]int64{}
+	for rows.Next() {
+		var ch string
+		var n int64
+		if err := rows.Scan(&ch, &n); err != nil {
+			return 0, nil, err
+		}
+		deliveries[ch] = n
+	}
+	return outboxWaiting, deliveries, rows.Err()
+}
+
 // DuplicateSummary returns how many deliveries completed and how many duplicate
 // messages the consumers recognised and ignored (D5).
 // With a non-nil eventID the counts cover only that event.

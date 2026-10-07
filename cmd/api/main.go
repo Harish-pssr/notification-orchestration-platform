@@ -1,4 +1,4 @@
-// Command api serves the REST API and, later, the dashboard.
+// Command api serves the REST API and the dashboard.
 package main
 
 import (
@@ -14,9 +14,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 
+	"notifplatform/internal/broker"
 	"notifplatform/internal/config"
+	"notifplatform/internal/events"
 	"notifplatform/internal/faults"
+	"notifplatform/internal/health"
 	"notifplatform/internal/httpapi"
 	"notifplatform/internal/outbox"
 )
@@ -26,6 +30,35 @@ func main() {
 		slog.Error("api failed", "error", err)
 		os.Exit(1)
 	}
+}
+
+// brokerStats reads the stream and each channel's durable consumer from JetStream:
+// how many messages are waiting, in flight, or have been redelivered.
+func brokerStats(ctx context.Context, js jetstream.JetStream) (httpapi.BrokerStats, error) {
+	stats := httpapi.BrokerStats{Channels: map[string]httpapi.BrokerChannel{}}
+	stream, err := js.Stream(ctx, broker.StreamName)
+	if err != nil {
+		return stats, errors.New("the broker stream does not exist yet")
+	}
+	info, err := stream.Info(ctx)
+	if err != nil {
+		return stats, errors.New("could not read the broker stream")
+	}
+	stats.StreamMessages = info.State.Msgs
+	for _, ch := range events.AllChannels {
+		cons, err := stream.Consumer(ctx, string(ch))
+		if err != nil {
+			continue // that channel's consumer has not started yet
+		}
+		ci, err := cons.Info(ctx)
+		if err != nil {
+			continue
+		}
+		stats.Channels[string(ch)] = httpapi.BrokerChannel{
+			Pending: ci.NumPending, AckPending: ci.NumAckPending, Redelivered: ci.NumRedelivered,
+		}
+	}
+	return stats, nil
 }
 
 func run() error {
@@ -48,9 +81,17 @@ func run() error {
 	}
 	defer nc.Close()
 
+	js, err := jetstream.New(nc)
+	if err != nil {
+		return fmt.Errorf("jetstream: %w", err)
+	}
+
 	faultsEnabled := config.Getenv("FAULTS_ENABLED", "false") == "true"
 	handler := httpapi.NewHandler(httpapi.Deps{
 		Store:         outbox.NewStore(pool),
+		Workers:       func(ctx context.Context) ([]health.Instance, error) { return health.List(ctx, pool) },
+		Broker:        func(ctx context.Context) (httpapi.BrokerStats, error) { return brokerStats(ctx, js) },
+		StaleAfter:    config.GetenvDuration("HEARTBEAT_STALE_AFTER", 10*time.Second),
 		Faults:        faults.New(pool, faultsEnabled, time.Second, slog.Default()),
 		FaultsEnabled: faultsEnabled,
 		AdminToken:    os.Getenv("ADMIN_TOKEN"),
