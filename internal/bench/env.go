@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
@@ -25,6 +26,7 @@ type Environment struct {
 	MaxClockMHz int       `json:"max_clock_mhz,omitempty"` // nominal maximum
 	PowerSource string    `json:"power_source"`            // "ac", "battery" or "unknown"
 	PowerPlan   string    `json:"power_plan,omitempty"`
+	VMProduct   string    `json:"vm_product,omitempty"` // Linux: the hypervisor's product name, when it reports one
 	DockerCPUs  int       `json:"docker_cpus,omitempty"`
 	DockerMemGB float64   `json:"docker_mem_gb,omitempty"`
 }
@@ -50,6 +52,30 @@ func planName(line string) string {
 		return strings.TrimSpace(line[open+1 : closeIdx])
 	}
 	return strings.TrimSpace(line)
+}
+
+// cpuFromProcInfo reads the CPU model and current clock (MHz) from /proc/cpuinfo text.
+// It takes the first processor entry.
+func cpuFromProcInfo(text string) (model string, mhz int) {
+	for _, line := range strings.Split(text, "\n") {
+		key, value, ok := strings.Cut(line, ":")
+		if !ok {
+			continue
+		}
+		switch strings.TrimSpace(key) {
+		case "model name":
+			if model == "" {
+				model = strings.TrimSpace(value)
+			}
+		case "cpu MHz":
+			if mhz == 0 {
+				if f, err := strconv.ParseFloat(strings.TrimSpace(value), 64); err == nil {
+					mhz = int(f)
+				}
+			}
+		}
+	}
+	return model, mhz
 }
 
 // OnBattery reports whether the machine is known to be running on battery.
@@ -97,6 +123,18 @@ $plan = (powercfg /getactivescheme) -join ' ';
 					e.PowerSource = batteryPowerSource(raw.Battery)
 				}
 			}
+		}
+	}
+
+	if runtime.GOOS == "linux" {
+		// A server has no battery to run down. The CPU model and the hypervisor's product name
+		// are what make a result from a cloud VM interpretable.
+		e.PowerSource = "ac"
+		if raw, err := os.ReadFile("/proc/cpuinfo"); err == nil {
+			e.CPUModel, e.ClockMHz = cpuFromProcInfo(string(raw))
+		}
+		if raw, err := os.ReadFile("/sys/devices/virtual/dmi/id/product_name"); err == nil {
+			e.VMProduct = strings.TrimSpace(string(raw))
 		}
 	}
 

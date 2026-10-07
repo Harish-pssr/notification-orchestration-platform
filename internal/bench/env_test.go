@@ -56,3 +56,21 @@ func TestWarningFlagsBatteryAndPowerSaver(t *testing.T) {
 		t.Errorf("unknown power source warned: %s", w)
 	}
 }
+
+func TestCPUFromProcInfoTakesTheFirstProcessor(t *testing.T) {
+	text := `processor	: 0
+model name	: Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz
+cpu MHz		: 2899.998
+
+processor	: 1
+model name	: Something Else
+cpu MHz		: 1000.000
+`
+	model, mhz := cpuFromProcInfo(text)
+	if model != "Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz" || mhz != 2899 {
+		t.Errorf("got %q, %d MHz", model, mhz)
+	}
+	if model, mhz := cpuFromProcInfo("nothing useful here"); model != "" || mhz != 0 {
+		t.Errorf("empty input gave %q, %d", model, mhz)
+	}
+}
