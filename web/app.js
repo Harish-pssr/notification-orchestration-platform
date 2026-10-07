@@ -115,10 +115,11 @@ const sections = {
       root.innerHTML = `
         <div class="card">
           <div class="card-head"><h2>What this is</h2></div>
-          <div class="cols-2 prose">
-            <p>When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
-            <p>It is the kind of plumbing that sits behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+          <div class="prose">
+            <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+            <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
           </div>
+          <div class="flow" aria-label="The path of an event"><span>Event</span><i>→</i><span>API and database</span><i>→</i><span>Outbox</span><i>→</i><span>Relay</span><i>→</i><span>Broker</span><i>→</i><span>Consumers</span><i>→</i><span>Provider</span></div>
         </div>
 
         <div class="card">
@@ -193,17 +194,17 @@ const sections = {
 
   overview: {
     title: "Overview",
-    desc: "A live picture of the pipeline: how many events exist, where they are right now, and whether anything needs attention. Counted exactly from the database.",
+    desc: "A live picture of the pipeline: how many events exist, where they are right now, and whether anything needs attention.",
     mount(root) {
       root.innerHTML = `
         <div class="tiles" id="ov-tiles"></div>
         <div class="card">
-          <div class="card-head"><h2>Pipeline</h2><p>Where events are right now, from saved to delivered. New here? <a href="#/start">Start here</a> explains each step.</p></div>
+          <div class="card-head"><h2>How events are flowing</h2><p>New here? <a href="#/start">Start here</a> explains each step.</p></div>
           <div class="pipeline" id="ov-pipeline"></div>
         </div>
         <div class="card">
           <div class="card-head"><h2>Latest events</h2><a href="#/events">View all events</a></div>
-          <div class="table-wrap"><table><thead><tr><th>Event</th><th>Type</th><th>Channels</th><th>Created</th></tr></thead>
+          <div class="table-wrap"><table><thead><tr><th>Event</th><th>Type</th><th>Email</th><th>Push</th><th>Webhook</th><th>Created</th></tr></thead>
           <tbody id="ov-recent"></tbody></table></div>
         </div>`;
       root.addEventListener("click", rowClick);
@@ -223,30 +224,29 @@ const sections = {
       const lat = s.latency;
       $("#ov-tiles").innerHTML = [
         tile("Events created", num(created), "saved by the API"),
-        tile("Waiting for relay", num(backlog), "saved, not yet passed on; normally near 0"),
-        tile("Published to broker", num(ev.PUBLISHED || 0), "handed to the message broker"),
         tile("Deliveries completed", `${num(delivered)}<span class="muted small"> / ${num(total)}</span>`, "one per event and channel"),
-        tile("Needs attention", num(trouble), "retrying or gave up; 0 is healthy", trouble > 0),
-        tile("Latency (p50 / p95)", lat.count ? fmtPair(lat.p50_ms, lat.p95_ms) : "–", `saved to delivered, last ${num(lat.count)} deliveries`),
+        tile("Needs attention", num(trouble), trouble ? "retrying or gave up" : "nothing is stuck", trouble > 0),
+        tile("Latency (p50 / p95)", lat.count ? fmtPair(lat.p50_ms, lat.p95_ms) : "–", "saved to delivered, recent events"),
       ].join("");
 
       $("#ov-pipeline").innerHTML = `
-        <div class="node"><h3>1 · API</h3><div class="big">${num(created)}</div><div class="sub">saves each event with its business change in one transaction</div></div>
+        <div class="node"><h3>1 · API</h3><div class="big">${num(created)}</div><div class="sub">saved in one transaction</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>2 · Outbox</h3><div class="big">${num(backlog)}</div><div class="sub">saved, waiting for the relay to pick them up (normally near 0)${ev.DLQ ? ` · ${num(ev.DLQ)} dead-lettered` : ""}</div></div>
+        <div class="node"><h3>2 · Outbox</h3><div class="big">${num(backlog)}</div><div class="sub">waiting for the relay${ev.DLQ ? ` · ${num(ev.DLQ)} gave up` : ""}</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>3 · Relay → Broker</h3><div class="big">${num(ev.PUBLISHED || 0)}</div><div class="sub">handed to the message broker (NATS), which keeps them until a consumer confirms</div></div>
+        <div class="node"><h3>3 · Broker</h3><div class="big">${num(ev.PUBLISHED || 0)}</div><div class="sub">handed to the message broker</div></div>
         <div class="arrow" aria-hidden="true">→</div>
         <div class="fan">${CHANNELS.map((ch) => {
           const c = s.channels[ch] || {};
-          const inflight = (c.PENDING || 0) + (c.RETRYING || 0);
-          return `<div class="channel-node"><strong>${ch}</strong><span class="big">${num(c.DELIVERED || 0)}</span>
-            <div class="channel-stats"><span>delivered</span><span title="Waiting for a consumer, or being retried">${num(inflight)} not yet delivered</span>${c.DLQ ? `<span style="color:var(--bad)">${num(c.DLQ)} dead-lettered</span>` : ""}</div></div>`;
+          const open = (c.PENDING || 0) + (c.RETRYING || 0);
+          const extra = [open ? `${num(open)} not yet delivered` : "", c.DLQ ? `<span style="color:var(--bad)">${num(c.DLQ)} dead-lettered</span>` : ""].filter(Boolean);
+          return `<div class="channel-node"><strong>${ch}</strong><span class="big">${num(c.DELIVERED || 0)}<span class="muted small"> delivered</span></span>
+            ${extra.length ? `<div class="channel-stats">${extra.map((x) => `<span>${x}</span>`).join("")}</div>` : ""}</div>`;
         }).join("")}</div>`;
 
-      const recent = state.events.slice(0, 8);
+      const recent = state.events.slice(0, 6);
       $("#ov-recent").innerHTML = recent.length ? recent.map((e) => eventRow(e, false)).join("")
-        : `<tr><td colspan="4" class="empty">No events yet. <a href="#/create">Create one</a> and watch it travel through the pipeline.</td></tr>`;
+        : `<tr><td colspan="6" class="empty">No events yet. <a href="#/create">Create one</a> and watch it travel through the pipeline.</td></tr>`;
     },
   },
 
@@ -255,6 +255,7 @@ const sections = {
     desc: "Send an event to the API and watch it flow through. The API saves it, with a to-do record, in one database transaction; the relay then delivers it on every channel that event type is routed to.",
     mount(root) {
       root.innerHTML = `
+        <div id="cr-notice"></div>
         <div class="card">
           <div class="card-head"><h2>1 · Choose an event type</h2><p>Each type is delivered on the channels shown on its card.</p></div>
           <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
@@ -274,7 +275,6 @@ const sections = {
               <button class="btn btn-primary btn-lg" id="cr-send">Send event</button>
               <button class="btn" id="cr-resend" disabled title="Repeat the last request with the same key">Resend last request</button>
             </div>
-            <p class="small" id="cr-needs"></p>
           </div>
           <div class="card">
             <div class="card-head"><h2>3 · Watch it happen</h2><p>Requests sent from this page</p></div>
@@ -377,7 +377,7 @@ const sections = {
       // On a public deployment writes need the admin token; viewing never does.
       const needs = state.config.create_requires_token && !getToken();
       $("#cr-send").disabled = needs;
-      $("#cr-needs").textContent = needs ? "Creating events needs the admin token (top right). Viewing everything else does not." : "";
+      setNotice("cr-notice", needs ? "Creating events needs the admin token (top right). Viewing everything else does not." : "");
     },
   },
 
@@ -397,7 +397,7 @@ const sections = {
             <span class="spacer"></span><span class="muted small" id="ev-count"></span>
           </div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Event</th><th>Type</th><th>Outbox</th><th>Attempts</th><th>Channels</th><th>Created</th></tr></thead>
+            <thead><tr><th>Event</th><th>Type</th><th>Outbox</th><th>Attempts</th><th>Email</th><th>Push</th><th>Webhook</th><th>Created</th></tr></thead>
             <tbody id="ev-body"></tbody></table></div>
         </div>`;
       $("#ev-q").oninput = (e) => { state.filters.q = e.target.value.trim().toLowerCase(); this.update(); };
@@ -414,24 +414,20 @@ const sections = {
           (f.state === "progress" && !attention(e) && !completed(e))));
       $("#ev-count").textContent = `${rows.length} of ${state.events.length} shown (latest ${state.events.length})`;
       $("#ev-body").innerHTML = rows.length ? rows.map((e) => eventRow(e, true)).join("")
-        : `<tr><td colspan="6" class="empty">${state.events.length ? "No events match these filters." : "No events yet."}</td></tr>`;
+        : `<tr><td colspan="8" class="empty">${state.events.length ? "No events match these filters." : "No events yet."}</td></tr>`;
     },
   },
 
   health: {
     title: "Health",
-    desc: "Which parts of the system are running and how much work is waiting in front of each. Workers come and go, so health is per role (the relay, or one channel's consumer): UP while at least one instance reports in, DOWN when none does, PAUSED when an operator paused it.",
+    desc: "Which parts of the system are running, and how much work is waiting in front of each. A part (the relay, or one channel's consumer) is UP while at least one of its instances reports in.",
     data: null,
+    showGone: false,
     mount(root) {
       root.innerHTML = `
-        <div id="hl-roles" class="tiles"></div>
-        <div class="card">
-          <div class="card-head"><h2>Instances</h2><p id="hl-note" class="muted small"></p></div>
-          <div class="table-wrap"><table>
-            <thead><tr><th>Instance</th><th>Role</th><th>State</th><th>Settings</th><th>Last heartbeat</th></tr></thead>
-            <tbody id="hl-instances"></tbody></table></div>
-          <p style="margin-top:10px"><button class="btn btn-ghost" id="hl-gone" hidden></button></p>
-        </div>`;
+        <div id="hl-notice"></div>
+        <div class="toolbar"><span class="muted small" id="hl-note"></span><span class="spacer"></span><button class="btn btn-ghost" id="hl-gone" hidden></button></div>
+        <div id="hl-roles"></div>`;
       root.addEventListener("click", async (e) => {
         if (e.target.closest("#hl-gone")) { this.showGone = !this.showGone; this.render(); return; }
         const b = e.target.closest("button[data-pause]");
@@ -451,44 +447,46 @@ const sections = {
     },
     render() {
       const d = this.data, usable = state.config.faults_enabled && getToken();
+      setNotice("hl-notice", usable ? "" : !state.config.faults_enabled
+        ? "Fault injection is switched off on this server, so Pause and Resume are not available."
+        : "Enter the admin token (top right) to use Pause and Resume.");
       const pretty = { "relay": "Relay", "consumer-email": "Email consumer", "consumer-push": "Push consumer", "consumer-webhook": "Webhook consumer" };
       const pausePoint = { "relay": "relay.pause", "consumer-email": "consumer.email.pause", "consumer-push": "consumer.push.pause", "consumer-webhook": "consumer.webhook.pause" };
       const statusChip = { UP: chip("DELIVERED", "UP"), DOWN: chip("DLQ", "DOWN"), PAUSED: chip("RETRYING", "PAUSED") };
 
-      $("#hl-roles").innerHTML = (d.roles || []).map((role) => {
-        let backlog = "";
-        if (role.name === "relay") {
-          backlog = d.backlog ? `${num(d.backlog.outbox)} event(s) waiting in the outbox` : "";
-        } else {
-          const ch = role.name.replace("consumer-", ""), b = d.broker && d.broker.channels && d.broker.channels[ch];
-          const waiting = d.backlog && d.backlog.deliveries ? (d.backlog.deliveries[ch] || 0) : 0;
-          backlog = (b ? `${num(b.pending)} waiting in broker, ${num(b.ack_pending)} in flight<br>` : "") + `${num(waiting)} not yet delivered`;
-        }
-        const paused = role.status === "PAUSED";
-        const btn = `<button class="btn" style="margin-top:8px" data-pause="${pausePoint[role.name]}" data-action="${paused ? "resume" : "pause"}" ${usable ? "" : "disabled"}>${paused ? "Resume" : "Pause"}</button>`;
-        return `<div class="tile"><div class="tile-label">${pretty[role.name] || esc(role.name)}</div>
-          <div style="margin:4px 0">${statusChip[role.status] || esc(role.status)}</div>
-          <div class="tile-note">${role.live} live instance${role.live === 1 ? "" : "s"}</div>
-          <div class="tile-note" style="margin-top:6px">${backlog}</div>${btn}</div>`;
-      }).join("");
-
-      // Instances that went away recently stay visible as evidence of an outage; ones
-      // gone for more than five minutes (old deploys) are hidden as noise.
-      const all = (d.roles || []).flatMap((role) => role.instances).filter((i) => i.fresh || i.age_s < 300);
-      // Stopped instances (scaled down or restarted) look like a fault, so they are hidden unless asked for.
-      const stopped = all.filter((i) => !i.fresh);
-      const shown = this.showGone ? all : all.filter((i) => i.fresh);
+      // Instances that stopped (scaled down or restarted) look like a fault, so they are hidden unless asked for.
+      const stopped = (d.roles || []).flatMap((role) => role.instances).filter((i) => !i.fresh && i.age_s < 300);
       const goneBtn = $("#hl-gone");
       goneBtn.hidden = stopped.length === 0;
       goneBtn.textContent = this.showGone ? "Hide stopped instances" : `Show ${stopped.length} stopped instance${stopped.length === 1 ? "" : "s"}`;
-      $("#hl-instances").innerHTML = shown.length ? shown.map((i) => `<tr>
-          <td class="mono">${esc(i.name)}</td><td>${esc(i.role)}</td>
-          <td>${i.fresh ? (i.state === "PAUSED" ? chip("RETRYING", "PAUSED") : chip("DELIVERED", "RUNNING")) : chip("DLQ", "GONE")}</td>
-          <td class="muted small">${esc(settingsText(i.config))}</td>
-          <td class="muted">${i.age_s < 2 ? "just now" : Math.round(i.age_s) + " s ago"}</td></tr>`).join("")
-        : `<tr><td colspan="5" class="empty">No worker has sent a heartbeat yet.</td></tr>`;
-      $("#hl-note").textContent = `Running means a heartbeat within the last ${d.stale_after_s} s. Instances that stopped (scaled down or restarted) are hidden by default.` +
-        (usable ? "" : " Pause and resume need the admin token and fault injection enabled.");
+      $("#hl-note").textContent = `Running means a heartbeat within the last ${d.stale_after_s} s.`;
+
+      $("#hl-roles").innerHTML = (d.roles || []).map((role) => {
+        let backlog;
+        if (role.name === "relay") {
+          backlog = d.backlog ? `${num(d.backlog.outbox)} event${d.backlog.outbox === 1 ? "" : "s"} waiting in the outbox` : "";
+        } else {
+          const ch = role.name.replace("consumer-", ""), b = d.broker && d.broker.channels && d.broker.channels[ch];
+          const waiting = d.backlog && d.backlog.deliveries ? (d.backlog.deliveries[ch] || 0) : 0;
+          backlog = [b ? `${num(b.pending)} waiting in the broker` : "", b ? `${num(b.ack_pending)} being processed` : "", `${num(waiting)} not yet delivered`].filter(Boolean).join(" · ");
+        }
+        const paused = role.status === "PAUSED";
+        const rows = role.instances.filter((i) => i.fresh || (this.showGone && i.age_s < 300));
+        const instRow = (i) => `<div class="inst-row">
+            <span class="mono inst-name">${esc(i.name)}</span>
+            ${i.fresh ? (i.state === "PAUSED" ? chip("RETRYING", "PAUSED") : chip("DELIVERED", "RUNNING")) : chip("DLQ", "STOPPED")}
+            <span class="inst-settings muted small">${esc(settingsText(i.config))}</span>
+            <span class="inst-age muted small">${i.age_s < 2 ? "just now" : Math.round(i.age_s) + " s ago"}</span></div>`;
+        return `<div class="card role">
+          <div class="role-head">
+            <div class="role-title"><h2>${pretty[role.name] || esc(role.name)}</h2>${statusChip[role.status] || esc(role.status)}
+              <span class="muted small">${role.live} live instance${role.live === 1 ? "" : "s"}</span></div>
+            <div class="role-backlog muted small">${backlog}</div>
+            <button class="btn" data-pause="${pausePoint[role.name]}" data-action="${paused ? "resume" : "pause"}" ${usable ? "" : "disabled"}>${paused ? "Resume" : "Pause"}</button>
+          </div>
+          <div class="inst-list">${rows.length ? rows.map(instRow).join("") : `<div class="inst-empty muted small">No instance is reporting in.</div>`}</div>
+        </div>`;
+      }).join("");
     },
   },
 
@@ -568,13 +566,13 @@ const sections = {
     data: { deliveries: [], events: [] },
     mount(root) {
       root.innerHTML = `
+        <div id="dl-notice"></div>
         <div class="card">
           <div class="card-head"><h2>Dead-lettered deliveries</h2><p id="dl-count" class="muted small"></p></div>
           <div class="toolbar">
             <button class="btn btn-primary" id="dl-replay-sel" disabled>Replay selected</button>
             <select id="dl-channel" aria-label="Channel to replay"><option value="">All channels</option><option>email</option><option>push</option><option>webhook</option></select>
             <button class="btn" id="dl-replay-all" disabled>Replay all in this channel</button>
-            <span class="spacer"></span><span id="dl-needs" class="muted small"></span>
           </div>
           <div class="table-wrap"><table>
             <thead><tr><th></th><th>Event</th><th>Type</th><th>Channel</th><th>Attempts</th><th>Replays</th><th>Reason</th></tr></thead>
@@ -626,7 +624,7 @@ const sections = {
       const token = !!getToken();
       $("#dl-replay-sel").disabled = !token || this.selected.size === 0;
       $("#dl-replay-all").disabled = !token || this.data.deliveries.length === 0;
-      $("#dl-needs").textContent = token ? "" : "Enter the admin token (top right) to replay.";
+      setNotice("dl-notice", token ? "" : "Enter the admin token (top right) to replay deliveries.");
     },
     async call(body) {
       const r = await adminApi("POST", "/api/replay", body);
@@ -665,35 +663,45 @@ const sections = {
 
   faults: {
     title: "Failure controls",
-    desc: "Break things on purpose and watch the guarantees hold. These controls need the admin token, and they are switched off on public deployments.",
+    desc: "Break things on purpose and watch the guarantees hold. Each card is one kind of failure; the status bar shows what is currently injected.",
     mount(root) {
       root.innerHTML = `
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head"><h2>Provider (external system)</h2><p>Make a channel's provider misbehave</p></div>
-            <div class="row">
+        <div id="fc-notice"></div>
+        <div class="card status-bar">
+          <div><h2>Currently injected</h2><div id="fc-active" class="muted">Loading…</div></div>
+          <button class="btn" id="fc-restore-all">Restore everything</button>
+        </div>
+        <div class="scenario-grid">
+          <div class="card scenario">
+            <h2>A provider starts failing</h2>
+            <p class="muted">The external service for one channel returns errors or answers slowly. Temporary errors are retried with growing delays and then dead-lettered; a 4xx error goes straight to <a href="#/dlq">Dead letters</a>. A delay longer than the consumer's 5 s timeout counts as a failure.</p>
+            <div class="fields-grid">
               <label class="field"><span>Channel</span><select id="fc-channel"><option>webhook</option><option>email</option><option>push</option></select></label>
               <label class="field"><span>Respond with</span><select id="fc-status">
-                <option value="500">500 Server error (transient)</option><option value="503">503 Unavailable (transient)</option>
-                <option value="429">429 Too many requests (transient, Retry-After)</option><option value="400">400 Bad request (permanent)</option>
+                <option value="500">500 Server error (temporary)</option><option value="503">503 Unavailable (temporary)</option>
+                <option value="429">429 Too many requests (temporary)</option><option value="400">400 Bad request (permanent)</option>
                 <option value="0">No error, delay only</option></select></label>
+              <label class="field"><span>Extra delay (ms)</span><input type="number" id="fc-delay" min="0" max="60000" value="0"></label>
+              <label class="field"><span>For the next N calls</span><input type="number" id="fc-count" min="1" placeholder="all"></label>
             </div>
-            <div class="row">
-              <label class="field" style="width:140px"><span>Extra delay (ms)</span><input type="number" id="fc-delay" min="0" max="60000" value="0"></label>
-              <label class="field" style="width:150px"><span>Affect next N calls</span><input type="number" id="fc-count" min="1" placeholder="all"></label>
-            </div>
-            <div class="row"><button class="btn btn-primary" id="fc-apply">Apply failure</button><button class="btn" id="fc-clear">Restore provider</button></div>
-            <p class="muted small" style="margin-top:8px">Transient errors are retried with backoff and then dead-lettered. A 4xx goes straight to dead letters. A delay longer than the consumer's call timeout (5 s) counts as a timeout.</p>
+            <div class="actions"><button class="btn btn-primary" id="fc-apply">Apply failure</button><button class="btn" id="fc-clear">Restore provider</button></div>
           </div>
-          <div class="card">
-            <div class="card-head"><h2>Relay</h2><p>Faults at the publish step</p></div>
-            <div class="row"><button class="btn" id="fc-dup">Duplicate next event</button><button class="btn" id="fc-crash">Crash relay after publish (once)</button></div>
-            <p class="muted small" style="margin-top:8px">Crash kills a relay right after the broker accepted the publish and before the database is updated; another relay recovers it once the lease expires. To pause or resume the relay or a consumer, use the Health page.</p>
-            <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
-            <button class="btn" id="fc-restore-all">Restore everything</button>
+          <div class="card scenario">
+            <h2>A message is delivered twice</h2>
+            <p class="muted">The relay publishes the next event's messages a second time, skipping the broker's own de-duplication. Consumers and the provider must make sure no one is notified twice. The <a href="#/idempotency">Idempotency</a> page runs this as a complete experiment and shows the counts.</p>
+            <div class="actions"><button class="btn btn-primary" id="fc-dup">Duplicate the next event</button></div>
           </div>
-        </div>
-        <div class="card"><div class="card-head"><h2>Currently active</h2></div><div id="fc-active" class="muted">Loading…</div></div>`;
+          <div class="card scenario">
+            <h2>A relay crashes mid-publish</h2>
+            <p class="muted">A relay is killed right after the broker accepted the messages and before the database was updated, the worst moment. Another relay takes the event over once the lease expires and publishes it again; the duplicate is then absorbed downstream.</p>
+            <div class="actions"><button class="btn btn-primary" id="fc-crash">Crash a relay once</button></div>
+          </div>
+          <div class="card scenario">
+            <h2>A worker is paused</h2>
+            <p class="muted">Pausing the relay or a consumer stops it taking work. Nothing is lost: events wait safely in the outbox or in the broker and drain when it resumes. Pause and resume live on the Health page, next to each worker.</p>
+            <div class="actions"><a class="btn" href="#/health">Open Health</a></div>
+          </div>
+        </div>`;
       const act = (fn, ok) => async () => {
         try { await fn(); toast(ok); } catch (e) { toast(e.message, "bad"); }
         this.update();
@@ -716,6 +724,9 @@ const sections = {
     },
     async update() {
       const usable = state.config.faults_enabled && getToken();
+      setNotice("fc-notice", usable ? "" : !state.config.faults_enabled
+        ? "Fault injection is switched off on this server, so these controls are view-only."
+        : "Enter the admin token (top right) to use these controls.");
       for (const id of ["fc-apply", "fc-clear", "fc-dup", "fc-crash", "fc-restore-all"]) $("#" + id).disabled = !usable;
       const [pf, faultsRes] = await Promise.all([
         api("/api/provider/failures").catch(() => null),
@@ -736,8 +747,8 @@ const sections = {
           lines.push(`${chip("RETRYING", f.point)} ${esc(f.action)}${f.remaining != null ? " (" + f.remaining + " left)" : ""}`);
         }
       }
-      $("#fc-active").innerHTML = lines.length ? lines.map((l) => `<div style="margin:4px 0">${l}</div>`).join("")
-        : `<span class="muted">Nothing injected. ${!state.config.faults_enabled ? "Fault injection is disabled on this server." : !getToken() ? "Enter the admin token (top right) to use these controls." : ""}</span>`;
+      $("#fc-active").innerHTML = lines.length ? lines.map((l) => `<div class="active-line">${l}</div>`).join("")
+        : `<span>Nothing. The system is behaving normally.</span>`;
     },
   },
 
@@ -746,49 +757,60 @@ const sections = {
     desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and proves that no duplicate notification was actually sent.",
     running: false,
     mount(root) {
+      const mode = (id, title, text) => `<button type="button" class="mode-card" role="radio" aria-checked="false" data-mode="${id}"><strong>${title}</strong><span class="muted small">${text}</span></button>`;
       root.innerHTML = `
-        <div class="tiles" id="id-tiles"></div>
+        <div id="id-notice"></div>
+        <div class="card">
+          <div class="card-head"><h2>How a duplicate is stopped</h2><p id="id-state"></p></div>
+          <div class="pipeline" id="id-layers"></div>
+        </div>
         <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h2>Duplicate-delivery experiment</h2></div>
-            <p class="muted small" style="margin-bottom:10px">Creates one PaymentSucceeded event while the relay is told to publish every message twice, bypassing the broker's own de-duplication. Then it shows what each layer did with the copies.</p>
-            <label class="field"><span>Protections</span>
-              <select id="id-mode">
-                <option value="normal">Both on (normal): consumers and provider</option>
-                <option value="provider">Consumer shortcut off: the provider alone must stop duplicates</option>
-                <option value="control">Negative control: both off, duplicates should get through</option>
-              </select></label>
-            <div class="row"><button class="btn btn-primary" id="id-run" disabled>Run experiment</button><span id="id-needs" class="muted small"></span></div>
+            <div class="card-head"><h2>Run an experiment</h2><p>Creates one payment event while the relay publishes every message twice.</p></div>
+            <div class="mode-cards" role="radiogroup" aria-label="Protections" id="id-modes">
+              ${mode("normal", "Both protections on", "The normal system. Consumers and the provider both guard against duplicates.")}
+              ${mode("provider", "Consumer check off", "Only the provider's idempotency key stands between a duplicate and a second notification.")}
+              ${mode("control", "Negative control: both off", "Duplicates should get through. This proves the counters can detect them, so the zeros mean something.")}
+            </div>
+            <div class="actions" style="margin-top:12px"><button class="btn btn-primary btn-lg" id="id-run" disabled>Run experiment</button></div>
             <p id="id-progress" class="muted small" style="margin-top:8px" aria-live="polite"></p>
           </div>
           <div class="card"><div class="card-head"><h2>Result</h2></div>
-            <div id="id-result" class="muted">Run the experiment to see the outcome.</div></div>
+            <div id="id-result" class="muted">Choose a mode and run the experiment to see the outcome.</div></div>
         </div>`;
+      this.mode = "normal";
+      const modes = $("#id-modes");
+      const paint = () => { for (const b of modes.querySelectorAll("[data-mode]")) b.setAttribute("aria-checked", String(b.dataset.mode === this.mode)); };
+      modes.addEventListener("click", (ev) => { const b = ev.target.closest("[data-mode]"); if (b && !this.running) { this.mode = b.dataset.mode; paint(); } });
+      paint();
       $("#id-run").onclick = () => this.run();
     },
     async update() {
       const r = await api("/api/idempotency").catch(() => null);
-      if (r && r.ok) this.renderTiles(r.body);
+      if (r && r.ok) this.renderLayers(r.body);
       const canRun = state.config.faults_enabled && getToken();
       $("#id-run").disabled = !canRun || this.running;
-      $("#id-needs").textContent = !state.config.faults_enabled ? "Fault injection is disabled on this server."
-        : !getToken() ? "Enter the admin token (top right)." : "";
+      setNotice("id-notice", canRun ? "" : !state.config.faults_enabled
+        ? "Fault injection is switched off on this server, so the experiment cannot be run. The counters below are still live."
+        : "Enter the admin token (top right) to run the experiment.");
     },
-    renderTiles(d) {
+    renderLayers(d) {
       const p = d.provider || {};
-      $("#id-tiles").innerHTML = [
-        tile("Deliveries completed", num(d.deliveries_delivered), "all channels"),
-        tile("Ignored by consumers", num(d.duplicates_ignored_by_consumers), "duplicate stopped before the provider"),
-        tile("Suppressed by provider", num(d.duplicate_requests_suppressed_by_provider), "duplicate stopped by the key"),
-        tile("Side effects executed", num(p.effects), `${num(p.requests)} provider requests`),
-        tile("Duplicate side effects", num(p.duplicate_effects), "must stay at 0", (p.duplicate_effects || 0) > 0),
-        tile("Provider idempotency", p.dedupe === false ? "OFF" : "On", p.dedupe === false ? "negative control active" : "normal", p.dedupe === false),
-      ].join("");
+      const ignored = d.duplicates_ignored_by_consumers || 0, suppressed = d.duplicate_requests_suppressed_by_provider || 0, dup = p.duplicate_effects || 0;
+      $("#id-state").innerHTML = p.dedupe === false ? chip("DLQ", "provider protection OFF (negative control)") : chip("DELIVERED", "protections on");
+      $("#id-layers").innerHTML = `
+        <div class="node"><h3>Duplicates absorbed</h3><div class="big">${num(ignored + suppressed)}</div><div class="sub">repeat messages after a retry or crash, stopped by one of the two layers</div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node"><h3>Layer 1 · Consumer</h3><div class="big">${num(ignored)}</div><div class="sub">ignored: "this delivery is already marked delivered"</div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node"><h3>Layer 2 · Provider</h3><div class="big">${num(suppressed)}</div><div class="sub">suppressed: "I have seen this idempotency key"</div></div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node${dup ? " bad" : ""}"><h3>Notifications sent</h3><div class="big">${num(p.effects)}</div><div class="sub">${dup ? `<strong>${num(dup)} duplicate${dup === 1 ? "" : "s"} got through</strong>` : "0 duplicates, as it must be"} · ${num(p.requests)} requests reached the provider</div></div>`;
     },
     async run() {
       if (this.running) return;
       this.running = true; $("#id-run").disabled = true;
-      const mode = $("#id-mode").value, out = $("#id-result"), say = (t) => { $("#id-progress").textContent = t; };
+      const mode = this.mode, out = $("#id-result"), say = (t) => { $("#id-progress").textContent = t; };
       let eventId = null;
       out.textContent = "Running…"; // never show the previous run's result while a new one is in progress
       try {
@@ -860,16 +882,23 @@ const sections = {
 const settingsText = (c) => Object.entries(c || {}).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ") || "-";
 const tile = (label, value, note, warn) => `<div class="tile${warn ? " attention" : ""}"><div class="tile-label">${label}</div><div class="tile-value">${value}</div><div class="tile-note">${note}</div></div>`;
 
-function channelChips(deliveries) {
-  const entries = CHANNELS.filter((c) => deliveries[c]).map((c) => [c, deliveries[c]]);
-  return entries.map(([c, s]) => chip(s, `${c} · ${LABEL[s] || s}`)).join("");
+// One table cell per channel with a short status, so channels line up in columns and are easy to scan.
+// A channel the event type is not routed to shows a dash.
+function channelCells(deliveries) {
+  return CHANNELS.map((c) => `<td>${deliveries[c] ? chip(deliveries[c], LABEL[deliveries[c]] || deliveries[c]) : `<span class="muted">–</span>`}</td>`).join("");
+}
+
+// The one place pages say "you need the admin token / this is switched off", in the same style everywhere.
+function setNotice(id, message) {
+  const el = $("#" + id);
+  if (el) el.innerHTML = message ? `<div class="notice" role="note">${esc(message)}</div>` : "";
 }
 
 function eventRow(e, full) {
   const link = `<a href="#" data-event="${esc(e.id)}" class="mono">${shortId(e.id)}</a>`;
   return full
-    ? `<tr class="clickable" data-event="${esc(e.id)}"><td>${link}</td><td>${esc(e.type)}</td><td>${chip(e.status)}</td><td>${e.attempts}</td><td>${channelChips(e.deliveries)}</td><td class="muted" title="${esc(e.created_at)}">${ago(e.created_at)}</td></tr>`
-    : `<tr class="clickable" data-event="${esc(e.id)}"><td>${link}</td><td>${esc(e.type)}</td><td>${channelChips(e.deliveries)}</td><td class="muted">${ago(e.created_at)}</td></tr>`;
+    ? `<tr class="clickable" data-event="${esc(e.id)}"><td>${link}</td><td>${esc(e.type)}</td><td>${chip(e.status)}</td><td>${e.attempts}</td>${channelCells(e.deliveries)}<td class="muted" title="${esc(e.created_at)}">${ago(e.created_at)}</td></tr>`
+    : `<tr class="clickable" data-event="${esc(e.id)}"><td>${link}</td><td>${esc(e.type)}</td>${channelCells(e.deliveries)}<td class="muted">${ago(e.created_at)}</td></tr>`;
 }
 
 function rowClick(ev) {
