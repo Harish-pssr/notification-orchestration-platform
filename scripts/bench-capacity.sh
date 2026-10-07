@@ -15,6 +15,7 @@ cd "$(dirname "$0")/.."
 
 BENCH=${BENCH:-bin/bench}
 OUT=${OUT:-benchmark-results}
+ONLY=${ONLY:-}   # optional extended regex: run only the configurations whose label matches
 
 # label relays consumers start-rate
 CONFIGS=(
@@ -32,6 +33,7 @@ CONFIGS=(
 mkdir -p "$OUT"
 for cfg in "${CONFIGS[@]}"; do
   read -r label relays consumers start <<< "$cfg"
+  if [[ -n "$ONLY" && ! "$label" =~ $ONLY ]]; then continue; fi
   "$BENCH" capacity -confirm -label "$label" -relays "$relays" -consumers "$consumers" \
     -start "$start" -factor 1.25 -out "$OUT" 2>&1 | tee -a "$OUT/capacity.log"
 done

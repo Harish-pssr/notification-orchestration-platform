@@ -6,7 +6,7 @@ bin/
 *.out
 
 # Scratch output of benchmark runs. Curated results live in docs/benchmarks.md and docs/data/.
-benchmark-results/
+benchmark-results*/
 
 # Maintainer's working notes, planning files and AI-assistant setup: kept locally,
 # not part of the repository (the repo holds code, READMEs and results).
