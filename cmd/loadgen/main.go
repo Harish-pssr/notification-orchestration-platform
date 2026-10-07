@@ -3,6 +3,9 @@
 //	loadgen reset -confirm        clear all events, deliveries, provider data and the stream
 //	loadgen seed -n 20000 [-delay 5s]  bulk-insert n PaymentSucceeded events straight into the outbox
 //	loadgen report [-json]        print exact counts and timings read from the database
+//	loadgen run -rate 200 -duration 60s   open-loop load through the HTTP API (D13)
+//	loadgen analyze -run ID       exact latency percentiles for a run, from database timestamps
+//	loadgen monitor -out f.csv    sample backlog and progress once per second
 //
 // Seeding bypasses the HTTP API on purpose: relay-scaling runs measure the relay,
 // not the API's insert path. Every timing in the report comes from database
@@ -19,10 +22,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
 
-	"notifplatform/internal/broker"
+	"notifplatform/internal/bench"
 	"notifplatform/internal/config"
 	"notifplatform/internal/events"
 )
@@ -41,6 +42,14 @@ func main() {
 		err = report(os.Args[2:])
 	case "wait":
 		err = wait(os.Args[2:])
+	case "run":
+		err = runLoad(os.Args[2:])
+	case "analyze":
+		err = analyzeRun(os.Args[2:])
+	case "monitor":
+		err = monitorRun(os.Args[2:])
+	case "backlog":
+		err = backlog()
 	default:
 		usage()
 	}
@@ -51,7 +60,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: loadgen reset -confirm | seed -n N | wait -n N [-delivered] | report [-json|-csv]")
+	fmt.Fprintln(os.Stderr, "usage: loadgen reset -confirm | seed -n N | wait -n N [-delivered] | report [-json|-csv] | run -rate R -duration D | analyze -run ID | monitor -out FILE")
 	os.Exit(2)
 }
 
@@ -98,45 +107,8 @@ func reset(args []string) error {
 	if !*confirm {
 		return fmt.Errorf("refusing to delete data without -confirm")
 	}
-	ctx := context.Background()
-	cfg := config.Load()
-
-	platform, err := pgxpool.New(ctx, cfg.PlatformDSN)
-	if err != nil {
+	if err := bench.Reset(context.Background()); err != nil {
 		return err
-	}
-	defer platform.Close()
-	if _, err := platform.Exec(ctx, `TRUNCATE channel_deliveries, outbox_events, api_idempotency, payments, bookings, password_changes`); err != nil {
-		return fmt.Errorf("truncate platform: %w", err)
-	}
-
-	provider, err := pgxpool.New(ctx, cfg.ProviderDSN)
-	if err != nil {
-		return err
-	}
-	defer provider.Close()
-	if _, err := provider.Exec(ctx, `TRUNCATE requests, effects, idempotency_keys`); err != nil {
-		return fmt.Errorf("truncate provider: %w", err)
-	}
-
-	nc, err := nats.Connect(cfg.NATSURL)
-	if err != nil {
-		return err
-	}
-	defer nc.Close()
-	js, err := jetstream.New(nc)
-	if err != nil {
-		return err
-	}
-	if err := broker.EnsureStream(ctx, js); err != nil {
-		return err
-	}
-	stream, err := js.Stream(ctx, broker.StreamName)
-	if err != nil {
-		return err
-	}
-	if err := stream.Purge(ctx); err != nil {
-		return fmt.Errorf("purge stream: %w", err)
 	}
 	fmt.Println("reset: platform and provider tables truncated, stream purged")
 	return nil
