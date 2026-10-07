@@ -117,50 +117,39 @@ const sections = {
         <div class="card">
           <div class="card-head"><h2>About this project</h2></div>
           <div class="what-grid">
-            <div class="what-text prose">
-              <div>
-                <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
-                <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
-              </div>
-              <div class="promises">
-                <div><strong>No lost events</strong><span>an accepted event is always delivered</span></div>
-                <div><strong>No repeat notifications</strong><span>a duplicate is recognised and ignored</span></div>
-                <div><strong>No silent failures</strong><span>retried, then kept for an operator</span></div>
-              </div>
+            <div class="prose">
+              <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+              <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+              <p>This console shows the system live. <strong>Observe</strong> to watch events and the health of each part, <strong>Operate</strong> to create events and break things on purpose, <strong>Prove</strong> to see duplicates being stopped. The sections below explain the journey of an event, the guarantees and the words used.</p>
             </div>
-            <div class="path" aria-label="The path of an event">
-              <h3>The path of an event</h3>
-              <ol>
-                <li><strong>Event</strong><span>something happens</span></li>
-                <li><strong>API and database</strong><span>saved in one transaction</span></li>
-                <li><strong>Outbox</strong><span>waits to be handed on</span></li>
-                <li><strong>Relay</strong><span>moves it to the broker</span></li>
-                <li><strong>Broker</strong><span>holds it until confirmed</span></li>
-                <li><strong>Consumers</strong><span>one per channel</span></li>
-                <li><strong>Provider</strong><span>sends it once</span></li>
-              </ol>
-            </div>
+            <dl class="glance" aria-label="At a glance">
+              <div><dt>Delivery</dt><dd>At least once, with idempotent effects</dd></div>
+              <div><dt>Channels</dt><dd>Email, push, webhook</dd></div>
+              <div><dt>Built with</dt><dd>Go, PostgreSQL, NATS JetStream, Docker Compose</dd></div>
+              <div><dt>Runs as</dt><dd>API, relays, one consumer per channel, a mock provider</dd></div>
+              <div><dt>Observable</dt><dd>Structured logs, Prometheus metrics, this dashboard</dd></div>
+            </dl>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-head"><h2>The journey of one event</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
+          <div class="card-head"><h2>Event journey</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
           <div class="step-grid">
-            ${step(1, "The API saves it", "It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.")}
-            ${step(2, "The outbox holds it", "The event record is a to-do entry in the same database: \"saved, not yet handed on\". Committed with the payment, it can never be lost in between.")}
-            ${step(3, "The relay hands it on", "A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which keeps each until it is confirmed.")}
-            ${step(4, "A consumer asks to send it", "One consumer per channel (email, push, webhook) takes a message and calls the provider, which stands in for the real external service.")}
-            ${step(5, "The provider sends it once", "Every notification carries an idempotency key. If the same one arrives twice, the provider recognises the key and does not send again. The delivery is marked <em>Delivered</em>.")}
+            ${step(1, "API", "It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.")}
+            ${step(2, "Outbox", "The event record is a to-do entry in the same database: \"saved, not yet handed on\". Committed with the payment, it can never be lost in between.")}
+            ${step(3, "Relay", "A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which keeps each until it is confirmed.")}
+            ${step(4, "Consumer", "One consumer per channel (email, push, webhook) takes a message and calls the provider, which stands in for the real external service.")}
+            ${step(5, "Provider", "Every notification carries an idempotency key. If the same one arrives twice, the provider recognises the key and does not send again. The delivery is marked <em>Delivered</em>.")}
           </div>
         </div>
 
         <div class="card">
           <div class="card-head"><h2>Guarantees</h2></div>
           <div class="point-grid">
-            ${point("Nothing is lost", "An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.")}
-            ${point("Repeats are harmless", "The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
-            ${point("Failures are retried", "Temporary errors are retried with growing delays. Permanent ones go to <a href=\"#/dlq\">Dead letters</a>, where an operator can fix the cause and replay them.")}
-            ${point("Outages heal", "While a part is down, events wait safely in the database or the broker, and drain when it returns.")}
+            ${point("No lost events", "An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.")}
+            ${point("Harmless repeats", "The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
+            ${point("Retried failures", "Temporary errors are retried with growing delays. Permanent ones go to <a href=\"#/dlq\">Dead letters</a>, where an operator can fix the cause and replay them.")}
+            ${point("Self-healing", "While a part is down, events wait safely in the database or the broker, and drain when it returns.")}
           </div>
         </div>
 
