@@ -107,6 +107,7 @@ const EVENT_TYPES = {
 const sections = {
   start: {
     title: "Start here",
+    heading: "How this platform works",
     desc: "What this project is, how one event travels through it, and a two-minute way to try it.",
     mount(root) {
       const step = (n, title, text) => `<div class="step"><span class="step-n">${n}</span><h3>${title}</h3><p>${text}</p></div>`;
@@ -114,16 +115,34 @@ const sections = {
       const term = (t, d) => `<div><dt>${t}</dt><dd>${d}</dd></div>`;
       root.innerHTML = `
         <div class="card">
-          <div class="card-head"><h2>What this is</h2></div>
-          <div class="prose">
-            <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
-            <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+          <div class="what-grid">
+            <div class="prose">
+              <h2 class="what-title">What this project does</h2>
+              <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+              <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
+              <div class="promises">
+                <div><strong>No lost events</strong><span>an event that was accepted is always delivered</span></div>
+                <div><strong>No repeat notifications</strong><span>a duplicate is recognised and ignored</span></div>
+                <div><strong>No silent failures</strong><span>problems are retried, then kept for an operator</span></div>
+              </div>
+            </div>
+            <div class="path" aria-label="The path of an event">
+              <h3>The path of an event</h3>
+              <ol>
+                <li><strong>Event</strong><span>something happens in the business</span></li>
+                <li><strong>API and database</strong><span>saved in one transaction</span></li>
+                <li><strong>Outbox</strong><span>waits to be handed on</span></li>
+                <li><strong>Relay</strong><span>moves it to the broker</span></li>
+                <li><strong>Broker</strong><span>holds it until confirmed</span></li>
+                <li><strong>Consumers</strong><span>one per channel</span></li>
+                <li><strong>Provider</strong><span>sends it once</span></li>
+              </ol>
+            </div>
           </div>
-          <div class="flow" aria-label="The path of an event"><span>Event</span><i>→</i><span>API and database</span><i>→</i><span>Outbox</span><i>→</i><span>Relay</span><i>→</i><span>Broker</span><i>→</i><span>Consumers</span><i>→</i><span>Provider</span></div>
         </div>
 
         <div class="card">
-          <div class="card-head"><h2>The journey of one event</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
+          <div class="card-head"><h2>From payment to notification: the journey of one event</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
           <div class="step-grid">
             ${step(1, "The API saves it", "It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.")}
             ${step(2, "The outbox holds it", "The event record is a to-do entry in the same database: \"saved, not yet handed on\". Committed with the payment, it can never be lost in between.")}
@@ -134,7 +153,7 @@ const sections = {
         </div>
 
         <div class="card">
-          <div class="card-head"><h2>Why you can trust it</h2></div>
+          <div class="card-head"><h2>Why it can be trusted</h2></div>
           <div class="point-grid">
             ${point("Nothing is lost", "An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.")}
             ${point("Repeats are harmless", "The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
@@ -149,7 +168,7 @@ const sections = {
             <ol class="steps" id="st-try"></ol>
           </div>
           <div class="card">
-            <div class="card-head"><h2>What has been measured</h2></div>
+            <div class="card-head"><h2>Measured results</h2></div>
             <ul class="points">
               <li><strong>Reliability under failure:</strong> 99,999 events with 3 relay crashes, about 15,000 injected duplicate messages and about 2% failing provider calls. Every delivery completed, 0 dead letters, <strong>0 duplicate notifications</strong>. With the protections switched off the same run produced 1,425 duplicates, so the counter can see them.</li>
               <li><strong>Outages:</strong> the relay, and separately the message broker, stopped for 60 seconds under load (3 times each). Nothing was lost, and the backlog drained about 100 seconds after each restart.</li>
@@ -160,7 +179,7 @@ const sections = {
         </div>
 
         <div class="card">
-          <div class="card-head"><h2>Words used on these pages</h2></div>
+          <div class="card-head"><h2>Glossary</h2></div>
           <dl class="glossary">
             ${term("Event", "Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.")}
             ${term("Channel", "A way to notify: email, push or webhook. Each event type is routed to some of them.")}
@@ -194,12 +213,13 @@ const sections = {
 
   overview: {
     title: "Overview",
+    heading: "Pipeline overview",
     desc: "A live picture of the pipeline: how many events exist, where they are right now, and whether anything needs attention.",
     mount(root) {
       root.innerHTML = `
         <div class="tiles" id="ov-tiles"></div>
         <div class="card">
-          <div class="card-head"><h2>How events are flowing</h2><p>New here? <a href="#/start">Start here</a> explains each step.</p></div>
+          <div class="card-head"><h2>Where events are right now</h2><p>New here? <a href="#/start">Start here</a> explains each step.</p></div>
           <div class="pipeline" id="ov-pipeline"></div>
         </div>
         <div class="card">
@@ -252,6 +272,7 @@ const sections = {
 
   create: {
     title: "Create events",
+    heading: "Create an event",
     desc: "Send an event to the API and watch it flow through. The API saves it, with a to-do record, in one database transaction; the relay then delivers it on every channel that event type is routed to.",
     mount(root) {
       root.innerHTML = `
@@ -383,6 +404,7 @@ const sections = {
 
   events: {
     title: "Events",
+    heading: "All events",
     desc: "Every event, with its state in the outbox and the delivery status of each channel. Click a row to see its full timeline.",
     mount(root) {
       root.innerHTML = `
@@ -420,6 +442,7 @@ const sections = {
 
   health: {
     title: "Health",
+    heading: "System health",
     desc: "Which parts of the system are running, and how much work is waiting in front of each. A part (the relay, or one channel's consumer) is UP while at least one of its instances reports in.",
     data: null,
     showGone: false,
@@ -471,6 +494,10 @@ const sections = {
           backlog = [b ? `${num(b.pending)} waiting in the broker` : "", b ? `${num(b.ack_pending)} being processed` : "", `${num(waiting)} not yet delivered`].filter(Boolean).join(" · ");
         }
         const paused = role.status === "PAUSED";
+        const what = { "relay": "Moves saved events from the outbox to the message broker.",
+          "consumer-email": "Takes email messages from the broker and asks the provider to send them.",
+          "consumer-push": "Takes push messages from the broker and asks the provider to send them.",
+          "consumer-webhook": "Takes webhook messages from the broker and asks the provider to call them." }[role.name] || "";
         const rows = role.instances.filter((i) => i.fresh || (this.showGone && i.age_s < 300));
         const instRow = (i) => `<div class="inst-row">
             <span class="mono inst-name">${esc(i.name)}</span>
@@ -480,7 +507,8 @@ const sections = {
         return `<div class="card role">
           <div class="role-head">
             <div class="role-title"><h2>${pretty[role.name] || esc(role.name)}</h2>${statusChip[role.status] || esc(role.status)}
-              <span class="muted small">${role.live} live instance${role.live === 1 ? "" : "s"}</span></div>
+              <span class="muted small">${role.live} live instance${role.live === 1 ? "" : "s"}</span>
+              <div class="role-desc muted small">${esc(what)}</div></div>
             <div class="role-backlog muted small">${backlog}</div>
             <button class="btn" data-pause="${pausePoint[role.name]}" data-action="${paused ? "resume" : "pause"}" ${usable ? "" : "disabled"}>${paused ? "Resume" : "Pause"}</button>
           </div>
@@ -492,6 +520,7 @@ const sections = {
 
   experiment: {
     title: "Experiment",
+    heading: "Live experiment",
     desc: "Appears while a benchmark or failure experiment is running: what is being changed, which phase the run is in, and live counters that should end at nothing lost and nothing duplicated.",
     samples: [],
     provider: null,
@@ -561,6 +590,7 @@ const sections = {
 
   dlq: {
     title: "Dead letters",
+    heading: "Dead letters: deliveries that gave up",
     desc: "Deliveries that gave up: their retries ran out, or the provider rejected them for good. Read the reason, fix the cause, then replay. Replaying is safe because the provider recognises work it already did.",
     selected: new Set(),
     data: { deliveries: [], events: [] },
@@ -568,7 +598,7 @@ const sections = {
       root.innerHTML = `
         <div id="dl-notice"></div>
         <div class="card">
-          <div class="card-head"><h2>Dead-lettered deliveries</h2><p id="dl-count" class="muted small"></p></div>
+          <div class="card-head"><h2>Waiting for a decision</h2><p id="dl-count" class="muted small"></p></div>
           <div class="toolbar">
             <button class="btn btn-primary" id="dl-replay-sel" disabled>Replay selected</button>
             <select id="dl-channel" aria-label="Channel to replay"><option value="">All channels</option><option>email</option><option>push</option><option>webhook</option></select>
@@ -663,12 +693,13 @@ const sections = {
 
   faults: {
     title: "Failure controls",
+    heading: "Break things on purpose",
     desc: "Break things on purpose and watch the guarantees hold. Each card is one kind of failure; the status bar shows what is currently injected.",
     mount(root) {
       root.innerHTML = `
         <div id="fc-notice"></div>
         <div class="card status-bar">
-          <div><h2>Currently injected</h2><div id="fc-active" class="muted">Loading…</div></div>
+          <div><h2>What is currently broken</h2><div id="fc-active" class="muted">Loading…</div></div>
           <button class="btn" id="fc-restore-all">Restore everything</button>
         </div>
         <div class="scenario-grid">
@@ -754,6 +785,7 @@ const sections = {
 
   idempotency: {
     title: "Idempotency",
+    heading: "No duplicate notifications",
     desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and proves that no duplicate notification was actually sent.",
     running: false,
     mount(root) {
@@ -766,7 +798,7 @@ const sections = {
         </div>
         <div class="grid-2">
           <div class="card">
-            <div class="card-head"><h2>Run an experiment</h2><p>Creates one payment event while the relay publishes every message twice.</p></div>
+            <div class="card-head"><h2>Try it: send a duplicate</h2><p>Creates one payment event while the relay publishes every message twice.</p></div>
             <div class="mode-cards" role="radiogroup" aria-label="Protections" id="id-modes">
               ${mode("normal", "Both protections on", "The normal system. Consumers and the provider both guard against duplicates.")}
               ${mode("provider", "Consumer check off", "Only the provider's idempotency key stands between a duplicate and a second notification.")}
@@ -775,7 +807,7 @@ const sections = {
             <div class="actions" style="margin-top:12px"><button class="btn btn-primary btn-lg" id="id-run" disabled>Run experiment</button></div>
             <p id="id-progress" class="muted small" style="margin-top:8px" aria-live="polite"></p>
           </div>
-          <div class="card"><div class="card-head"><h2>Result</h2></div>
+          <div class="card"><div class="card-head"><h2>What happened</h2></div>
             <div id="id-result" class="muted">Choose a mode and run the experiment to see the outcome.</div></div>
         </div>`;
       this.mode = "normal";
@@ -956,7 +988,7 @@ function show(route) {
   if (route === "start") { try { localStorage.setItem("seen-start", "1"); } catch { /* ignore */ } }
   const s = sections[route];
   document.title = `${s.title} · Notification Platform Console`;
-  $("#page-title").textContent = s.title; $("#page-desc").textContent = s.desc;
+  $("#page-title").textContent = s.heading || s.title; $("#page-desc").textContent = s.desc;
   for (const a of document.querySelectorAll("#nav a")) {
     a.dataset.route === route ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current");
   }
