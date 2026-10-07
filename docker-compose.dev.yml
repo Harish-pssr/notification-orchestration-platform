@@ -1,0 +1,37 @@
+# Dev ports 15433/15434 are used because Windows reserves 5317-5816 (Hyper-V/WSL).
+# Local development only: publishes the infrastructure ports so `go test` and
+# psql on the host can reach them, and turns fault injection on with a known
+# token. Never use this file on the VM.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+x-dev-faults: &dev-faults
+  FAULTS_ENABLED: "true"
+  ADMIN_TOKEN: dev-token
+
+# Short retry delays so a failing delivery reaches the dead-letter state in a few
+# seconds (the production defaults are 1s base and 30s cap).
+x-dev-consumer: &dev-consumer
+  <<: *dev-faults
+  BACKOFF_BASE: 300ms
+  BACKOFF_CAP: 2s
+
+services:
+  postgres-platform:
+    ports: ["15433:5432"]
+  postgres-provider:
+    ports: ["15434:5432"]
+  nats:
+    ports: ["4222:4222", "8222:8222"]
+  provider:
+    ports: ["9090:9090"]
+    environment: *dev-faults
+  api:
+    environment: *dev-faults
+  relay:
+    # A short lease makes the crash-recovery demo take seconds, not 30s.
+    environment: { <<: *dev-faults, RELAY_LEASE: 5s }
+  consumer-email:
+    environment: *dev-consumer
+  consumer-push:
+    environment: *dev-consumer
+  consumer-webhook:
+    environment: *dev-consumer

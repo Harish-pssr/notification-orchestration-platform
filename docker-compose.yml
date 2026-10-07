@@ -1,0 +1,126 @@
+name: notifplatform
+
+# Same file locally and on the VM (D10). Postgres and NATS are not published to
+# the host here; docker-compose.dev.yml adds those ports for local development.
+
+x-postgres: &postgres
+  image: postgres:17-alpine
+  restart: unless-stopped
+  environment:
+    POSTGRES_USER: ${POSTGRES_USER:-notif}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notif}
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    interval: 2s
+    timeout: 3s
+    retries: 30
+
+x-app-env: &app-env
+  PLATFORM_DSN: postgres://${POSTGRES_USER:-notif}:${POSTGRES_PASSWORD:-notif}@postgres-platform:5432/platform?sslmode=disable
+  PROVIDER_DSN: postgres://${POSTGRES_USER:-notif}:${POSTGRES_PASSWORD:-notif}@postgres-provider:5432/provider?sslmode=disable
+  NATS_URL: nats://nats:4222
+  PROVIDER_URL: http://provider:9090
+  # Fault injection is off unless explicitly enabled (D8). Set both in .env to use it.
+  FAULTS_ENABLED: ${FAULTS_ENABLED:-false}
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+
+services:
+  postgres-platform:
+    <<: *postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-notif}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notif}
+      POSTGRES_DB: platform
+    volumes: [pg-platform:/var/lib/postgresql/data]
+
+  # Separate instance so the "external" provider really is external (D5, D10).
+  postgres-provider:
+    <<: *postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-notif}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-notif}
+      POSTGRES_DB: provider
+    volumes: [pg-provider:/var/lib/postgresql/data]
+
+  nats:
+    image: nats:2-alpine
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data", "-m", "8222"]   # JetStream on, file storage, monitoring port
+    volumes: [nats-data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8222/healthz || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate-platform:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: migrate } }
+    command: ["platform"]
+    environment: *app-env
+    depends_on:
+      postgres-platform: { condition: service_healthy }
+    restart: "no"
+
+  migrate-provider:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: migrate } }
+    command: ["provider"]
+    environment: *app-env
+    depends_on:
+      postgres-provider: { condition: service_healthy }
+    restart: "no"
+
+  provider:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: provider } }
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate-provider: { condition: service_completed_successfully }
+
+  relay:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: relay } }
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
+
+  consumer-email:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: consumer } }
+    restart: unless-stopped
+    environment: { <<: *app-env, CHANNEL: email }
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
+      provider: { condition: service_started }
+
+  consumer-push:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: consumer } }
+    restart: unless-stopped
+    environment: { <<: *app-env, CHANNEL: push }
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
+      provider: { condition: service_started }
+
+  consumer-webhook:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: consumer } }
+    restart: unless-stopped
+    environment: { <<: *app-env, CHANNEL: webhook }
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
+      provider: { condition: service_started }
+
+  api:
+    build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: api } }
+    restart: unless-stopped
+    environment: *app-env
+    ports: ["8080:8080"]
+    depends_on:
+      migrate-platform: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
+
+volumes:
+  pg-platform:
+  pg-provider:
+  nats-data:
