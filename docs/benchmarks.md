@@ -206,3 +206,101 @@ The arrival rates differ between before and after because capacity differs, so t
 - The before and after sweeps started their ladders at different rates, which affects where in a 25% band the confirmed value lands.
 - The mock provider and its database still take a large share of the CPU, so this machine's platform capacity is understated.
 - Not tested: the latency effect of a slow provider, where concurrency should matter most because slow calls no longer queue behind each other.
+
+## B4. Reliability under injected failure (100,000 events) and negative control
+
+**Question:** with duplicate messages, crashing relays and failing provider calls happening during load, does every accepted event get delivered exactly once in effect: nothing lost, nothing applied twice?
+
+### Environment and method
+
+Same machine and conditions as B2 (AC power, Docker Desktop, 16 CPUs). Code: commit `6f0cc3f` (the platform's behaviour is unchanged since the broker-outage fix, decision D18). Run with `scripts/bench-reliability.sh`; raw reports are in `docs/data/2026-10-07-reliability/`.
+
+- **Load:** 100,000 PaymentSucceeded events through the HTTP API at 150 events/s, open loop (about 11 minutes), with 4 relays and 4 consumers per channel (each consumer handles 8 messages at once). 150/s is below the measured capacity of this configuration (366/s, B3) on purpose: the run tests correctness under failure, not peak throughput.
+- **Duplicates:** the relay publishes a second copy, with fresh message ids that the broker's own de-duplication cannot absorb, for about 5% of the events it handles.
+- **Relay crashes:** 3 real `docker kill` (SIGKILL) of a random relay container at random times inside the load; the relay was restored after each. A kill can strike at any instruction, including between publishing and recording success.
+- **Provider errors:** about 2% of provider requests answered with HTTP 503 before any effect ran (retried with backoff).
+- **Counting:** exact, from both databases after the system drained. "Duplicate side effects" is the number of provider effect rows minus the number of distinct idempotency keys among them. Requests answered with an injected error are subtracted from the duplicate counts (they are retries, not duplicates).
+- **Pass criteria:** every accepted event is stored; every delivery is DELIVERED; zero dead letters; exactly one provider effect per delivery; zero duplicate side effects.
+- **Negative control:** 10,000 events with the same duplicate and error injection, but with the provider's idempotency protection off and the consumers' skip-if-already-delivered shortcut off. It must show duplicate side effects, otherwise the counters have not been shown to detect them.
+
+### Results
+
+| | Main run (protections on) | Negative control (protections off) |
+|---|---|---|
+| Events accepted by the API | 99,999 (0 rejected, 0 errors) | 9,999 |
+| Events stored | 99,999 | 9,999 |
+| Deliveries (3 per event) | 299,997 | 29,997 |
+| Delivered / dead-lettered / unfinished | 299,997 / 0 / 0 | 29,997 / 0 / 0 |
+| Deliveries that needed a retry | 5,764 | 539 |
+| Relay crashes (SIGKILL) | 3 | 0 |
+| Provider requests | 321,078 | 32,028 |
+| Provider requests answered with an injected error | 6,480 | 606 |
+| Duplicate copies absorbed | 15,192 (591 stopped by consumers, 14,601 suppressed by the provider's idempotency key) | 0 |
+| Provider side effects executed | 299,997 (299,997 distinct keys) | 31,422 (29,997 distinct keys) |
+| **Duplicate side effects** | **0** | **1,425** |
+| Time to finish after the load ended | 0.3 s | 0.1 s |
+| Verdict | **PASS** | **PASS** (duplicates were detected, as required) |
+
+(The load was planned as 100,000 events; the generator's rounding created 99,999, and 9,999 in the control.)
+
+### What the data shows
+
+1. **Nothing was lost.** Every one of the 99,999 accepted events was stored and all 299,997 deliveries reached DELIVERED with no dead letters, through 3 relay SIGKILLs and about 6,500 injected provider errors.
+2. **Nothing was applied twice.** 15,192 duplicate copies were absorbed (matching the expected 5% of 99,999 events times 3 channels, about 15,000) and the provider executed exactly 299,997 effects, one per delivery. Two layers did the absorbing: consumers recognised 591 duplicates as already delivered, and the provider's idempotency key suppressed the other 14,601. With concurrent consumers (D15) most duplicate copies are in progress at the same moment as the original, so the provider's key carries most of the load. That is the intended defence in depth: the consumer check is only an optimisation.
+3. **The counters can see duplicates.** With both protections off, the same duplicate injection produced 1,425 duplicate side effects (4.75% of the 29,997 deliveries, matching the injected rate), so the zero in the main run is a measurement, not an absence of measurement.
+4. **Failures cost latency, not correctness:** the system finished delivering within 0.3 s of the load ending, so the crashes did not leave a lasting backlog at this rate.
+
+### Limitations
+
+- One run of each; the random crash times and injected errors differ between runs (the report records them).
+- Provider errors are injected **before** the effect runs. The case where the effect committed but the response was lost is covered by the relay-crash and consumer-redelivery paths and by automated tests, but not by this run's error injection.
+- Only relays were killed during the load. Consumer crashes are covered by automated tests, not by this run; broker and relay outages are covered separately in B5.
+- Duplicates come from the relay's injection point and from crash recovery. Other duplicate sources (for example a consumer crashing after the provider call) are covered by tests (see `docs/failure-scenarios.md`), not counted separately here.
+- A rate below capacity was chosen deliberately; behaviour at saturation with failures injected is not measured.
+- Everything ran on one laptop under Docker Desktop.
+
+---
+
+## B5. Recovery from a 60-second outage of the relay or the broker
+
+**Question:** when the relay, or NATS, is stopped for 60 seconds under steady load, how large does the backlog get, how long does the system take to recover, and is anything lost?
+
+### Method
+
+Same environment and configuration as B4 (4 relays, 4 consumers per channel). For each repetition the system is reset, then runs steady load at 250 events/s (68% of the measured capacity of 366/s, B3) through the HTTP API: 30 s of steady load, then a **real** `docker compose stop` of the relay (all instances) or of NATS for 60 s, then 90 s more load. A one-second sampler reads exact counts from the database. 3 repetitions each.
+
+- **Peak backlog:** the largest number of events not yet published (outbox) and of deliveries not yet delivered after the stop.
+- **Recovery time:** from the restart until the number of undelivered deliveries is back within two seconds of arrivals (1,500 deliveries, the same bound as the capacity test's bounded-backlog rule).
+- **Peak delivery rate:** the best five-second average of deliveries completed per second after the restart.
+- **Pass criteria:** every accepted event stored, all deliveries DELIVERED, zero dead letters, zero duplicate side effects.
+
+### Results
+
+| Service stopped | Rep | Outage | Peak events waiting in the outbox | Peak deliveries undelivered | Recovery time | Peak delivery rate | Accepted / delivered (deliveries) | Dead letters | Duplicate side effects |
+|---|---|---|---|---|---|---|---|---|---|
+| Relay | 1 | 61.0 s | 15,510 | 46,545 | 99.0 s | 1,313/s | 45,000 / 135,000 | 0 | 0 |
+| Relay | 2 | 61.1 s | 15,555 | 46,671 | 99.9 s | 1,315/s | 45,000 / 135,000 | 0 | 0 |
+| Relay | 3 | 61.1 s | 15,583 | 46,749 | 97.9 s | 1,299/s | 45,000 / 135,000 | 0 | 0 |
+| NATS | 1 | 61.9 s | 16,017 | 48,057 | 98.1 s | 1,311/s | 45,000 / 135,000 | 0 | 0 |
+| NATS | 2 | 61.0 s | 15,479 | 46,449 | 97.0 s | 1,325/s | 45,000 / 135,000 | 0 | 0 |
+| NATS | 3 | 61.0 s | 15,592 | 46,783 | 101.0 s | 1,289/s | 45,000 / 135,000 | 0 | 0 |
+
+The undelivered-delivery count before the outage was 31 to 43 (steady state).
+
+### What the data shows
+
+1. **No loss in any of the six outages.** All 45,000 accepted events and all 135,000 deliveries completed each time, with zero dead letters and zero duplicate side effects.
+2. **The backlog is as large as the arrivals during the outage** (250 events/s for about 61 s is about 15,300 events), i.e. nothing was being processed while the service was down, and the database absorbed all of it.
+3. **Recovery takes about 100 s after a 61 s outage, in every repetition (97 to 101 s)**, for both services. At the measured peak delivery rate (about 1,300 deliveries, about 435 events, per second) minus the 250 events/s still arriving, the net drain is about 185 events/s, and 15,500 events divided by 185 gives about 84 s plus a ramp-up: consistent with the measured time (this is an arithmetic cross-check, not a separate measurement).
+4. **Recovery is bounded by the system's own drain rate, not by the failure.** Relay and NATS outages looked the same from outside because in both cases the events wait in the outbox (the relay down: not claimed; NATS down: claimed, release without attempting, back off; D18) and the same pipeline drains them afterwards.
+
+### A defect this experiment exposed (decision D18)
+
+An earlier version of the relay dead-lettered events during a broker outage: every failed publish used one of an event's five attempts. At about 100 events/s the effect was hidden (each failing publish blocks a relay for its 5 s timeout, so no single event was retried five times within a 30 to 60 s outage), but with three events in flight a 75 s NATS outage dead-lettered all three. The relay now gives the attempt back when the broker is at fault, releases the rest of the batch untried and backs off, and the client no longer buffers while disconnected. After the fix the same low-traffic outage ends with all three events published and delivered, and a test covers it (`TestBrokerOutageNeverDeadLettersAnEvent`). B5's runs above are on the fixed code.
+
+### Limitations
+
+- NATS was stopped and started with its data intact. Loss of the broker's storage is a different failure and is not tested.
+- One arrival rate (250/s) and one outage length (60 s); a longer outage means a proportionally larger backlog and longer recovery.
+- Recovery time is bounded by this machine's drain rate (about 435 events/s here, with the mock provider and its database sharing the CPU), so the absolute figures will differ elsewhere; the no-loss result does not depend on them.
+- The outage tests do not combine with injected duplicates and provider errors (B4 does that without outages).

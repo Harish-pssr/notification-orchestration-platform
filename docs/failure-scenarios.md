@@ -143,6 +143,34 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Test:** the logic is covered by `TestRoleGoesDownWhenHeartbeatsStop` (database-clock age, role status rules) and the unit tests in `internal/health`. The real container stop was checked manually, not in an automated test.
 - **Observed (manual, dev settings: 1 s heartbeats, 4 s stale threshold):** after stopping the webhook consumer the role showed `DOWN` within 2.4 s; relay, email and push stayed `UP`; after starting it again the role was `UP` within 0.5 s.
 
+### F21. Relay crashes (SIGKILL) under load, with duplicates and provider errors
+
+- **Failure:** during 100,000 events at 150/s, 3 relay containers are killed with SIGKILL at random times, about 5% of events are published twice, and about 2% of provider requests fail with 503.
+- **Expected:** no event lost, every delivery DELIVERED, no dead letters, exactly one provider effect per delivery, no duplicate side effects.
+- **Test:** `bench reliability` (`scripts/bench-reliability.sh`), with the pass criteria in `bench.JudgeReliability` (unit-tested against every kind of loss).
+- **Observed:** 99,999 events accepted and stored, 299,997 deliveries all delivered, 0 dead letters, 15,192 duplicate copies absorbed (591 by consumers, 14,601 by the provider's key), 299,997 effects with 0 duplicate side effects. See B4.
+
+### F22. The negative control: duplicates are detectable
+
+- **Failure (deliberate):** the same injection as F21 for 10,000 events, with the provider's idempotency protection and the consumers' skip-if-delivered shortcut switched off.
+- **Expected:** duplicate side effects appear, proving the counters can see them; nothing is lost.
+- **Test:** `bench reliability -control`.
+- **Observed:** 1,425 duplicate side effects among 29,997 deliveries, nothing lost. See B4.
+
+### F23. Relay down for 60 s under load
+
+- **Failure:** all relay containers are stopped for 60 s while events arrive at 250/s (real `docker compose stop`), 3 repetitions.
+- **Expected:** the API keeps accepting events; they wait in the outbox; after the restart the backlog drains; nothing is lost.
+- **Test:** `bench recovery -service relay`.
+- **Observed:** peak backlog about 15,500 events; recovery about 98 to 100 s after the restart; every event delivered, 0 dead letters, 0 duplicate side effects in all three repetitions. See B5.
+
+### F24. Broker (NATS) down for 60 s under load, and at low load
+
+- **Failure:** NATS is stopped for 60 s while events arrive at 250/s, 3 repetitions; and, separately, for 75 s with only three events in flight.
+- **Expected:** events wait in the outbox, no event is dead-lettered because of the outage however long it lasts or how few events are waiting, and everything is delivered after the broker returns.
+- **Test:** `bench recovery -service nats` for the load case; `TestBrokerOutageNeverDeadLettersAnEvent` and `TestBrokerFailureReleasesTheRestOfTheBatchWithoutTryingIt` for the low-traffic case (a broker stand-in that always fails); and a manual check on the real stack.
+- **Observed:** load case: peak backlog about 15,500 to 16,000 events, recovery 97 to 101 s, nothing lost in any repetition. Low-traffic case: **a defect was found and fixed (D18).** Before the fix, three events were dead-lettered by a 75 s outage because every failed publish used one of their five attempts. After the fix a broker failure gives the attempt back, and the same outage ends with all three events published and delivered.
+
 ## Planned
 
-Scenarios arriving with later slices: broker down (real `docker compose stop nats`), consumer crash before ack (real crash rather than a simulated delivery count), outage and backlog recovery timing.
+Scenarios still to add: consumer crash after the provider call and before the acknowledgement (real crash rather than a simulated delivery count), and loss of the broker's storage.
