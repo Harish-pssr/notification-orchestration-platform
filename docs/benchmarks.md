@@ -161,3 +161,48 @@ Two things the confirmation stage caught that a single ramp would have reported 
 ### How this data was produced (a correction)
 
 A first attempt at this matrix was **discarded**. Its results were inconsistent (a configuration that passed one hour failed the next, and one step stalled for about 20 s without reproducing), and the cause turned out to be the machine: the laptop was **running on battery** with a power-limited CPU. The benchmark tool now records the machine's power source, power plan and clock with the results and **refuses to run on battery**. The figures in this section were all measured on mains power after that fix. The earlier relay-only measurement (B1) predates the environment capture, so its power state is unknown; it will be re-measured with the current tooling.
+
+## B3. Optimization: concurrent message processing in each consumer (before and after)
+
+**Question:** the baseline (B2) showed one consumer per channel is the first bottleneck (about 100 messages/s, because each message is handled serially: database read, provider call, database write). Does processing several messages at the same time inside one consumer raise capacity, and by how much?
+
+**Change:** each consumer instance now handles up to 8 messages at once (`CONSUMER_CONCURRENCY`, default 8) using a bounded worker pool. A slot is claimed before each fetch and the fetch asks for no more messages than there are free slots, so a slow message holds nothing else back. Nothing else changed: acknowledgement still follows the database write, and duplicates are still suppressed by the provider's idempotency key. A test checks that a stuck message does not delay the others. Code: commit `bfe6ac3`.
+
+**Method:** identical to B2 (same machine, AC power, "Balanced" plan, same protocol, same ladder factor of 1.25, same confirmation and latency stages). Only four of B2's nine configurations were re-run. Raw data: `docs/data/2026-10-07-d15-concurrent-consumer/`.
+
+### Confirmed capacity (events/s)
+
+| Relays | Consumers per channel | Before (B2) | After | Change | After: confirmation (rate: sustained runs / runs) |
+|---|---|---|---|---|---|
+| 1 | 1 | 98 | **153** | +56% | 191: 1/3, 153: 2/2 |
+| 4 | 1 | 98 | **298** | about 3x | 373: 0/2, 298: 2/2 |
+| 4 | 4 | 234 | **366** | +56% | 366: 2/3, 458: 0/2 |
+| 4 | 8 | 313 | **313** | none | 313: 2/3, 391: 0/2 |
+
+### Latency at 70% of each configuration's own capacity (milliseconds, median of 3 repetitions)
+
+The arrival rates differ between before and after because capacity differs, so these rows are **not** a like-for-like latency comparison.
+
+| Relays | Consumers | After: rate | After p50 | After p95 | After p99 | Before: rate | Before p50 / p95 / p99 |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 107/s | 106 | 217 | 240 | 69/s | 159 / 261 / 290 |
+| 4 | 1 | 209/s | 39 | 79 | 108 | 69/s | 140 / 269 / 302 |
+| 4 | 4 | 256/s | 47 | 118 | 211 | 164/s | 31 / 48 / 65 |
+| 4 | 8 | 219/s | 41 | 79 | 103 | 219/s | 44 / 87 / 112 |
+
+### What the data shows
+
+1. **Concurrency inside a consumer gives roughly what extra consumer processes gave.** 4 relays with 1 consumer per channel (now 8 messages at a time) sustains 298 events/s; before the change it took 8 separate consumers per channel to reach 313. One process per channel replaces eight.
+2. **It does not remove the machine-wide ceiling.** 4 relays with 8 consumers (64 messages in flight per channel) sustains the same 313 events/s as before, with the same latency at the same load (p50 41 vs 44 ms, p99 103 vs 112 ms) and the same platform Postgres CPU (221 vs 222 of 1,600). Beyond a point, more concurrency adds nothing.
+3. **The 4 relay, 4 consumer configuration reached 366 events/s (before: 234).** That is partly the expected scaling of the same effect (4 consumers now means 32 messages at a time). The step between 313 and 366 is **smaller than the 25% ladder step** and the two sweeps used different starting rates, so the data does not show that the ceiling itself moved; it shows 313 and 366 were each the highest rate in their own ladder that passed. Treat the ceiling as roughly 310 to 370 events/s.
+4. **1 relay, 1 consumer is now limited by the relay, not the consumer.** It reaches 153 events/s, essentially the 156 events/s that B2 measured for one relay with 8 consumers. The consumer is no longer the first bottleneck.
+5. **Latency:** low-load behaviour is unchanged where it was relay-bound (the roughly 100 ms created-to-published floor from the 200 ms poll, decision D14). Higher capacity does not by itself change latency at equal load; the like-for-like row (4 relays, 8 consumers, 219/s) is within a few milliseconds of before.
+6. **Intermittent stalls remain.** In 2 of 12 latency repetitions the p99 was 3.5 to 3.7 s while the median was normal (before: 4 of 27). The cause is still unidentified and this change did not address it.
+
+### Limitations
+
+- One run per configuration with the repeated-measurement protocol inside it; the confirmed values are one rate step wide (25%).
+- Only four of the nine B2 configurations were re-run (the relay-scaling rows with 8 consumers per channel and the 2 and 8 relay rows were not).
+- The before and after sweeps started their ladders at different rates, which affects where in a 25% band the confirmed value lands.
+- The mock provider and its database still take a large share of the CPU, so this machine's platform capacity is understated.
+- Not tested: the latency effect of a slow provider, where concurrency should matter most because slow calls no longer queue behind each other.
