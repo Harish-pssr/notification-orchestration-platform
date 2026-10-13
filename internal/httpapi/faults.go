@@ -117,6 +117,7 @@ type providerStats struct {
 	DistinctKeys     int64 `json:"distinct_keys"`
 	Effects          int64 `json:"effects"`
 	DuplicateEffects int64 `json:"duplicate_effects"`
+	InjectedFailures int64 `json:"injected_failures"`
 	Dedupe           bool  `json:"dedupe"`
 }
 
@@ -160,7 +161,9 @@ func (h *eventsHandler) idempotency(providerURL string, client *http.Client) htt
 			writeJSON(w, http.StatusOK, out)
 			return
 		}
-		suppressed := ps.Requests - ps.Effects
+		// A request answered with an injected error ran no effect, but it is not a duplicate
+		// the provider suppressed either, so it is subtracted (it is a retry, not a repeat).
+		suppressed := ps.Requests - ps.InjectedFailures - ps.Effects
 		if suppressed < 0 {
 			suppressed = 0
 		}

@@ -232,6 +232,9 @@ type Stats struct {
 	DistinctKeys     int64 `json:"distinct_keys"`
 	Effects          int64 `json:"effects"`
 	DuplicateEffects int64 `json:"duplicate_effects"`
+	// InjectedFailures counts requests answered with an injected error before any effect ran.
+	// They are in Requests too, so anything derived from Requests minus Effects must subtract them.
+	InjectedFailures int64 `json:"injected_failures"`
 	Dedupe           bool  `json:"dedupe"` // whether idempotency is currently on
 }
 
@@ -250,8 +253,9 @@ func (p *Provider) stats(w http.ResponseWriter, r *http.Request) {
 		SELECT (SELECT count(*) FROM requests WHERE key LIKE $1),
 		       (SELECT count(DISTINCT key) FROM requests WHERE key LIKE $1),
 		       (SELECT count(*) FROM effects WHERE key LIKE $1),
-		       (SELECT count(*) - count(DISTINCT key) FROM effects WHERE key LIKE $1)`, like).
-		Scan(&s.Requests, &s.DistinctKeys, &s.Effects, &s.DuplicateEffects)
+		       (SELECT count(*) - count(DISTINCT key) FROM effects WHERE key LIKE $1),
+		       (SELECT count(*) FROM injected_failures WHERE key LIKE $1)`, like).
+		Scan(&s.Requests, &s.DistinctKeys, &s.Effects, &s.DuplicateEffects, &s.InjectedFailures)
 	s.Dedupe = p.dedupe.Load()
 	if err != nil {
 		p.fail(w, "stats", err)
