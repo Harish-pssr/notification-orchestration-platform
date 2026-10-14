@@ -837,7 +837,7 @@ const sections = {
         <div class="card" id="id-email" hidden>
           <div class="card-head head-left"><h2>Email delivery</h2><span id="em-state"></span></div>
           <div id="em-notice"></div>
-          <p class="muted" style="max-width:70ch">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on.</p>
+          <p class="muted" style="max-width:70ch">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A real send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
           <div class="email-row">
             <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send real emails</span></label>
             <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">

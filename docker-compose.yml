@@ -23,6 +23,9 @@ x-app-env: &app-env
   # Fault injection is off unless explicitly enabled (D8). Set both in .env to use it.
   FAULTS_ENABLED: ${FAULTS_ENABLED:-false}
   ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+  # How long a consumer waits for the provider. The mock answers in milliseconds, so 5s is generous; a REAL email
+  # takes several seconds (Gmail about 5), so set CALL_TIMEOUT=30s in .env when you use real sending (D21).
+  CALL_TIMEOUT: ${CALL_TIMEOUT:-5s}
 
 services:
   postgres-platform:
