@@ -460,7 +460,15 @@ func (e *emailer) release(ctx context.Context, key string) {
 }
 
 // executeEmail is the real-send path (see the state machine at the top of this file).
-func (p *Provider) executeEmail(ctx context.Context, key string, ch events.Channel, body []byte) (resp []byte, replayed bool, err error) {
+func (p *Provider) executeEmail(reqCtx context.Context, key string, ch events.Channel, body []byte) (resp []byte, replayed bool, err error) {
+	if err := reqCtx.Err(); err != nil {
+		return nil, false, err // the caller is already gone: do not start a send nobody is waiting for
+	}
+	// From here the work finishes even if the caller gives up. A real send takes seconds, so the consumer's call
+	// timeout can fire while the email is already on its way; if the record after the send were cancelled with
+	// the request, the key would stay IN_PROGRESS and the email would be sent again after the stuck timeout, which
+	// is a duplicate with no crash at all. The SMTP timeout bounds how long this can run.
+	ctx := context.WithoutCancel(reqCtx)
 	e := p.email
 	dedupe := p.dedupe.Load()
 	if dedupe {
@@ -480,6 +488,7 @@ func (p *Provider) executeEmail(ctx context.Context, key string, ch events.Chann
 	}
 
 	subject, text := buildEmail(key, body)
+	sendStart := time.Now()
 	reply, sendErr := e.sender.Send(ctx, Mail{From: e.cfg.From, To: e.to(), Subject: subject, Body: text, MessageID: newMessageID(e.cfg.From)})
 	if sendErr != nil {
 		var se *SendError
@@ -496,7 +505,7 @@ func (p *Provider) executeEmail(ctx context.Context, key string, ch events.Chann
 		}
 		return nil, false, &statusError{code: 502, retryAfter: 1, msg: "email send failed: " + sendErr.Error()}
 	}
-	e.log.Info("email accepted by the mail server", "key", key, "reply", reply, "status", "email_sent")
+	e.log.Info("email accepted by the mail server", "key", key, "reply", reply, "took_ms", time.Since(sendStart).Milliseconds(), "status", "email_sent")
 
 	if e.afterSend != nil {
 		if err := e.afterSend(); err != nil {

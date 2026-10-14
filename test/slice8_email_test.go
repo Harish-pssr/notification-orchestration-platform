@@ -275,6 +275,34 @@ func TestCrashBetweenSendAndDoneResendsOnlyAfterTheStuckTimeout(t *testing.T) {
 	}
 }
 
+// A real send takes seconds, so the consumer's call timeout can fire while the email is on its way. The record
+// after the send must survive that, or the key would stay IN_PROGRESS and the email would be sent again.
+func TestTheRecordSurvivesTheCallerGivingUpMidSend(t *testing.T) {
+	skipShort(t)
+	e := newEmailProvider(t, testEmailConfig(), true, true)
+	e.snd.delay = 400 * time.Millisecond
+	key := uuid.NewString() + ":email"
+
+	raw, _ := json.Marshal(map[string]any{"event_id": uuid.NewString(), "event_type": "PaymentSucceeded", "channel": "email",
+		"payload": map[string]any{"amount_cents": 100, "currency": "GBP"}})
+	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/v1/email", bytes.NewReader(raw))
+	req.Header.Set("Idempotency-Key", key)
+	impatient := &http.Client{Timeout: 100 * time.Millisecond}
+	if resp, err := impatient.Do(req); err == nil {
+		resp.Body.Close()
+		t.Fatal("the impatient caller was expected to time out")
+	}
+
+	waitFor(t, "the abandoned send to be recorded", 3*time.Second, func() bool { return e.keyState(t, key) == "DONE" })
+	if e.snd.count() != 1 || e.scalar(t, `SELECT count(*) FROM effects WHERE key = $1`, key) != 1 {
+		t.Fatalf("sent=%d, want 1 email and 1 effect", e.snd.count())
+	}
+	// The consumer's retry is answered from the stored result: no second email, no waiting for the stuck timeout.
+	if code, hdr := e.post(t, "email", key); code != 200 || hdr.Get("Idempotent-Replayed") != "true" || e.snd.count() != 1 {
+		t.Fatalf("retry: %d replayed=%q sent=%d", code, hdr.Get("Idempotent-Replayed"), e.snd.count())
+	}
+}
+
 func TestConcurrentRequestsForOneKeySendOnce(t *testing.T) {
 	skipShort(t)
 	e := newEmailProvider(t, testEmailConfig(), true, true)
