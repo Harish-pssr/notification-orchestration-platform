@@ -738,7 +738,7 @@ const sections = {
           <div class="card scenario">
             <h2>Paused worker</h2>
             <p class="muted">Pausing the relay or a consumer stops it taking work. Nothing is lost: events wait safely in the outbox or in the broker and drain when it resumes. Pause and resume live on the Health page, next to each worker.</p>
-            <div class="actions"><a class="btn" href="#/health">Open Health</a></div>
+            <div class="actions"><a class="btn btn-primary" href="#/health">Open Health</a></div>
           </div>
         </div>`;
       const act = (fn, ok) => async () => {
