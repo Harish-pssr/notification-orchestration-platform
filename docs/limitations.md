@@ -22,6 +22,10 @@ Each entry has the same shape: **the gap**, **why it exists** (a deliberate scop
 
 **A provider that ignores idempotency keys breaks the "no duplicate side effects" claim.** The guarantee holds because the (mock) provider writes the key and the effect in one transaction under a unique constraint. Real providers vary: some honour an idempotency header, some do not. *Production:* for providers without key support, accept at-most-once for that channel (and risk loss), or reconcile with the provider's status API before retrying, or use a provider that supports keys.
 
+**Real email: "delivered" means "accepted by the mail server", and a crash can still duplicate.** The optional real email mode (D21) cannot make the send and the idempotency record one transaction. A crash after the mail server accepted the message and before the key is marked `DONE` leaves the key `IN_PROGRESS`; after a timeout the retry sends again, so a rare duplicate email is possible. The mock does not have this window (it measured zero duplicate side effects). The system also cannot know whether the message reached the inbox, went to spam or bounced later; it records the server's acceptance reply and nothing more. *Production:* send with a stable message id and look it up in the mail system's activity API before retrying, handle bounces and delivery callbacks, and decide per message type whether a duplicate or a miss is worse.
+
+**Real email is for a local demo only.** One recipient, chosen in the dashboard by anyone with the admin token, so it must not be enabled on a public deployment; the SMTP password is read from the environment and never shown; the hourly cap is kept in memory and resets when the provider restarts.
+
 **Retention of the provider's keys.** The mock keeps keys forever; real providers expire them (often after 24 hours), which bounds how late a retry can still be recognised. *Production:* keep retry windows shorter than the provider's key lifetime.
 
 ## Failure handling

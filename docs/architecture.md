@@ -50,7 +50,7 @@ A business operation commits to the database, and notifications for it must even
 | API | `cmd/api` | Validates requests; writes business row, outbox row, delivery rows and the idempotency record atomically; serves read endpoints and the dashboard |
 | Relay | `cmd/relay` | Claims due outbox rows, publishes one message per pending channel, finishes the row with a fenced update |
 | Consumer | `cmd/consumer` (`CHANNEL=email\|push\|webhook`) | Pulls messages for one channel and processes up to `CONSUMER_CONCURRENCY` (default 8) at once: loads the delivery and payload, calls the provider with an idempotency key, marks the delivery (D15) |
-| Provider | `cmd/provider` | Stands in for the external email/push/webhook systems; deduplicates by `Idempotency-Key`; counts requests and effects separately |
+| Provider | `cmd/provider` | Stands in for the external email/push/webhook systems; deduplicates by `Idempotency-Key`; counts requests and effects separately; can optionally send the email channel for real to one fixed recipient (D21) |
 | Migrate | `cmd/migrate` | Applies embedded SQL migrations to the platform or provider database |
 | Loadgen, Bench | `cmd/loadgen`, `cmd/bench` | Open-loop load generation and the benchmark, reliability and recovery experiments (see [benchmarks.md](benchmarks.md)) |
 

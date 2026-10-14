@@ -95,6 +95,20 @@ All published ports are bound to `127.0.0.1` (this machine only):
 
 Postgres uses 15433 and 15434 because Windows reserves the range 5317 to 5816.
 
+### Real email (optional)
+
+By default the email channel is a mock: nothing is ever sent. To see the "one email however many times the broker delivers it" guarantee in a real inbox, give the provider an SMTP account in an uncommitted `.env` (see `.env.example`). Gmail works with an **App password** (turn on 2-Step Verification, then Google Account, Security, App passwords):
+
+```bash
+EMAIL_SMTP_HOST=smtp.gmail.com
+EMAIL_SMTP_PORT=587
+EMAIL_SMTP_USER=you@gmail.com
+EMAIL_SMTP_PASS=the-16-character-app-password
+EMAIL_TO=you@gmail.com
+```
+
+Restart the provider (`scripts/up.sh`), open **Duplicates**, use **Send test email** to check the settings, then switch on **Send real emails** and run the experiment: one email arrives even though the provider received each request twice. The switch always starts off after a restart, only the email channel is real (to the one recipient, which can be changed on that page), at most 20 emails per hour are sent (`EMAIL_MAX_PER_HOUR`), and the benchmark tools refuse to run while it is on. Never enable it on a public deployment. A real send cannot share a transaction with the idempotency key, so for real email the guarantee is at least once with a rare duplicate if the provider crashes between the send and its record (D21, [limitations](docs/limitations.md)).
+
 ## Look inside (beyond the dashboard)
 
 Everything the dashboard shows comes from these places, which you can query directly.

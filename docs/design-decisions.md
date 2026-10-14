@@ -25,6 +25,7 @@ Code comments and documents refer to numbered decisions such as "(D4)" or "(D18)
 | D18 | A broker outage never dead-letters an event | `internal/relay` |
 | D19 | One credential, the admin token, for every write | `internal/admin`, `internal/httpapi` |
 | D20 | No public hosting and no cloud benchmark | `docs/deployment.md` |
+| D21 | Optional real email sending | `internal/provider/email.go`, `migrations/provider/0004_real_email.sql` |
 
 ## D0. PostgreSQL
 
@@ -109,3 +110,9 @@ Code comments and documents refer to numbered decisions such as "(D4)" or "(D18)
 ## D20. No public hosting and no cloud benchmark
 
 **Decided:** the project is not hosted publicly and no benchmark was run on a cloud VM. **Why:** for a personal project the live link adds little and the cost, upkeep and public attack surface are real. **Consequences stated plainly:** the production setup is verified locally only, there are no Linux numbers, and the explanation of the latency stalls (B6) remains an inference. See [deployment.md](deployment.md) and [limitations.md](limitations.md).
+
+## D21. Optional real email sending
+
+**Decided:** the provider can send the email channel for real, to **one fixed recipient**, through an SMTP account configured in the environment. It is off unless the SMTP settings are present **and** an operator switches it on in the dashboard (Duplicates, Email delivery); the switch always starts off after a restart; a hard cap (20 per hour by default) limits the sends; the benchmark tools refuse to run while it is on. Push and webhook stay mock. **Why:** the platform's claims rest on a mock that is atomic with its idempotency key, so a reader can ask whether a repeated message really produces one email; with a real inbox, a duplicate delivery visibly produces one email.
+
+**The consequence that matters:** a real send cannot share a database transaction with the idempotency key, so the real path uses a state machine instead of one transaction: claim the key as `IN_PROGRESS` (a unique insert), send, then in one transaction record the effect and mark the key `DONE`. A crash between the send and `DONE` leaves the key `IN_PROGRESS` with the email already sent; after a stuck timeout (60 s) the next retry sends again. So the guarantee for **real** email is *at least once, with a rare duplicate in that window*; the mock stays at zero measured duplicate side effects. A repeat that arrives while a key is `IN_PROGRESS` gets 503 (retried), never a second send; a send that definitely failed releases the key; one whose outcome is unknown keeps it. Each send attempt gets its own Message-ID, because some mailbox providers hide a repeated Message-ID and would hide a real duplicate. **Accepted:** "accepted by the mail server" is all that can be known (not inbox, spam or bounce); the recipient is chosen by whoever holds the admin token, so it must not be enabled on a public deployment; the cap lives in memory and resets on restart.

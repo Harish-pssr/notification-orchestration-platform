@@ -171,6 +171,20 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Test:** `bench recovery -service nats` for the load case; `TestBrokerOutageNeverDeadLettersAnEvent` and `TestBrokerFailureReleasesTheRestOfTheBatchWithoutTryingIt` for the low-traffic case (a broker stand-in that always fails); and a manual check on the real stack.
 - **Observed:** load case: peak backlog about 15,500 to 16,000 events, recovery 97 to 101 s, nothing lost in any repetition. Low-traffic case: **a defect was found and fixed (D18).** Before the fix, three events were dead-lettered by a 75 s outage because every failed publish used one of their five attempts. After the fix a broker failure gives the attempt back, and the same outage ends with all three events published and delivered.
 
+### F25. Real email: the broker delivers the message twice, one email arrives (D21)
+
+- **Failure:** the relay publishes an event twice (the duplicate fault) while real email sending is on.
+- **Expected:** the provider receives two requests for the email key, sends one email, and answers the second from the stored result.
+- **Test:** `TestRealEmailIsSentOncePerKey` (fake sender); also run through the whole stack against a throwaway SMTP server on the same machine, not a real mail service.
+- **Observed (stack run):** provider requests for the email key 2, emails received by the SMTP server 1, effects 1. With the consumer shortcut and the provider's idempotency both off (the negative control) the same run produced 2 emails with different Message-IDs. Real sending off sent none, and the benchmark tools refused to start while it was on.
+
+### F26. Real email: a crash between the send and `DONE` (D21)
+
+- **Failure:** the provider dies after the mail server accepted the email and before the key is marked `DONE`.
+- **Expected:** an immediate retry is refused (503, nothing sent); after the stuck timeout the retry sends again. The platform cannot know the first email went out, so this is the documented duplicate window of real email.
+- **Test:** `TestCrashBetweenSendAndDoneResendsOnlyAfterTheStuckTimeout` (a hook simulates the crash).
+- **Observed:** the second email used a different Message-ID, and exactly one effect was recorded.
+
 ## Not yet covered
 
 Scenarios not provoked for real: a consumer crash after the provider call and before the acknowledgement (the poison guard is verified with a simulated delivery count), a Postgres outage, an API crash, and loss of the broker's storage. They are analysed in [crash-analysis.md](crash-analysis.md).
