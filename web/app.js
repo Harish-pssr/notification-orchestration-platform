@@ -854,14 +854,27 @@ const sections = {
         <div class="card" id="id-email" hidden>
           <div class="card-head head-left"><h2>Email delivery</h2><span id="em-state"></span></div>
           <div id="em-notice"></div>
-          <p class="muted">By default the email channel is a mock and nothing is sent. With live sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A live send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
-          <div class="email-row">
-            <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send live emails</span></label>
-            <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">
-            <button class="btn" id="em-save">Save recipient</button>
-            <button class="btn" id="em-test">Send test email</button>
+          <p class="muted">By default the email channel is a mock and nothing is sent. With live sending on, every email notification goes to the one recipient below.</p>
+          <div class="email-grid">
+            <div class="email-col">
+              <div class="email-label">Live sending</div>
+              <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send live emails</span></label>
+              <p class="muted small" style="margin-top:8px">Always starts off after a restart.</p>
+            </div>
+            <div class="email-col">
+              <label class="field" style="margin-bottom:0"><span class="email-label" style="display:block;margin-bottom:8px">Recipient</span>
+                <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">
+              </label>
+              <div class="actions">
+                <button class="btn" id="em-save">Save recipient</button>
+                <button class="btn" id="em-test">Send test email</button>
+              </div>
+            </div>
           </div>
-          <p class="muted small" id="em-usage" style="margin-top:10px"></p>
+          <div class="email-foot">
+            <p class="muted small" id="em-usage"></p>
+            <p class="muted small">Live sending is capped per hour, and the benchmark tools refuse to run while it is on. A live send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span>; otherwise the consumer times out and retries (with the protections off, each retry sends another email).</p>
+          </div>
         </div>
         <div class="grid-2">
           <div class="card">
