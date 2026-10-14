@@ -74,6 +74,8 @@ a { color: var(--accent); text-decoration: none; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 a.pill { color: var(--fg); }
 a.pill:hover { background: var(--line); }
+.pill-off .dot { background: var(--muted); }
+.pill-off .dot { background: var(--muted); }
 .pill-ok .dot { background: var(--ok); } .pill-bad .dot { background: var(--bad); } .pill-warn .dot { background: var(--warn); }
 
 /* Forms and buttons */

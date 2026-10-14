@@ -304,7 +304,6 @@ const sections = {
     mount(root) {
       root.innerHTML = `
         <div id="cr-notice"></div>
-        <div id="cr-email-note"></div>
         <div class="card">
           <div class="card-head"><h2>1 · Event type</h2><p>Each type is delivered on the channels shown on its card.</p></div>
           <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
@@ -427,8 +426,6 @@ const sections = {
       const needs = state.config.create_requires_token && !getToken();
       $("#cr-send").disabled = needs;
       setNotice("cr-notice", needs ? "Creating events needs the admin token (top right). Viewing everything else does not." : "");
-      const em = state.email;
-      setNotice("cr-email-note", em && em.real ? `Real email is ON: each event with an email channel sends a real email to ${em.recipient}. Switch it off on the Duplicates page.` : "");
     },
   },
 
@@ -840,7 +837,7 @@ const sections = {
         <div class="card" id="id-email" hidden>
           <div class="card-head head-left"><h2>Email delivery</h2><span id="em-state"></span></div>
           <div id="em-notice"></div>
-          <p class="muted" style="max-width:70ch">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A real send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
+          <p class="muted">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A real send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
           <div class="email-row">
             <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send real emails</span></label>
             <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">
@@ -1167,12 +1164,19 @@ async function checkApi() {
   renderEmailPill();
 }
 
-// Real email is a global setting: while it is on, every email notification from any page is a real email, so
-// the sidebar says so on every page and links to the card that switches it off.
+// Real email is a global setting: while it is on, every email notification from any page is a real email. The
+// sidebar therefore always shows whether it is ON or OFF (once SMTP is configured; with no SMTP there is nothing to
+// switch) and links to the card that changes it.
 function renderEmailPill() {
-  const pill = $("#email-pill"), em = state.email, on = !!(em && em.real);
-  pill.hidden = !on;
-  pill.title = on ? `Real emails are being sent to ${em.recipient}. Click to change.` : "";
+  const pill = $("#email-pill"), em = state.email;
+  pill.hidden = !(em && em.configured);
+  if (pill.hidden) return;
+  const on = !!em.real;
+  pill.className = "pill " + (on ? "pill-warn" : "pill-off");
+  $("#email-pill-text").textContent = "Real email sending: " + (on ? "ON" : "OFF");
+  pill.title = on
+    ? `Real emails are being sent to ${em.recipient}. Click to change.`
+    : "Email notifications are mock: nothing is sent. Click to switch real sending on.";
 }
 
 $("#live").onchange = (e) => { state.live = e.target.checked; renderUpdated(); if (state.live) refresh(); };
