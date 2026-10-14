@@ -72,6 +72,8 @@ a { color: var(--accent); text-decoration: none; }
 .chip.neutral { --c: var(--muted); }
 .pill { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius); background: var(--surface-2); font-size: 12px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+a.pill { color: var(--fg); }
+a.pill:hover { background: var(--line); }
 .pill-ok .dot { background: var(--ok); } .pill-bad .dot { background: var(--bad); } .pill-warn .dot { background: var(--warn); }
 
 /* Forms and buttons */
@@ -140,7 +142,7 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); }
   .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 8px; }
-  .brand { padding: 0 8px; } .brand-sub, .nav-group, .sidebar-foot .pill, .theme-row .muted { display: none; } .sidebar-foot { padding: 0 4px; }
+  .brand { padding: 0 8px; } .brand-sub, .nav-group, .sidebar-foot #api-pill, .theme-row .muted { display: none; } .sidebar-foot { padding: 0 4px; }
   .nav { flex-direction: row; overflow-x: auto; flex: 1; } .nav a { white-space: nowrap; }
   .main { padding: 14px 16px 32px; }
 }

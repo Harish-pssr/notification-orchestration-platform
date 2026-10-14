@@ -304,6 +304,7 @@ const sections = {
     mount(root) {
       root.innerHTML = `
         <div id="cr-notice"></div>
+        <div id="cr-email-note"></div>
         <div class="card">
           <div class="card-head"><h2>1 · Event type</h2><p>Each type is delivered on the channels shown on its card.</p></div>
           <div class="type-cards" role="radiogroup" aria-label="Event type" id="cr-types"></div>
@@ -426,6 +427,8 @@ const sections = {
       const needs = state.config.create_requires_token && !getToken();
       $("#cr-send").disabled = needs;
       setNotice("cr-notice", needs ? "Creating events needs the admin token (top right). Viewing everything else does not." : "");
+      const em = state.email;
+      setNotice("cr-email-note", em && em.real ? `Real email is ON: each event with an email channel sends a real email to ${em.recipient}. Switch it off on the Duplicates page.` : "");
     },
   },
 
@@ -905,6 +908,7 @@ const sections = {
       if (!r || !r.ok) { card.hidden = true; return; }
       card.hidden = false;
       const st = this.email = r.body;
+      state.email = st; renderEmailPill();
       const usable = state.config.faults_enabled && getToken() && st.configured;
       $("#em-state").innerHTML = !st.configured ? neutralChip("Mock only") : st.real ? chip("RETRYING", "Real emails ON") + (st.recipient ? ` <span class="muted small">to ${esc(st.recipient)}</span>` : "") : neutralChip("Mock: nothing is sent");
       setNotice("em-notice", !st.configured
@@ -1158,6 +1162,17 @@ async function checkApi() {
     pill.className = "pill " + (r.ok ? "pill-ok" : "pill-warn");
     text.textContent = r.ok ? "API, Postgres, NATS healthy" : "Degraded: " + bad.join(", ");
   } catch { pill.className = "pill pill-bad"; text.textContent = "API unreachable"; }
+  const em = await api("/api/provider/email").catch(() => null);
+  state.email = em && em.ok ? em.body : null;
+  renderEmailPill();
+}
+
+// Real email is a global setting: while it is on, every email notification from any page is a real email, so
+// the sidebar says so on every page and links to the card that switches it off.
+function renderEmailPill() {
+  const pill = $("#email-pill"), em = state.email, on = !!(em && em.real);
+  pill.hidden = !on;
+  pill.title = on ? `Real emails are being sent to ${em.recipient}. Click to change.` : "";
 }
 
 $("#live").onchange = (e) => { state.live = e.target.checked; renderUpdated(); if (state.live) refresh(); };
