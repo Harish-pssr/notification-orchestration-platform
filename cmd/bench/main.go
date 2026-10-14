@@ -86,6 +86,9 @@ func (c common) open(ctx context.Context) (env, func(), error) {
 	if !*c.confirm {
 		return env{}, nil, fmt.Errorf("refusing to run without -confirm: every step deletes all data")
 	}
+	if err := bench.EmailMustBeOff(ctx, *c.api); err != nil {
+		return env{}, nil, err
+	}
 	if err := os.MkdirAll(*c.out, 0o755); err != nil {
 		return env{}, nil, err
 	}
