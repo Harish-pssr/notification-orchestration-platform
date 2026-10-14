@@ -203,8 +203,8 @@ const sections = {
       steps.push(`<li>Watch it on the <a href="#/overview">Overview</a>: the counters and the pipeline move as the event passes each step.</li>`);
       steps.push(`<li>Open it in <a href="#/events">Events</a> (click the row) to see its timeline: when it was created, when it was published, and when each channel delivered it.</li>`);
       steps.push(cfg.faults_enabled
-        ? `<li>Break something on purpose in <a href="#/faults">Failure controls</a>: make the webhook provider return errors, create an event, and watch it retry and then land in <a href="#/dlq">Dead letters</a>. Restore the provider and replay it. Or pause the relay on <a href="#/health">Health</a> and watch the backlog build and drain.</li>`
-        : `<li>Failure controls are switched off on this deployment so visitors cannot break it. The cases they cover (a crashing relay, a failing provider, a broker outage, duplicate messages) are described in the repository's docs/failure-scenarios.md, and <a href="#/idempotency">Idempotency</a> shows where duplicates are stopped.</li>`);
+        ? `<li>Break something on purpose in <a href="#/faults">Failures</a>: make the webhook provider return errors, create an event, and watch it retry and then land in <a href="#/dlq">Dead letters</a>. Restore the provider and replay it. Or pause the relay on <a href="#/health">Health</a> and watch the backlog build and drain.</li>`
+        : `<li>Failure injection is switched off on this deployment so visitors cannot break it. The cases they cover (a crashing relay, a failing provider, a broker outage, duplicate messages) are described in the repository's docs/failure-scenarios.md, and <a href="#/idempotency">Duplicates</a> shows where duplicates are stopped.</li>`);
       $("#st-try").innerHTML = steps.join("");
     },
   },
@@ -217,7 +217,7 @@ const sections = {
       root.innerHTML = `
         <div class="tiles" id="ov-tiles"></div>
         <div class="card">
-          <div class="card-head"><h2>Pipeline</h2><p>New here? <a href="#/start">Start here</a> explains each step.</p></div>
+          <div class="card-head"><h2>Pipeline</h2><p>New here? <a href="#/start">Start</a> explains each step.</p></div>
           <div class="pipeline" id="ov-pipeline"></div>
         </div>
         <div class="card">
@@ -727,7 +727,7 @@ const sections = {
           </div>
           <div class="card scenario">
             <h2>Duplicate delivery</h2>
-            <p class="muted">The relay publishes the next event's messages a second time, skipping the broker's own de-duplication. Consumers and the provider must make sure no one is notified twice. The <a href="#/idempotency">Idempotency</a> page runs this as a complete experiment and shows the counts.</p>
+            <p class="muted">The relay publishes the next event's messages a second time, skipping the broker's own de-duplication. Consumers and the provider must make sure no one is notified twice. The <a href="#/idempotency">Duplicates</a> page runs this as a complete experiment and shows the counts.</p>
             <div class="actions"><button class="btn btn-primary" id="fc-dup">Duplicate the next event</button></div>
           </div>
           <div class="card scenario">

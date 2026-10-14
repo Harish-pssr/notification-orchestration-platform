@@ -51,7 +51,7 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 
 - **Failure:** the relay publishes every message twice with fresh message IDs, so the broker's dedup window cannot absorb the copy (fault `relay.after_publish` = `duplicate`, once).
 - **Expected:** each channel's consumer receives the second copy, finds the delivery already `DELIVERED`, ignores it and counts it; the provider sees 3 requests and executes 3 effects.
-- **Test:** `TestDuplicateDeliveryIsIgnoredByConsumers`; also runnable from the dashboard (Idempotency, "Both on").
+- **Test:** `TestDuplicateDeliveryIsIgnoredByConsumers`; also runnable from the dashboard (Duplicates, "Both protections on").
 - **Observed:** 6 messages received by consumers, 3 ignored by consumers, 0 suppressed by the provider, 3 side effects, 0 duplicate side effects.
 
 ### F8. Duplicate delivery, stopped by the provider alone
@@ -92,7 +92,7 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 
 - **Failure:** the webhook provider returns 500 on every call.
 - **Expected:** after 5 attempts the webhook delivery is dead-lettered with reason "retries exhausted: provider returned 500" while email and push are delivered normally; `/api/dead-letters` lists it. After the provider is restored, a replay of that one delivery delivers it, with exactly one webhook effect, and email and push are not sent again.
-- **Test:** `TestRetriesExhaustedThenReplayDelivers`; also driven through the dashboard (Failure controls, Create events, Dead letters, Replay) in a headless browser.
+- **Test:** `TestRetriesExhaustedThenReplayDelivers`; also driven through the dashboard (Failures, Create, Dead letters, Replay) in a headless browser.
 - **Observed:** passes: 5 attempts, 5 failed requests and 0 effects before restore; after replay `replay_count = 1`, 1 webhook effect, 1 effect each for email and push. In the dev configuration the whole sequence takes about 4 seconds.
 
 ### F14. Permanent provider error is not retried
