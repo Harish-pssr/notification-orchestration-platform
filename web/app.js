@@ -599,8 +599,8 @@ const sections = {
           <div class="card-head"><h2>Dead-lettered deliveries</h2><p id="dl-count" class="muted small"></p></div>
           <div class="toolbar">
             <button class="btn btn-primary" id="dl-replay-sel" disabled>Replay selected</button>
-            <select id="dl-channel" aria-label="Channel to replay"><option value="">All channels</option><option>email</option><option>push</option><option>webhook</option></select>
-            <button class="btn" id="dl-replay-all" disabled>Replay all in this channel</button>
+            <select id="dl-channel" aria-label="Filter by channel"><option value="">All channels</option><option>email</option><option>push</option><option>webhook</option></select>
+            <button class="btn" id="dl-replay-all" disabled>Replay all</button>
           </div>
           <div class="table-wrap"><table>
             <thead><tr><th></th><th>Event</th><th>Type</th><th>Channel</th><th>Attempts</th><th>Replays</th><th>Reason</th></tr></thead>
@@ -621,6 +621,12 @@ const sections = {
       });
       $("#dl-replay-sel").onclick = () => this.replaySelected();
       $("#dl-replay-all").onclick = () => this.replayAll();
+      // The channel box filters the table and scopes "Replay all" to the same channel.
+      $("#dl-channel").onchange = () => {
+        const ch = $("#dl-channel").value;
+        for (const k of [...this.selected]) if (ch && k.split("|")[1] !== ch) this.selected.delete(k); // never replay rows that are hidden
+        this.render();
+      };
       $("#dl-events").addEventListener("click", (e) => {
         const b = e.target.closest("button[data-replay-event]");
         if (b) this.replayEvent(b.dataset.replayEvent);
@@ -631,16 +637,18 @@ const sections = {
       if (r && r.ok) { this.data = r.body; this.render(); }
     },
     render() {
-      const rows = this.data.deliveries, key = (d) => d.event_id + "|" + d.channel;
-      const live = new Set(rows.map(key));
+      const all = this.data.deliveries, key = (d) => d.event_id + "|" + d.channel;
+      const live = new Set(all.map(key));
       for (const k of [...this.selected]) if (!live.has(k)) this.selected.delete(k); // it was replayed or removed
-      $("#dl-count").textContent = rows.length ? `${rows.length} dead` : "";
+      const channel = $("#dl-channel").value;
+      const rows = channel ? all.filter((d) => d.channel === channel) : all;
+      $("#dl-count").textContent = !all.length ? "" : channel ? `${rows.length} of ${all.length} dead (${channel})` : `${all.length} dead`;
       $("#dl-body").innerHTML = rows.length ? rows.map((d) => `<tr>
           <td><input type="checkbox" data-key="${esc(key(d))}" ${this.selected.has(key(d)) ? "checked" : ""} aria-label="Select this delivery"></td>
           <td><a href="#" data-event="${esc(d.event_id)}" class="mono">${shortId(d.event_id)}</a></td>
           <td>${esc(d.event_type)}</td><td>${esc(d.channel)}</td><td>${d.attempts}</td><td>${d.replay_count}</td>
           <td>${esc(d.last_error || "")}</td></tr>`).join("")
-        : `<tr><td colspan="7" class="empty">No dead-lettered deliveries. Deliveries land here when their retries run out or the provider rejects them for good.</td></tr>`;
+        : `<tr><td colspan="7" class="empty">${all.length ? `No dead-lettered deliveries on ${esc(channel)}.` : "No dead-lettered deliveries. Deliveries land here when their retries run out or the provider rejects them for good."}</td></tr>`;
       const ev = this.data.events;
       $("#dl-events-card").hidden = !ev.length;
       $("#dl-events").innerHTML = ev.map((e) => `<tr><td><a href="#" data-event="${esc(e.id)}" class="mono">${shortId(e.id)}</a></td>
@@ -651,7 +659,9 @@ const sections = {
     syncButtons() {
       const token = !!getToken();
       $("#dl-replay-sel").disabled = !token || this.selected.size === 0;
-      $("#dl-replay-all").disabled = !token || this.data.deliveries.length === 0;
+      const channel = $("#dl-channel").value, shown = channel ? this.data.deliveries.filter((d) => d.channel === channel).length : this.data.deliveries.length;
+      $("#dl-replay-all").textContent = channel ? `Replay all on ${channel}` : "Replay all";
+      $("#dl-replay-all").disabled = !token || shown === 0;
       setNotice("dl-notice", token ? "" : "Enter the admin token (top right) to replay deliveries.");
     },
     async call(body) {
