@@ -619,8 +619,10 @@ func (p *Provider) sendTestEmail(w http.ResponseWriter, r *http.Request) {
 		if !errors.As(err, &se) || !se.Uncertain {
 			e.cap.Refund()
 		}
+		p.log.Warn("test email failed", "error", err, "status", "email_test_failed")
 		writeEmailError(w, http.StatusBadGateway, err.Error())
 		return
 	}
+	p.log.Info("test email accepted by the mail server", "reply", reply, "status", "email_test_sent")
 	writeEmailJSON(w, http.StatusOK, map[string]any{"accepted": true, "reply": reply})
 }

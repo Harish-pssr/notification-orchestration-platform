@@ -52,9 +52,26 @@ async function api(path, opts) {
   return { ok: res.ok, status: res.status, headers: res.headers, body };
 }
 
+// Plain-language version of an email error. The technical text stays in the browser console and the provider's log.
+function emailError(raw) {
+  console.warn("email error:", raw);
+  const m = String(raw || "");
+  if (/valid email address/i.test(m)) return "That is not a valid email address.";
+  if (/set a recipient|save a recipient/i.test(m)) return "Save a recipient address first.";
+  if (/admin token|unauthori/i.test(m)) return "Enter the admin token (top right) to change this.";
+  if (/not configured/i.test(m)) return "Email is not configured on the server.";
+  if (/hourly limit/i.test(m)) return "The hourly limit for live emails has been reached.";
+  if (/provider unreachable|timed out|deadline|did not respond/i.test(m)) return "The email service did not respond. Please try again.";
+  if (/unencrypted/i.test(m)) return "The mail server must support encryption before a password can be sent.";
+  if (/smtp login|535|authenticat|credential/i.test(m)) return "The mail server rejected the sign-in. Check the SMTP username and app password in .env.";
+  if (/rcpt|recipient/i.test(m)) return "The mail server refused the recipient address.";
+  if (/connect|no such host|refused|dial|network/i.test(m)) return "Could not connect to the mail server. Check the host and port.";
+  return "The email could not be sent.";
+}
+
 function toast(msg, kind) {
   const el = document.createElement("div");
-  el.className = "toast" + (kind === "bad" ? " bad" : "");
+  el.className = "toast" + (kind === "bad" ? " bad" : kind === "good" ? " good" : "");
   el.textContent = msg;
   $("#toasts").appendChild(el);
   setTimeout(() => el.remove(), 4000);
@@ -837,9 +854,9 @@ const sections = {
         <div class="card" id="id-email" hidden>
           <div class="card-head head-left"><h2>Email delivery</h2><span id="em-state"></span></div>
           <div id="em-notice"></div>
-          <p class="muted">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A real send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
+          <p class="muted">By default the email channel is a mock and nothing is sent. With live sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on. A live send takes several seconds, so set <span class="mono">CALL_TIMEOUT=30s</span> in <span class="mono">.env</span> or the consumer times out and retries (with the protections off, each retry sends another email).</p>
           <div class="email-row">
-            <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send real emails</span></label>
+            <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send live emails</span></label>
             <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">
             <button class="btn" id="em-save">Save recipient</button>
             <button class="btn" id="em-test">Send test email</button>
@@ -873,7 +890,7 @@ const sections = {
       $("#em-real").onchange = async (e) => {
         const want = e.target.checked, typed = $("#em-to").value.trim();
         const to = typed || (this.email && this.email.recipient) || "(no recipient saved)";
-        if (want && !confirm(`Switch REAL email sending on?\n\nEvery email notification will be sent as a real email to ${to}, up to ${this.email ? this.email.max_per_hour : 20} per hour.`)) {
+        if (want && !confirm(`Switch LIVE email sending on?\n\nEvery email notification will be sent as a live email to ${to}, up to ${this.email ? this.email.max_per_hour : 20} per hour.`)) {
           e.target.checked = false; return;
         }
         try {
@@ -881,21 +898,21 @@ const sections = {
           if (typed) body.recipient = typed;
           await must(adminApi("POST", "/api/provider/email", body));
           $("#em-to").value = "";
-          toast(want ? "Real email sending is ON" : "Real email sending is OFF");
-        } catch (err) { toast(err.message, "bad"); }
+          toast(want ? "Live email sending is on" : "Live email sending is off");
+        } catch (err) { toast(emailError(err.message), "bad"); }
         refresh();
       };
       $("#em-save").onclick = async () => {
         const typed = $("#em-to").value.trim();
         if (!typed) { toast("Type the recipient's email address first", "bad"); return; }
-        try { await must(adminApi("POST", "/api/provider/email", { recipient: typed })); $("#em-to").value = ""; toast("Recipient saved"); }
-        catch (err) { toast(err.message, "bad"); }
+        try { await must(adminApi("POST", "/api/provider/email", { recipient: typed })); $("#em-to").value = ""; toast("Recipient saved", "good"); }
+        catch (err) { toast(emailError(err.message), "bad"); }
         refresh();
       };
       $("#em-test").onclick = async () => {
         const btn = $("#em-test"); btn.disabled = true;
-        try { const r = await must(adminApi("POST", "/api/provider/email/test", {})); toast("Test email accepted by the mail server: " + ((r.body && r.body.reply) || "ok")); }
-        catch (err) { toast(err.message, "bad"); }
+        try { await must(adminApi("POST", "/api/provider/email/test", {})); toast("Test email sent to " + ((this.email && this.email.recipient) || "the recipient"), "good"); }
+        catch (err) { toast("Test email failed: " + emailError(err.message), "bad"); }
         refresh();
       };
     },
@@ -907,7 +924,7 @@ const sections = {
       const st = this.email = r.body;
       state.email = st; renderEmailPill();
       const usable = state.config.faults_enabled && getToken() && st.configured;
-      $("#em-state").innerHTML = !st.configured ? neutralChip("Mock only") : st.real ? chip("RETRYING", "Real emails ON") + (st.recipient ? ` <span class="muted small">to ${esc(st.recipient)}</span>` : "") : neutralChip("Mock: nothing is sent");
+      $("#em-state").innerHTML = !st.configured ? neutralChip("Mock only") : st.real ? chip("RETRYING", "Live emails ON") + (st.recipient ? ` <span class="muted small">to ${esc(st.recipient)}</span>` : "") : neutralChip("Mock: nothing is sent");
       setNotice("em-notice", !st.configured
         ? "SMTP is not configured on the server, so emails are always mock. Set EMAIL_SMTP_HOST, EMAIL_SMTP_USER and EMAIL_SMTP_PASS in .env and restart the provider."
         : !state.config.faults_enabled ? "Fault injection is switched off on this server, so these settings are view-only."
@@ -917,7 +934,7 @@ const sections = {
       $("#em-save").disabled = !usable; $("#em-to").disabled = !usable; $("#em-test").disabled = !usable || !st.has_recipient;
       $("#em-to").placeholder = st.has_recipient ? "Saved: " + st.recipient : "recipient@example.com";
       $("#em-usage").textContent = st.configured
-        ? `${st.sent_this_hour} of ${st.max_per_hour} real emails used in the last hour. "Accepted" means the mail server took the message; it can still land in spam. A request stuck in progress is sent again after ${st.stuck_after_s} s${st.stuck_resends ? ` (${st.stuck_resends} so far)` : ""}, which can rarely mean a duplicate.`
+        ? `${st.sent_this_hour} of ${st.max_per_hour} live emails used in the last hour. "Accepted" means the mail server took the message; it can still land in spam. A request stuck in progress is sent again after ${st.stuck_after_s} s${st.stuck_resends ? ` (${st.stuck_resends} so far)` : ""}, which can rarely mean a duplicate.`
         : "";
     },
     async update() {
@@ -956,7 +973,7 @@ const sections = {
     async run() {
       if (this.running) return;
       if (this.mode === "control" && this.email && this.email.real &&
-          !confirm("Real email sending is ON. This experiment turns the protections off, so it will send DUPLICATE real emails to " + this.email.recipient + ". Continue?")) return;
+          !confirm("Live email sending is ON. This experiment turns the protections off, so it will send DUPLICATE live emails to " + this.email.recipient + ". Continue?")) return;
       this.running = true; $("#id-run").disabled = true;
       const mode = this.mode, out = $("#id-result"), say = (t) => { $("#id-progress").textContent = t; };
       let eventId = null;
@@ -1173,10 +1190,10 @@ function renderEmailPill() {
   if (pill.hidden) return;
   const on = !!em.real;
   pill.className = "pill " + (on ? "pill-warn" : "pill-off");
-  $("#email-pill-text").textContent = "Real email sending: " + (on ? "ON" : "OFF");
+  $("#email-pill-text").textContent = "Live email sending: " + (on ? "ON" : "OFF");
   pill.title = on
-    ? `Real emails are being sent to ${em.recipient}. Click to change.`
-    : "Email notifications are mock: nothing is sent. Click to switch real sending on.";
+    ? `Live emails are being sent to ${em.recipient}. Click to change.`
+    : "Email notifications are mock: nothing is sent. Click to switch live sending on.";
 }
 
 $("#live").onchange = (e) => { state.live = e.target.checked; renderUpdated(); if (state.live) refresh(); };

@@ -139,6 +139,7 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
 .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 30; }
 .toast { background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: var(--radius); box-shadow: var(--shadow); max-width: 360px; }
 .toast.bad { background: var(--bad); color: #fff; }
+.toast.good { background: var(--ok); color: var(--bg); }
 
 /* Small screens: the sidebar becomes a horizontal strip */
 @media (max-width: 760px) {
