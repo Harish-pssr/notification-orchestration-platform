@@ -834,6 +834,18 @@ const sections = {
           <div class="pipeline" id="id-layers"></div>
           <div class="reqs" id="id-requests"></div>
         </div>
+        <div class="card" id="id-email" hidden>
+          <div class="card-head head-left"><h2>Email delivery</h2><span id="em-state"></span></div>
+          <div id="em-notice"></div>
+          <p class="muted" style="max-width:70ch">By default the email channel is a mock and nothing is sent. With real sending on, every email notification goes to the one recipient below. It always starts off after a restart, is capped per hour, and the benchmark tools refuse to run while it is on.</p>
+          <div class="email-row">
+            <label class="switch switch-chip"><input type="checkbox" id="em-real"><span class="switch-track"></span><span class="switch-label">Send real emails</span></label>
+            <input type="email" id="em-to" autocomplete="off" aria-label="Recipient email address" placeholder="recipient@example.com">
+            <button class="btn" id="em-save">Save recipient</button>
+            <button class="btn" id="em-test">Send test email</button>
+          </div>
+          <p class="muted small" id="em-usage" style="margin-top:10px"></p>
+        </div>
         <div class="grid-2">
           <div class="card">
             <div class="card-head"><h2>Experiment</h2><p>One payment, every message published twice</p></div>
@@ -854,8 +866,61 @@ const sections = {
       modes.addEventListener("click", (ev) => { const b = ev.target.closest("[data-mode]"); if (b && !this.running) { this.mode = b.dataset.mode; paint(); } });
       paint();
       $("#id-run").onclick = () => this.run();
+      this.wireEmail();
+    },
+    wireEmail() {
+      const refresh = () => this.updateEmail();
+      $("#em-real").onchange = async (e) => {
+        const want = e.target.checked, typed = $("#em-to").value.trim();
+        const to = typed || (this.email && this.email.recipient) || "(no recipient saved)";
+        if (want && !confirm(`Switch REAL email sending on?\n\nEvery email notification will be sent as a real email to ${to}, up to ${this.email ? this.email.max_per_hour : 20} per hour.`)) {
+          e.target.checked = false; return;
+        }
+        try {
+          const body = { real: want };
+          if (typed) body.recipient = typed;
+          await must(adminApi("POST", "/api/provider/email", body));
+          $("#em-to").value = "";
+          toast(want ? "Real email sending is ON" : "Real email sending is OFF");
+        } catch (err) { toast(err.message, "bad"); }
+        refresh();
+      };
+      $("#em-save").onclick = async () => {
+        const typed = $("#em-to").value.trim();
+        if (!typed) { toast("Type the recipient's email address first", "bad"); return; }
+        try { await must(adminApi("POST", "/api/provider/email", { recipient: typed })); $("#em-to").value = ""; toast("Recipient saved"); }
+        catch (err) { toast(err.message, "bad"); }
+        refresh();
+      };
+      $("#em-test").onclick = async () => {
+        const btn = $("#em-test"); btn.disabled = true;
+        try { const r = await must(adminApi("POST", "/api/provider/email/test", {})); toast("Test email accepted by the mail server: " + ((r.body && r.body.reply) || "ok")); }
+        catch (err) { toast(err.message, "bad"); }
+        refresh();
+      };
+    },
+    async updateEmail() {
+      const r = await api("/api/provider/email").catch(() => null);
+      const card = $("#id-email");
+      if (!r || !r.ok) { card.hidden = true; return; }
+      card.hidden = false;
+      const st = this.email = r.body;
+      const usable = state.config.faults_enabled && getToken() && st.configured;
+      $("#em-state").innerHTML = !st.configured ? neutralChip("Mock only") : st.real ? chip("RETRYING", "Real emails ON") + (st.recipient ? ` <span class="muted small">to ${esc(st.recipient)}</span>` : "") : neutralChip("Mock: nothing is sent");
+      setNotice("em-notice", !st.configured
+        ? "SMTP is not configured on the server, so emails are always mock. Set EMAIL_SMTP_HOST, EMAIL_SMTP_USER and EMAIL_SMTP_PASS in .env and restart the provider."
+        : !state.config.faults_enabled ? "Fault injection is switched off on this server, so these settings are view-only."
+        : !getToken() ? "Enter the admin token (top right) to change these settings." : "");
+      const sw = $("#em-real");
+      sw.checked = !!st.real; sw.disabled = !usable;
+      $("#em-save").disabled = !usable; $("#em-to").disabled = !usable; $("#em-test").disabled = !usable || !st.has_recipient;
+      $("#em-to").placeholder = st.has_recipient ? "Saved: " + st.recipient : "recipient@example.com";
+      $("#em-usage").textContent = st.configured
+        ? `${st.sent_this_hour} of ${st.max_per_hour} real emails used in the last hour. "Accepted" means the mail server took the message; it can still land in spam. A request stuck in progress is sent again after ${st.stuck_after_s} s${st.stuck_resends ? ` (${st.stuck_resends} so far)` : ""}, which can rarely mean a duplicate.`
+        : "";
     },
     async update() {
+      this.updateEmail();
       const r = await api("/api/idempotency").catch(() => null);
       if (r && r.ok) this.renderLayers(r.body);
       const canRun = state.config.faults_enabled && getToken();
@@ -889,6 +954,8 @@ const sections = {
     },
     async run() {
       if (this.running) return;
+      if (this.mode === "control" && this.email && this.email.real &&
+          !confirm("Real email sending is ON. This experiment turns the protections off, so it will send DUPLICATE real emails to " + this.email.recipient + ". Continue?")) return;
       this.running = true; $("#id-run").disabled = true;
       const mode = this.mode, out = $("#id-result"), say = (t) => { $("#id-progress").textContent = t; };
       let eventId = null;

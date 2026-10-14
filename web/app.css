@@ -272,3 +272,7 @@ a.btn { display: inline-block; }
 .theme-btn { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); display: inline-grid; place-items: center; cursor: pointer; }
 .theme-btn:hover { background: var(--surface-2); border-color: var(--muted); }
 .theme-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Duplicates page: real email settings */
+.email-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.email-row input[type="email"] { min-width: 260px; flex: 1 1 260px; max-width: 360px; }
