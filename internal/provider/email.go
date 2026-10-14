@@ -608,7 +608,8 @@ func (p *Provider) sendTestEmail(w http.ResponseWriter, r *http.Request) {
 		writeEmailError(w, http.StatusTooManyRequests, fmt.Sprintf("the hourly limit of %d real emails was reached", e.cfg.MaxPerHour))
 		return
 	}
-	reply, err := e.sender.Send(r.Context(), Mail{
+	// A real send takes seconds; if the caller gives up, the send still finishes (the SMTP timeout bounds it).
+	reply, err := e.sender.Send(context.WithoutCancel(r.Context()), Mail{
 		From: e.cfg.From, To: e.to(), MessageID: newMessageID(e.cfg.From),
 		Subject: "Test email from the Notification Platform (" + strconv.Itoa(int(time.Now().Unix()%100000)) + ")",
 		Body:    "If you can read this, the SMTP settings work. Nothing else was sent.",

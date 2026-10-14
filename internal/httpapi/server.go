@@ -91,7 +91,7 @@ func NewHandler(d Deps) http.Handler {
 	})
 
 	if d.Faults != nil {
-		f := &faultsHandler{registry: d.Faults, providerURL: d.ProviderURL, client: client}
+		f := &faultsHandler{registry: d.Faults, providerURL: d.ProviderURL, client: client, slowClient: &http.Client{Timeout: providerSlowTimeout}}
 		adm := func(h http.HandlerFunc) http.Handler { return admin.Require(d.FaultsEnabled, d.AdminToken, h) }
 		mux.Handle("GET /api/faults", adm(f.list))
 		mux.Handle("PUT /api/faults/{point}", adm(f.set))
@@ -106,7 +106,7 @@ func NewHandler(d Deps) http.Handler {
 		// a test email needs the token and FAULTS_ENABLED like the other controls.
 		mux.HandleFunc("GET /api/provider/email", f.forwardGet("/email"))
 		mux.Handle("POST /api/provider/email", adm(f.forwardToProvider("/admin/email")))
-		mux.Handle("POST /api/provider/email/test", adm(f.forwardToProvider("/admin/email/test")))
+		mux.Handle("POST /api/provider/email/test", adm(f.forwardToProviderSlow("/admin/email/test")))
 	}
 
 	mux.Handle("GET /", http.FileServerFS(web.FS)) // the dashboard, embedded in the binary

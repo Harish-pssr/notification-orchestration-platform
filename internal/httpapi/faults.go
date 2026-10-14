@@ -17,6 +17,7 @@ type faultsHandler struct {
 	registry    *faults.Registry
 	providerURL string
 	client      *http.Client
+	slowClient  *http.Client // for calls that send a real email
 }
 
 func (h *faultsHandler) list(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +78,20 @@ func (h *faultsHandler) clear(w http.ResponseWriter, r *http.Request) {
 // own admin endpoints. The provider is a separate "external" system with its own
 // control surface (D8); the shared admin token is passed through.
 func (h *faultsHandler) forwardToProvider(path string) http.HandlerFunc {
+	return h.forward(path, nil)
+}
+
+// forwardToProviderSlow is forwardToProvider with the long timeout, for calls that send a real email.
+func (h *faultsHandler) forwardToProviderSlow(path string) http.HandlerFunc {
+	return h.forward(path, h.slowClient)
+}
+
+func (h *faultsHandler) forward(path string, client *http.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		c := client
+		if c == nil {
+			c = h.client
+		}
 		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<10))
 		if err != nil {
 			writeError(w, http.StatusBadRequest, "could not read body")
@@ -86,7 +100,7 @@ func (h *faultsHandler) forwardToProvider(path string) http.HandlerFunc {
 		req, _ := http.NewRequestWithContext(r.Context(), http.MethodPost, h.providerURL+path, bytes.NewReader(body))
 		req.Header.Set("Authorization", r.Header.Get("Authorization"))
 		req.Header.Set("Content-Type", "application/json")
-		resp, err := h.client.Do(req)
+		resp, err := c.Do(req)
 		if err != nil {
 			writeError(w, http.StatusBadGateway, "provider unreachable")
 			return
@@ -188,4 +202,12 @@ func (h *eventsHandler) idempotency(providerURL string, client *http.Client) htt
 	}
 }
 
-func newHTTPClient() *http.Client { return &http.Client{Timeout: 3 * time.Second} }
+// providerTimeout bounds the dashboard's quick calls to the provider. providerSlowTimeout is for the one call that
+// really sends an email (the test email): an SMTP conversation takes several seconds (Gmail about 5), longer than a
+// quick call is allowed, so it would otherwise be reported as "provider unreachable" while the email goes out.
+var (
+	providerTimeout     = 3 * time.Second
+	providerSlowTimeout = 30 * time.Second
+)
+
+func newHTTPClient() *http.Client { return &http.Client{Timeout: providerTimeout} }
