@@ -140,8 +140,8 @@ const sections = {
             <div class="flow-scroll">
             <svg class="flow-svg" viewBox="0 0 1200 460" role="group" aria-label="Diagram: a client sends an event to the API, which saves it in PostgreSQL; a relay publishes it to NATS JetStream; one consumer per channel calls the provider, which sends it once per idempotency key.">
               <defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
-              <rect class="zone" x="135" y="20" width="740" height="425" rx="14"/><text class="zone-label" x="152" y="42">YOUR PLATFORM</text>
-              <rect class="zone" x="905" y="20" width="285" height="425" rx="14"/><text class="zone-label" x="922" y="42">EXTERNAL SYSTEM (a mock here)</text>
+              <rect class="zone" x="135" y="20" width="740" height="425" rx="14"/><text class="zone-label" x="152" y="42">Your platform</text>
+              <rect class="zone" x="905" y="20" width="285" height="425" rx="14"/><text class="zone-label" x="922" y="42">External system (a mock here)</text>
               <path class="ar" d="M110,80 H158"/><path class="ar" d="M220,110 V168"/><path class="ar" d="M280,230 H343"/><path class="ar" d="M445,230 H518"/>
               <path class="ar" d="M645,162 H733"/><path class="ar" d="M645,238 H733"/><path class="ar" d="M645,314 H733"/>
               <path class="ar" d="M835,162 H933"/><path class="ar" d="M835,238 H933"/><path class="ar" d="M835,314 H933"/>
@@ -219,6 +219,7 @@ const sections = {
         const info = TIPS[el.dataset.tip];
         if (!info) return;
         tip.innerHTML = `<strong>${esc(info.t)}</strong><p>${esc(info.d)}</p>`;
+        tip.classList.toggle("fail", el.dataset.tip.startsWith("f")); // failure points get a red border
         tip.hidden = false;
         const box = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), w = tip.offsetWidth;
         tip.style.left = Math.max(0, Math.min(r.left - box.left + r.width / 2 - w / 2, box.width - w)) + "px";
@@ -1093,6 +1094,51 @@ async function checkApi() {
 }
 
 $("#live").onchange = (e) => { state.live = e.target.checked; renderUpdated(); if (state.live) refresh(); };
+
+// Colour theme: Auto follows the system; Light and Dark override it and are remembered in this browser.
+const THEME_ICONS = {
+  auto: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>`,
+  light: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>`,
+  dark: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.8 6.8 0 0 0 9.7 9.7z"/></svg>`,
+};
+const THEMES = ["auto", "light", "dark"];
+let theme = "auto";
+try { theme = localStorage.getItem("theme") || "auto"; } catch { /* storage unavailable */ }
+if (!THEMES.includes(theme)) theme = "auto";
+// The tab icon is the logo in the current accent colours. CSS variables cannot be read from an icon, so the colours are
+// resolved here and the icon is rebuilt whenever the theme changes (button, or the system setting while on Auto).
+function resolvedColor(cssVar) {
+  const probe = document.createElement("span");
+  probe.style.color = `var(${cssVar})`;
+  document.body.appendChild(probe);
+  const color = getComputedStyle(probe).color;
+  probe.remove();
+  return color;
+}
+function updateFavicon() {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${resolvedColor("--accent")}"/>` +
+    `<text x="32" y="45" font-size="38" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="${resolvedColor("--accent-fg")}">N</text></svg>`;
+  link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+}
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateFavicon);
+function applyTheme() {
+  if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme;
+  const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length], btn = $("#theme");
+  btn.innerHTML = THEME_ICONS[theme];
+  $("#theme-label").textContent = "Theme: " + theme[0].toUpperCase() + theme.slice(1);
+  updateFavicon();
+  btn.title = `Theme: ${theme} (click for ${next}). Auto follows your system setting.`;
+  btn.setAttribute("aria-label", `Colour theme: ${theme}. Click for ${next}.`);
+}
+$("#theme").onclick = () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+  try { localStorage.setItem("theme", theme); } catch { /* ignore */ }
+  applyTheme();
+};
+applyTheme();
+
 $("#drawer-close").onclick = closeDrawer; $("#drawer-backdrop").onclick = closeDrawer;
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && state.drawerId) closeDrawer(); });
 // #/<section> or #/<section>/<event id>
