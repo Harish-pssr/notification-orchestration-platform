@@ -803,6 +803,7 @@ const sections = {
         <div class="card">
           <div class="card-head"><h2>Protection layers</h2><p id="id-state"></p></div>
           <div class="pipeline" id="id-layers"></div>
+          <div class="reqs" id="id-requests"></div>
         </div>
         <div class="grid-2">
           <div class="card">
@@ -839,13 +840,23 @@ const sections = {
       const ignored = d.duplicates_ignored_by_consumers || 0, suppressed = d.duplicate_requests_suppressed_by_provider || 0, dup = p.duplicate_effects || 0;
       $("#id-state").innerHTML = p.dedupe === false ? chip("DLQ", "provider protection OFF (negative control)") : chip("DELIVERED", "protections on");
       $("#id-layers").innerHTML = `
-        <div class="node"><h3>Duplicates absorbed</h3><div class="big">${num(ignored + suppressed)}</div><div class="sub">repeat messages after a retry or crash, stopped by one of the two layers</div></div>
+        <div class="node"><h3>Duplicates absorbed</h3><div class="big">${num(ignored + suppressed)}</div><div class="sub">repeats stopped by a layer</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>Layer 1 · Consumer</h3><div class="big">${num(ignored)}</div><div class="sub">ignored: "this delivery is already marked delivered"</div></div>
+        <div class="node"><h3>Layer 1 · Consumer</h3><div class="big">${num(ignored)}</div><div class="sub">already marked delivered</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node"><h3>Layer 2 · Provider</h3><div class="big">${num(suppressed)}</div><div class="sub">suppressed: "I have seen this idempotency key"</div></div>
+        <div class="node"><h3>Layer 2 · Provider</h3><div class="big">${num(suppressed)}</div><div class="sub">idempotency key already seen</div></div>
         <div class="arrow" aria-hidden="true">→</div>
-        <div class="node${dup ? " bad" : ""}"><h3>Notifications sent</h3><div class="big">${num(p.effects)}</div><div class="sub">${dup ? `<strong>${num(dup)} duplicate${dup === 1 ? "" : "s"} got through</strong>` : "0 duplicates, as it must be"} · ${num(p.requests)} requests reached the provider</div></div>`;
+        <div class="node${dup ? " bad" : ""}"><h3>Notifications sent</h3><div class="big">${num(p.effects)}</div><div class="sub">${dup ? `<strong>${num(dup)} duplicate${dup === 1 ? "" : "s"} got through</strong>` : "0 duplicates, as it must be"}</div></div>`;
+      // Every request the provider received ends up in exactly one of three places, so the parts add up to the total.
+      const part = (value, label, cls) => `<div class="eq-part${cls ? " " + cls : ""}"><div class="eq-value">${num(value)}</div><div class="eq-label">${label}</div></div>`;
+      $("#id-requests").innerHTML = `
+        <h3>Where every provider request went</h3>
+        <div class="equation">
+          ${part(p.requests, "requests received", "eq-total")}<span class="eq-op" aria-hidden="true">=</span>
+          ${part(p.effects, "sent")}<span class="eq-op" aria-hidden="true">+</span>
+          ${part(suppressed, "repeats suppressed")}<span class="eq-op" aria-hidden="true">+</span>
+          ${part(p.injected_failures, "answered with an injected failure")}
+        </div>`;
     },
     async run() {
       if (this.running) return;

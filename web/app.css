@@ -232,3 +232,13 @@ a.btn { display: inline-block; }
 
 #updated { min-width: 9.5em; text-align: right; }
 #updated.is-paused { color: var(--warn); font-weight: 600; }
+
+/* Duplicates page: how the provider's requests add up */
+.reqs { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.reqs h3 { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.equation { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.eq-part { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 8px 12px; min-width: 120px; }
+.eq-part.eq-total { background: transparent; border-color: var(--muted); }
+.eq-value { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.eq-label { color: var(--muted); font-size: 12px; }
+.eq-op { color: var(--muted); font-size: 18px; }
