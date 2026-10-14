@@ -160,11 +160,7 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
 /* Start page: a grid of small blocks instead of one long column of text */
 .cols-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 32px; }
 .prose p { line-height: 1.65; }
-.step-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-.step { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 14px; position: relative; }
-.step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
-.step h3, .point h3 { font-size: 14px; margin-bottom: 4px; }
-.step p, .point p { color: var(--muted); font-size: 13px; line-height: 1.55; }
+.point h3 { font-size: 14px; margin-bottom: 4px; }
 .point-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .point { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
 .steps, .points { margin: 0; padding-left: 20px; line-height: 1.6; }
@@ -180,8 +176,6 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
 /* Start page: the path of an event */
 .lead-p { font-size: 15.5px; }
 .prose p + p { margin-top: 12px; }
-.what-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr); gap: 32px; align-items: start; }
-@media (max-width: 900px) { .what-grid { grid-template-columns: 1fr; } }
 
 /* Health: one panel per role, instances as rows inside it */
 .role { padding: 0; overflow: hidden; }
@@ -218,18 +212,6 @@ a.btn { display: inline-block; }
 
 .role-desc { flex-basis: 100%; margin-top: -4px; }
 
-
-/* Start page, first section: both columns start and end together */
-.what-grid { align-items: stretch; }
-
-
-/* Start page, "At a glance": facts that appear nowhere else on the page */
-.glance { margin: 0; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 6px 16px; }
-.glance > div { padding: 8px 0; border-bottom: 1px solid var(--line); }
-.glance > div:last-child { border-bottom: 0; }
-.glance dt { color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.glance dd { margin: 2px 0 0; font-size: 13.5px; }
-
 #updated { min-width: 9.5em; text-align: right; }
 #updated.is-paused { color: var(--warn); font-weight: 600; }
 
@@ -242,3 +224,43 @@ a.btn { display: inline-block; }
 .eq-value { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .eq-label { color: var(--muted); font-size: 12px; }
 .eq-op { color: var(--muted); font-size: 18px; }
+
+/* Start page: the flow diagram */
+.flow-scroll { overflow-x: auto; }
+.flow-svg { width: 100%; min-width: 760px; height: auto; display: block; font-family: inherit; }
+.flow-svg .zone { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 6 5; }
+.flow-svg .zone-label { fill: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+.flow-svg .fn rect, .flow-svg .fn .cyl { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.3; }
+.flow-svg .fn .grp { fill: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.flow-svg .fn .lane { fill: var(--surface); }
+.flow-svg .fn .cyl-lip { fill: none; stroke: var(--line); stroke-width: 1.3; }
+.flow-svg .fn text { fill: var(--fg); font-size: 13px; font-weight: 600; text-anchor: middle; }
+.flow-svg .fn text.t2 { fill: var(--muted); font-size: 11px; font-weight: 400; }
+.flow-svg .fn:hover rect, .flow-svg .fn:hover .cyl, .flow-svg .fn:hover .cyl-lip { stroke: var(--accent); }
+.flow-svg .ar { fill: none; stroke: var(--muted); stroke-width: 1.6; marker-end: url(#flow-arrow); }
+.flow-svg .arrowhead { fill: var(--muted); }
+.flow-svg .badge circle:not(.hit) { fill: var(--accent); }
+.flow-svg .badge text { fill: var(--accent-fg); font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.flow-svg .fail-mark circle:not(.hit) { fill: var(--bad); stroke: var(--surface); stroke-width: 2; }
+.flow-svg .fail-mark text { fill: #fff; font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.flow:not(.show-fail) .fail-mark { display: none; }
+
+/* Start page glossary: shown with a switch, like the failure points */
+#st-glossary:not(.show-glossary) .glossary { display: none; }
+#st-glossary:not(.show-glossary) .card-head { margin-bottom: 0; }
+
+/* Start page: switches next to their heading, and the step popover */
+.card-head.head-left { justify-content: flex-start; align-items: center; gap: 16px; }
+.switch-chip { padding: 4px 12px 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.switch-chip:hover { border-color: var(--accent); }
+.switch-chip .switch-track { background: color-mix(in srgb, var(--muted) 55%, transparent); }
+.flow-stage { position: relative; }
+.flow-tip { position: absolute; z-index: 5; width: 300px; max-width: calc(100% - 8px); background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); pointer-events: none; }
+.flow-tip[hidden] { display: none; }
+.flow-tip strong { display: block; font-size: 13px; margin-bottom: 4px; }
+.flow-tip p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.flow-hint { margin: 0 0 14px; font-size: 14.5px; }
+.flow-svg .hit { fill: transparent; stroke: none; }
+.flow-svg .badge, .flow-svg .fail-mark { outline: none; }
+.flow-svg .badge:hover circle:not(.hit), .flow-svg .badge:focus circle:not(.hit) { filter: brightness(1.25); }
+.flow-svg .fail-mark:hover circle:not(.hit), .flow-svg .fail-mark:focus circle:not(.hit) { filter: brightness(1.2); }

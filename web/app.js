@@ -115,38 +115,65 @@ const sections = {
   start: {
     title: "Start",
     heading: "Getting started",
-    desc: "What this project is, how one event travels through it, and a two-minute way to try it.",
+    desc: "What this project is and how one event travels through it.",
     mount(root) {
-      const step = (n, title, text) => `<div class="step"><span class="step-n">${n}</span><h3>${title}</h3><p>${text}</p></div>`;
       const point = (title, text) => `<div class="point"><h3>${title}</h3><p>${text}</p></div>`;
       const term = (t, d) => `<div><dt>${t}</dt><dd>${d}</dd></div>`;
       root.innerHTML = `
         <div class="card">
           <div class="card-head"><h2>About this project</h2></div>
-          <div class="what-grid">
-            <div class="prose">
-              <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project is a notification platform built to make sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
-              <p>It is the plumbing behind products you use every day. The interesting part is not sending a notification: it is what happens when the database, the message broker, a worker or the external email service fails halfway.</p>
-              <p>This console shows the system live. <strong>Observe</strong> to watch events and the health of each part, <strong>Operate</strong> to create events and break things on purpose, <strong>Prove</strong> to see duplicates being stopped. The sections below explain the journey of an event, the guarantees and the words used.</p>
-            </div>
-            <dl class="glance" aria-label="At a glance">
-              <div><dt>Delivery</dt><dd>At least once, with idempotent effects</dd></div>
-              <div><dt>Channels</dt><dd>Email, push, webhook</dd></div>
-              <div><dt>Built with</dt><dd>Go, PostgreSQL, NATS JetStream, Docker Compose</dd></div>
-              <div><dt>Runs as</dt><dd>API, relays, one consumer per channel, a mock provider</dd></div>
-              <div><dt>Observable</dt><dd>Structured logs, Prometheus metrics, this dashboard</dd></div>
-            </dl>
+          <div class="prose">
+            <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project makes sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+            <p class="muted">Delivery is at least once, and the provider makes repeats harmless. Built with Go, PostgreSQL, NATS JetStream and Docker Compose.</p>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-head"><h2>Event journey</h2><p>Each step has a matching counter on the <a href="#/overview">Overview</a>.</p></div>
-          <div class="step-grid">
-            ${step(1, "API", "It writes the business change (say, the payment) and a record of the event to the database in <em>one transaction</em>. Either both are saved or neither is.")}
-            ${step(2, "Outbox", "The event record is a to-do entry in the same database: \"saved, not yet handed on\". Committed with the payment, it can never be lost in between.")}
-            ${step(3, "Relay", "A background worker picks up outbox entries and publishes one small message per channel to a message broker (NATS JetStream), which keeps each until it is confirmed.")}
-            ${step(4, "Consumer", "One consumer per channel (email, push, webhook) takes a message and calls the provider, which stands in for the real external service.")}
-            ${step(5, "Provider", "Every notification carries an idempotency key. If the same one arrives twice, the provider recognises the key and does not send again. The delivery is marked <em>Delivered</em>.")}
+        <div class="card flow" id="st-flow">
+          <div class="card-head head-left">
+            <h2>How an event flows</h2>
+            <label class="switch switch-chip" title="Mark where each component can fail, with how the system recovers">
+              <input type="checkbox" id="st-fail"><span class="switch-track"></span><span class="switch-label">Show failure points</span>
+            </label>
+          </div>
+          <p class="muted flow-hint">Hover over a number to see what happens at that step. Switch on <strong>Show failure points</strong> to see where it can fail.</p>
+          <div class="flow-stage" id="st-stage">
+            <div class="flow-scroll">
+            <svg class="flow-svg" viewBox="0 0 1200 460" role="group" aria-label="Diagram: a client sends an event to the API, which saves it in PostgreSQL; a relay publishes it to NATS JetStream; one consumer per channel calls the provider, which sends it once per idempotency key.">
+              <defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+              <rect class="zone" x="135" y="20" width="740" height="425" rx="14"/><text class="zone-label" x="152" y="42">YOUR PLATFORM</text>
+              <rect class="zone" x="905" y="20" width="285" height="425" rx="14"/><text class="zone-label" x="922" y="42">EXTERNAL SYSTEM (a mock here)</text>
+              <path class="ar" d="M110,80 H158"/><path class="ar" d="M220,110 V168"/><path class="ar" d="M280,230 H343"/><path class="ar" d="M445,230 H518"/>
+              <path class="ar" d="M645,162 H733"/><path class="ar" d="M645,238 H733"/><path class="ar" d="M645,314 H733"/>
+              <path class="ar" d="M835,162 H933"/><path class="ar" d="M835,238 H933"/><path class="ar" d="M835,314 H933"/>
+              <path class="ar" d="M1045,320 V353"/><path class="ar" d="M785,350 V392 H220 V292"/>
+              <g class="fn"><rect x="10" y="50" width="100" height="60" rx="10"/><text x="60" y="78">Client</text><text class="t2" x="60" y="96">your app</text></g>
+              <g class="fn"><rect x="160" y="50" width="120" height="60" rx="10"/><text x="220" y="78">API</text><text class="t2" x="220" y="96">one transaction</text></g>
+              <g class="fn"><path class="cyl" d="M160,178 a60,8 0 0 1 120,0 v104 a60,8 0 0 1 -120,0 z"/><path class="cyl-lip" d="M160,178 a60,8 0 0 0 120,0"/><text x="220" y="212">PostgreSQL</text><text class="t2" x="220" y="234">business row</text><text class="t2" x="220" y="250">outbox record</text><text class="t2" x="220" y="266">delivery rows</text></g>
+              <g class="fn"><rect x="345" y="200" width="100" height="60" rx="10"/><text x="395" y="228">Relay</text><text class="t2" x="395" y="246">claim, publish</text></g>
+              <g class="fn"><rect class="grp" x="520" y="100" width="140" height="250" rx="12"/><text x="590" y="124">NATS JetStream</text>
+                <rect class="lane" x="535" y="140" width="110" height="44" rx="8"/><text x="590" y="166">email</text>
+                <rect class="lane" x="535" y="216" width="110" height="44" rx="8"/><text x="590" y="242">push</text>
+                <rect class="lane" x="535" y="292" width="110" height="44" rx="8"/><text x="590" y="318">webhook</text></g>
+              <g class="fn"><rect class="grp" x="725" y="100" width="120" height="250" rx="12"/><text x="785" y="124">Consumers</text>
+                <rect class="lane" x="735" y="140" width="100" height="44" rx="8"/><text x="785" y="158">Consumer</text><text class="t2" x="785" y="173">email</text>
+                <rect class="lane" x="735" y="216" width="100" height="44" rx="8"/><text x="785" y="234">Consumer</text><text class="t2" x="785" y="249">push</text>
+                <rect class="lane" x="735" y="292" width="100" height="44" rx="8"/><text x="785" y="310">Consumer</text><text class="t2" x="785" y="325">webhook</text></g>
+              <g class="fn"><rect x="935" y="120" width="220" height="200" rx="12"/><text x="1045" y="152">Provider</text>
+                <text class="t2" x="1045" y="176">stands in for the real</text><text class="t2" x="1045" y="192">email, push and webhook</text><text class="t2" x="1045" y="208">services</text>
+                <text class="t2" x="1045" y="252">sends one notification</text><text class="t2" x="1045" y="268">per idempotency key</text></g>
+              <g class="fn"><path class="cyl" d="M985,363 a60,8 0 0 1 120,0 v64 a60,8 0 0 1 -120,0 z"/><path class="cyl-lip" d="M985,363 a60,8 0 0 0 120,0"/><text x="1045" y="392">provider DB</text><text class="t2" x="1045" y="408">key + effect,</text><text class="t2" x="1045" y="421">one transaction</text></g>
+              <g class="badge" data-tip="s1" tabindex="0" role="button" aria-label="Step 1"><circle class="hit" cx="134" cy="80" r="17"/><circle cx="134" cy="80" r="10"/><text x="134" y="80">1</text></g><g class="badge" data-tip="s2" tabindex="0" role="button" aria-label="Step 2"><circle class="hit" cx="220" cy="139" r="17"/><circle cx="220" cy="139" r="10"/><text x="220" y="139">2</text></g>
+              <g class="badge" data-tip="s3" tabindex="0" role="button" aria-label="Step 3"><circle class="hit" cx="311" cy="230" r="17"/><circle cx="311" cy="230" r="10"/><text x="311" y="230">3</text></g><g class="badge" data-tip="s4" tabindex="0" role="button" aria-label="Step 4"><circle class="hit" cx="482" cy="230" r="17"/><circle cx="482" cy="230" r="10"/><text x="482" y="230">4</text></g>
+              <g class="badge" data-tip="s5" tabindex="0" role="button" aria-label="Step 5"><circle class="hit" cx="690" cy="238" r="17"/><circle cx="690" cy="238" r="10"/><text x="690" y="238">5</text></g><g class="badge" data-tip="s6" tabindex="0" role="button" aria-label="Step 6"><circle class="hit" cx="884" cy="238" r="17"/><circle cx="884" cy="238" r="10"/><text x="884" y="238">6</text></g>
+              <g class="badge" data-tip="s7" tabindex="0" role="button" aria-label="Step 7"><circle class="hit" cx="470" cy="392" r="17"/><circle cx="470" cy="392" r="10"/><text x="470" y="392">7</text></g>
+              <g class="fail-mark" data-tip="fA" tabindex="0" role="button" aria-label="Failure point A"><circle class="hit" cx="280" cy="50" r="17"/><circle cx="280" cy="50" r="10"/><text x="280" y="50">A</text></g>
+              <g class="fail-mark" data-tip="fB" tabindex="0" role="button" aria-label="Failure point B"><circle class="hit" cx="445" cy="200" r="17"/><circle cx="445" cy="200" r="10"/><text x="445" y="200">B</text></g>
+              <g class="fail-mark" data-tip="fC" tabindex="0" role="button" aria-label="Failure point C"><circle class="hit" cx="660" cy="100" r="17"/><circle cx="660" cy="100" r="10"/><text x="660" y="100">C</text></g>
+              <g class="fail-mark" data-tip="fD" tabindex="0" role="button" aria-label="Failure point D"><circle class="hit" cx="845" cy="100" r="17"/><circle cx="845" cy="100" r="10"/><text x="845" y="100">D</text></g>
+              <g class="fail-mark" data-tip="fE" tabindex="0" role="button" aria-label="Failure point E"><circle class="hit" cx="1155" cy="120" r="17"/><circle cx="1155" cy="120" r="10"/><text x="1155" y="120">E</text></g>
+            </svg>
+            </div>
+            <div class="flow-tip" id="st-tip" role="tooltip" hidden></div>
           </div>
         </div>
 
@@ -160,53 +187,54 @@ const sections = {
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-head"><h2>Try it</h2></div>
-            <ol class="steps" id="st-try"></ol>
+        <div class="card" id="st-glossary">
+          <div class="card-head head-left">
+            <h2>Glossary</h2>
+            <label class="switch switch-chip" title="Show the definitions of the words used in this console">
+              <input type="checkbox" id="st-gloss"><span class="switch-track"></span><span class="switch-label">Show definitions</span>
+            </label>
           </div>
-          <div class="card">
-            <div class="card-head"><h2>Measured results</h2></div>
-            <ul class="points">
-              <li><strong>Reliability under failure:</strong> 99,999 events with 3 relay crashes, about 15,000 injected duplicate messages and about 2% failing provider calls. Every delivery completed, 0 dead letters, <strong>0 duplicate notifications</strong>. With the protections switched off the same run produced 1,425 duplicates, so the counter can see them.</li>
-              <li><strong>Outages:</strong> the relay, and separately the message broker, stopped for 60 seconds under load (3 times each). Nothing was lost, and the backlog drained about 100 seconds after each restart.</li>
-              <li><strong>Capacity:</strong> roughly 310 to 370 events per second end to end.</li>
-            </ul>
-            <p class="muted small" style="margin-top:8px">Measured on one laptop (Docker Desktop on Windows): a measurement of that laptop, not a promise. Method and limits are in the repository's docs/benchmarks.md.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h2>Glossary</h2></div>
           <dl class="glossary">
-            ${term("Event", "Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.")}
-            ${term("Channel", "A way to notify: email, push or webhook. Each event type is routed to some of them.")}
-            ${term("Delivery", "One event on one channel. A payment event has three deliveries, each tracked separately.")}
-            ${term("Outbox", "The list, in the database, of events that are saved but not yet handed to the broker. A long outbox means the relay is behind or stopped.")}
-            ${term("Relay", "The worker that moves events from the outbox to the broker. Several can run at once.")}
-            ${term("Broker", "The message queue (NATS JetStream) that stores messages until a consumer confirms them.")}
-            ${term("Consumer", "The worker for one channel: takes messages from the broker and asks the provider to send them.")}
-            ${term("Provider", "The external service that actually sends the notification. Here it is a mock with its own database, so it behaves like something outside the platform.")}
-            ${term("Idempotency key", "A unique id for one operation. Repeating a request with the same key returns the first result instead of doing the work again; this is how duplicates are made harmless.")}
-            ${term("At least once", "The delivery guarantee: a message is never lost but may arrive more than once.")}
-            ${term("Retry and backoff", "After a temporary failure, try again after a growing, slightly randomised delay.")}
-            ${term("Dead letter", "A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.")}
-            ${term("Replay", "Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.")}
-            ${term("Backlog", "Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.")}
-          </dl>
+              ${term("Event", "Something that happened in the business, such as a payment succeeding. One event can be delivered on several channels.")}
+              ${term("Channel", "A way to notify: email, push or webhook. Each event type is routed to some of them.")}
+              ${term("Delivery", "One event on one channel. A payment event has three deliveries, each tracked separately.")}
+              ${term("Outbox", "The list, in the database, of events that are saved but not yet handed to the broker. A long outbox means the relay is behind or stopped.")}
+              ${term("Relay", "The worker that moves events from the outbox to the broker. Several can run at once.")}
+              ${term("Broker", "The message queue (NATS JetStream) that stores messages until a consumer confirms them.")}
+              ${term("Consumer", "The worker for one channel: takes messages from the broker and asks the provider to send them.")}
+              ${term("Provider", "The external service that actually sends the notification. Here it is a mock with its own database, so it behaves like something outside the platform.")}
+              ${term("Idempotency key", "A unique id for one operation. Repeating a request with the same key returns the first result instead of doing the work again; this is how duplicates are made harmless.")}
+              ${term("At least once", "The delivery guarantee: a message is never lost but may arrive more than once.")}
+              ${term("Retry and backoff", "After a temporary failure, try again after a growing, slightly randomised delay.")}
+              ${term("Dead letter", "A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.")}
+              ${term("Replay", "Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.")}
+              ${term("Backlog", "Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.")}
+            </dl>
         </div>`;
+      $("#st-fail").onchange = (e) => $("#st-flow").classList.toggle("show-fail", e.target.checked);
+      // Hover (or focus, or tap) a numbered step or a failure marker to read what happens there.
+      const TIPS = {s1: {"t": "1 · Send", "d": "The business system sends an event with an Idempotency-Key. A retry with the same key never creates a second event."}, s2: {"t": "2 · Save", "d": "The API writes the business row, an outbox record and one delivery row per channel in one transaction: all saved, or none."}, s3: {"t": "3 · Claim", "d": "A relay claims due outbox records with a short lease. If it dies, the lease expires and another relay takes over."}, s4: {"t": "4 · Publish", "d": "The relay publishes one small message per channel to NATS JetStream and waits for its confirmation."}, s5: {"t": "5 · Pull", "d": "Each channel's consumer pulls its messages. Anything not acknowledged is delivered again."}, s6: {"t": "6 · Send", "d": "The consumer calls the provider with an idempotency key. The provider sends once per key, however many repeats arrive."}, s7: {"t": "7 · Record", "d": "The consumer marks the delivery as delivered and acknowledges the message."}, fA: {"t": "A · API failure before commit", "d": "No state is written. The client retries with the same idempotency key, and the event is created once."}, fB: {"t": "B · Relay failure after publishing", "d": "The lease expires and another relay takes over the record. The republished message is harmless, because delivery is idempotent downstream."}, fC: {"t": "C · Broker unavailable", "d": "Events remain durable in PostgreSQL. Relays back off and retry without consuming attempts, and publishing resumes when the broker recovers."}, fD: {"t": "D · Consumer failure after the provider call", "d": "The unacknowledged message is redelivered. The provider recognises the idempotency key and does not send a second notification."}, fE: {"t": "E · Provider failure", "d": "Transient errors are retried with exponential backoff. Deliveries that exhaust their retries move to Dead letters and can be replayed once the cause is resolved."}};
+      const stage = $("#st-stage"), tip = $("#st-tip");
+      const showTip = (el) => {
+        const info = TIPS[el.dataset.tip];
+        if (!info) return;
+        tip.innerHTML = `<strong>${esc(info.t)}</strong><p>${esc(info.d)}</p>`;
+        tip.hidden = false;
+        const box = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), w = tip.offsetWidth;
+        tip.style.left = Math.max(0, Math.min(r.left - box.left + r.width / 2 - w / 2, box.width - w)) + "px";
+        tip.style.top = (r.bottom - box.top + 8) + "px";
+      };
+      const hideTip = () => { tip.hidden = true; };
+      const target = (e) => e.target.closest && e.target.closest("[data-tip]");
+      stage.addEventListener("pointerover", (e) => { const el = target(e); if (el) showTip(el); });
+      stage.addEventListener("pointerout", (e) => { if (target(e)) hideTip(); });
+      stage.addEventListener("focusin", (e) => { const el = target(e); if (el) showTip(el); });
+      stage.addEventListener("focusout", hideTip);
+      stage.addEventListener("click", (e) => { const el = target(e); if (el) showTip(el); });
+      document.addEventListener("click", (e) => { if (!stage.contains(e.target)) hideTip(); });
+      $("#st-gloss").onchange = (e) => $("#st-glossary").classList.toggle("show-glossary", e.target.checked);
     },
-    update() {
-      const cfg = state.config;
-      const steps = [];
-      steps.push(`<li><a href="#/create">Create an event.</a> Send a PaymentSucceeded: it is routed to email, push and webhook.${cfg.create_requires_token ? " On this deployment creating events needs the admin token (the box at the top right); everything else can be viewed freely." : ""}</li>`);
-      steps.push(`<li>Watch it on the <a href="#/overview">Overview</a>: the counters and the pipeline move as the event passes each step.</li>`);
-      steps.push(`<li>Open it in <a href="#/events">Events</a> (click the row) to see its timeline: when it was created, when it was published, and when each channel delivered it.</li>`);
-      steps.push(cfg.faults_enabled
-        ? `<li>Break something on purpose in <a href="#/faults">Failures</a>: make the webhook provider return errors, create an event, and watch it retry and then land in <a href="#/dlq">Dead letters</a>. Restore the provider and replay it. Or pause the relay on <a href="#/health">Health</a> and watch the backlog build and drain.</li>`
-        : `<li>Failure injection is switched off on this deployment so visitors cannot break it. The cases they cover (a crashing relay, a failing provider, a broker outage, duplicate messages) are described in the repository's docs/failure-scenarios.md, and <a href="#/idempotency">Duplicates</a> shows where duplicates are stopped.</li>`);
-      $("#st-try").innerHTML = steps.join("");
-    },
+    update() {},
   },
 
   overview: {
