@@ -88,7 +88,7 @@ All published ports are bound to `127.0.0.1` (this machine only):
 | 8080 | API and dashboard |
 | 15433 | platform Postgres (user `notif`, password `notif`, database `platform`) |
 | 15434 | provider Postgres (same credentials, database `provider`) |
-| 4222, 8222 | NATS client port and NATS monitoring |
+| 4222, 18222 | NATS client port and NATS monitoring (published as 18222; Windows reserves 8222 on some machines) |
 | 9090 | mock provider |
 | 9091 | Prometheus |
 | 3000 | Grafana (started by `scripts/up.sh`; no login in development) |
@@ -139,7 +139,7 @@ SELECT count(*) AS effects, count(*) - count(DISTINCT key) AS duplicate_side_eff
 
 The same counts are available as `curl localhost:9090/stats`.
 
-**The broker:** `curl "localhost:8222/jsz?streams=true&consumers=true"` shows the `NOTIFY` stream and each
+**The broker:** `curl "localhost:18222/jsz?streams=true&consumers=true"` shows the `NOTIFY` stream and each
 channel's consumer (messages pending, awaiting acknowledgement, redelivered).
 
 **Metrics.** `curl localhost:8080/metrics` serves the API's counters and the backlog gauges. Prometheus at
