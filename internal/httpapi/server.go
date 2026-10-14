@@ -102,6 +102,11 @@ func NewHandler(d Deps) http.Handler {
 		mux.Handle("POST /api/provider/failure", adm(f.forwardToProvider("/admin/failures")))
 		mux.Handle("POST /api/provider/failure/clear", adm(f.forwardToProvider("/admin/failures/clear")))
 		mux.HandleFunc("GET /api/provider/failures", f.providerFailures) // read-only
+		// Real email sending (D21): reading the status is open (the recipient is masked); changing it or sending
+		// a test email needs the token and FAULTS_ENABLED like the other controls.
+		mux.HandleFunc("GET /api/provider/email", f.forwardGet("/email"))
+		mux.Handle("POST /api/provider/email", adm(f.forwardToProvider("/admin/email")))
+		mux.Handle("POST /api/provider/email/test", adm(f.forwardToProvider("/admin/email/test")))
 	}
 
 	mux.Handle("GET /", http.FileServerFS(web.FS)) // the dashboard, embedded in the binary

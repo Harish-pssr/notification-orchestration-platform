@@ -75,7 +75,17 @@ services:
   provider:
     build: { context: ., dockerfile: deploy/Dockerfile, args: { SERVICE: provider } }
     restart: unless-stopped
-    environment: *app-env
+    # Real email sending (D21) is available only when these are set in an uncommitted .env, and it is switched on
+    # from the dashboard, never by configuration alone. Empty means the mock.
+    environment:
+      <<: *app-env
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_TO: ${EMAIL_TO:-}
+      EMAIL_MAX_PER_HOUR: ${EMAIL_MAX_PER_HOUR:-20}
     depends_on:
       migrate-provider: { condition: service_completed_successfully }
 

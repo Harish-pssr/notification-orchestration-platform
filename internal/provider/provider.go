@@ -6,11 +6,13 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"regexp"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -37,6 +39,7 @@ type Provider struct {
 	adminToken   string
 
 	fails          *failures         // injected misbehaviour per channel (D8)
+	email          *emailer          // real email sending (D21); nil or switched off means the mock
 	metrics        *metrics.Provider // nil means no metrics
 	metricsHandler http.Handler      // serves /metrics when set
 }
@@ -63,6 +66,7 @@ func (p *Provider) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /v1/{channel}", p.send)
 	mux.HandleFunc("GET /stats", p.stats)
+	mux.HandleFunc("GET /email", p.emailInfo)
 	if p.metricsHandler != nil {
 		mux.Handle("GET /metrics", p.metricsHandler)
 	}
@@ -70,6 +74,8 @@ func (p *Provider) Handler() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(p.fails.snapshot())
 	})
+	mux.Handle("POST /admin/email", admin.Require(p.adminEnabled, p.adminToken, http.HandlerFunc(p.setEmail)))
+	mux.Handle("POST /admin/email/test", admin.Require(p.adminEnabled, p.adminToken, http.HandlerFunc(p.sendTestEmail)))
 	mux.Handle("POST /admin/dedupe", admin.Require(p.adminEnabled, p.adminToken, http.HandlerFunc(p.setDedupe)))
 	mux.Handle("POST /admin/forget", admin.Require(p.adminEnabled, p.adminToken, http.HandlerFunc(p.forget)))
 	mux.Handle("POST /admin/failures", admin.Require(p.adminEnabled, p.adminToken, http.HandlerFunc(p.setFailure)))
@@ -126,6 +132,16 @@ func (p *Provider) send(w http.ResponseWriter, r *http.Request) {
 	response, replayed, err := p.execute(r.Context(), key, channel, body)
 	if err != nil {
 		p.metrics.Request(string(channel), metrics.ResultError, time.Since(start))
+		var se *statusError
+		if errors.As(err, &se) {
+			// A retryable answer from the real-email path (503 key in progress, 429 cap, 502 send failed).
+			if se.retryAfter > 0 {
+				w.Header().Set("Retry-After", strconv.Itoa(se.retryAfter))
+			}
+			p.log.Warn("request not completed", "key", key, "status_code", se.code, "reason", se.msg)
+			http.Error(w, se.msg, se.code)
+			return
+		}
 		p.fail(w, "execute", err)
 		return
 	}
@@ -144,6 +160,9 @@ func (p *Provider) send(w http.ResponseWriter, r *http.Request) {
 
 // execute runs the effect at most once per key.
 func (p *Provider) execute(ctx context.Context, key string, ch events.Channel, payload []byte) (resp []byte, replayed bool, err error) {
+	if ch == events.Email && p.email.active() {
+		return p.executeEmail(ctx, key, ch, payload)
+	}
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return nil, false, err

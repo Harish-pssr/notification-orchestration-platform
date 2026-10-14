@@ -111,6 +111,21 @@ func (h *faultsHandler) providerFailures(w http.ResponseWriter, r *http.Request)
 	_, _ = io.Copy(w, resp.Body)
 }
 
+// forwardGet returns a handler that relays a read-only GET to the provider.
+func (h *faultsHandler) forwardGet(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		resp, err := h.client.Get(h.providerURL + path)
+		if err != nil {
+			writeError(w, http.StatusBadGateway, "provider unreachable")
+			return
+		}
+		defer resp.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		_, _ = io.Copy(w, resp.Body)
+	}
+}
+
 // providerStats is the shape of the provider's GET /stats.
 type providerStats struct {
 	Requests         int64 `json:"requests"`

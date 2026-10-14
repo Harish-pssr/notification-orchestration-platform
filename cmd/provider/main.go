@@ -50,6 +50,13 @@ func run() error {
 	reg := metrics.NewRegistry()
 	p.SetMetrics(metrics.NewProvider(reg), metrics.Handler(reg))
 	p.SetAdmin(config.Getenv("FAULTS_ENABLED", "false") == "true", os.Getenv("ADMIN_TOKEN"))
+	// Real email sending (D21): available only when an SMTP account is configured, and always off until an
+	// operator switches it on from the dashboard.
+	emailCfg := provider.EmailConfigFromEnv()
+	p.SetEmail(ctx, emailCfg, nil)
+	if emailCfg.Configured() {
+		log.Info("real email sending is available but switched off", "smtp_host", emailCfg.Host, "max_per_hour", emailCfg.MaxPerHour)
+	}
 	srv := &http.Server{Addr: addr, Handler: p.Handler(), ReadHeaderTimeout: 5 * time.Second}
 
 	errCh := make(chan error, 1)
