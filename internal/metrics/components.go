@@ -79,6 +79,11 @@ type Relay struct {
 	claimDur      prometheus.Histogram
 	publishDur    prometheus.Histogram
 	finishDur     prometheus.Histogram
+
+	reconcilePasses   prometheus.Counter
+	reconcileRepaired prometheus.Counter
+	reconcileDead     prometheus.Counter
+	reconcileErrors   prometheus.Counter
 }
 
 // NewRelay registers the relay's metrics on reg.
@@ -112,9 +117,23 @@ func NewRelay(reg prometheus.Registerer) *Relay {
 		finishDur: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: Namespace, Name: "relay_finish_duration_seconds", Help: "Time for the fenced update that records an event as published.", Buckets: opBuckets,
 		}),
+		reconcilePasses: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace, Name: "reconciler_passes_total", Help: "Reconciler passes run by this relay.",
+		}),
+		reconcileRepaired: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace, Name: "reconciler_repaired_total",
+			Help: "Deliveries that looked lost by the broker and were sent back through the relay (should stay at zero in normal operation).",
+		}),
+		reconcileDead: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace, Name: "reconciler_dead_lettered_total", Help: "Deliveries the reconciler gave up on after the repair limit.",
+		}),
+		reconcileErrors: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: Namespace, Name: "reconciler_errors_total", Help: "Reconciler passes that failed.",
+		}),
 	}
 	reg.MustRegister(m.claimedEvents, m.publishedEvts, m.messages, m.failures, m.fenceLost, m.deadLettered,
-		m.claimDur, m.publishDur, m.finishDur)
+		m.claimDur, m.publishDur, m.finishDur,
+		m.reconcilePasses, m.reconcileRepaired, m.reconcileDead, m.reconcileErrors)
 	return m
 }
 
@@ -168,6 +187,25 @@ func (m *Relay) DeadLettered() {
 		return
 	}
 	m.deadLettered.Inc()
+}
+
+// Reconciled records one reconciler pass (D22): deliveries it sent back through the
+// relay because they looked lost, and deliveries it gave up on.
+func (m *Relay) Reconciled(repaired, deadLettered int) {
+	if m == nil {
+		return
+	}
+	m.reconcilePasses.Inc()
+	m.reconcileRepaired.Add(float64(repaired))
+	m.reconcileDead.Add(float64(deadLettered))
+}
+
+// ReconcileFailed records a reconciler pass that returned an error.
+func (m *Relay) ReconcileFailed() {
+	if m == nil {
+		return
+	}
+	m.reconcileErrors.Inc()
 }
 
 // ---------- Consumer ----------

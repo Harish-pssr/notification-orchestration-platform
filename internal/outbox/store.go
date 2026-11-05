@@ -211,13 +211,16 @@ type Pending struct {
 	// Replays is how many times an operator replayed this delivery. It becomes part
 	// of the broker message ID so a replay is never mistaken for the original publish.
 	Replays int
+	// Reconciles is how many times the reconciler republished this delivery (D22). It
+	// is part of the message ID for the same reason as Replays.
+	Reconciles int
 }
 
 // PendingChannels returns, per event, the deliveries that are still PENDING
 // (D6: only those are published by the relay).
 func (s *Store) PendingChannels(ctx context.Context, ids []uuid.UUID) (map[uuid.UUID][]Pending, error) {
 	rows, err := s.pool.Query(ctx,
-		`SELECT event_id, channel, replay_count FROM channel_deliveries
+		`SELECT event_id, channel, replay_count, reconcile_count FROM channel_deliveries
 		 WHERE event_id = ANY($1) AND status = 'PENDING' ORDER BY event_id, channel`, ids)
 	if err != nil {
 		return nil, fmt.Errorf("pending channels: %w", err)
@@ -228,11 +231,11 @@ func (s *Store) PendingChannels(ctx context.Context, ids []uuid.UUID) (map[uuid.
 	for rows.Next() {
 		var id uuid.UUID
 		var ch string
-		var replays int
-		if err := rows.Scan(&id, &ch, &replays); err != nil {
+		var replays, reconciles int
+		if err := rows.Scan(&id, &ch, &replays, &reconciles); err != nil {
 			return nil, err
 		}
-		out[id] = append(out[id], Pending{Channel: events.Channel(ch), Replays: replays})
+		out[id] = append(out[id], Pending{Channel: events.Channel(ch), Replays: replays, Reconciles: reconciles})
 	}
 	return out, rows.Err()
 }

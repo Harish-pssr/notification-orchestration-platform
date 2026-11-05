@@ -128,7 +128,7 @@ func (s *Store) Replay(ctx context.Context, in ReplayInput) (ReplayResult, error
 	rows, err := tx.Query(ctx, `
 		UPDATE channel_deliveries d
 		SET status = 'PENDING', attempts = 0, last_error = NULL, next_attempt_at = NULL,
-		    replay_count = d.replay_count + 1
+		    replay_count = d.replay_count + 1, reconcile_count = 0
 		FROM outbox_events o
 		WHERE o.id = d.event_id AND o.status = 'PUBLISHED' AND d.status = 'DLQ'
 		  AND ($1::uuid IS NULL OR d.event_id = $1) AND ($2::text IS NULL OR d.channel = $2)

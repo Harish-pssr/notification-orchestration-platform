@@ -76,8 +76,20 @@ func run() error {
 
 	// Metrics (D9): served on their own port because the relay has no HTTP server.
 	reg := metrics.NewRegistry()
-	r.SetMetrics(metrics.NewRelay(reg))
+	rm := metrics.NewRelay(reg)
+	r.SetMetrics(rm)
 	go metrics.Serve(ctx, config.Getenv("METRICS_ADDR", ":9100"), reg, log)
+
+	// Reconciler (D22): finds deliveries the broker seems to have lost and sends them
+	// back through the relay. RECONCILE_EVERY=0 turns it off.
+	rec := relay.NewReconciler(relay.ReconcilerConfig{
+		Every:      config.GetenvDuration("RECONCILE_EVERY", 30*time.Second),
+		After:      config.GetenvDuration("RECONCILE_AFTER", 10*time.Minute),
+		MaxRepairs: config.GetenvInt("RECONCILE_MAX_REPAIRS", 3),
+		Batch:      config.GetenvInt("RECONCILE_BATCH", 100),
+	}, outbox.NewStore(pool), log)
+	rec.SetMetrics(rm)
+	go rec.Run(ctx)
 
 	// Fault injection (D8): a no-op unless FAULTS_ENABLED=true.
 	fr := faults.New(pool, config.Getenv("FAULTS_ENABLED", "false") == "true",

@@ -260,6 +260,11 @@ func (r *Relay) publish(ctx context.Context, c outbox.Claimed, pending []outbox.
 			// as a repeat of the original publish.
 			msgID += fmt.Sprintf(":replay-%d", p.Replays)
 		}
+		if p.Reconciles > 0 {
+			// Same for a message the reconciler republished because the broker seemed
+			// to have lost the earlier one (D22).
+			msgID += fmt.Sprintf(":recon-%d", p.Reconciles)
+		}
 		if duplicate {
 			msgID += ":dup-" + uuid.NewString()
 		}
