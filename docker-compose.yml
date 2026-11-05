@@ -26,6 +26,11 @@ x-app-env: &app-env
   # How long a consumer waits for the provider. The mock answers in milliseconds, so 5s is generous; a REAL email
   # takes several seconds (Gmail about 5), so set CALL_TIMEOUT=30s in .env when you use real sending (D21).
   CALL_TIMEOUT: ${CALL_TIMEOUT:-5s}
+  # The reconciler (D22) runs inside every relay. It looks for deliveries the broker lost every RECONCILE_EVERY
+  # and treats a delivery as lost after RECONCILE_AFTER without any sign of life; the wait must stay longer
+  # than the slowest legitimate retry or consumer outage. Shorten it only to demonstrate a repair.
+  RECONCILE_EVERY: ${RECONCILE_EVERY:-30s}
+  RECONCILE_AFTER: ${RECONCILE_AFTER:-10m}
 
 services:
   postgres-platform:

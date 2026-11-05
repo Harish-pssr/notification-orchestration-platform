@@ -10,7 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
+
 	"notifplatform/internal/bench"
+	"notifplatform/internal/broker"
+	"notifplatform/internal/config"
 	"notifplatform/internal/events"
 	"notifplatform/internal/experiment"
 )
@@ -52,7 +57,7 @@ func (e env) dbNow(ctx context.Context) (float64, error) {
 func recovery(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("recovery", flag.ExitOnError)
 	cm := addCommon(fs)
-	service := fs.String("service", "relay", "Compose service to stop: relay or nats")
+	service := fs.String("service", "relay", "Compose service to stop (relay or nats), or nats-purge to delete every message in the broker stream under load (D22)")
 	rate := fs.Float64("rate", 150, "arrival rate, events per second (about 70% of capacity)")
 	relays := fs.Int("relays", 4, "relay instances")
 	consumers := fs.Int("consumers", 4, "consumer instances per channel")
@@ -62,8 +67,8 @@ func recovery(ctx context.Context, args []string) error {
 	repeats := fs.Int("repeats", 3, "repetitions, each from a clean state")
 	drain := fs.Duration("drain-timeout", 5*time.Minute, "how long to wait for everything to be delivered after the load")
 	_ = fs.Parse(args)
-	if *service != "relay" && *service != "nats" {
-		return fmt.Errorf("-service must be relay or nats")
+	if *service != "relay" && *service != "nats" && *service != purgeService {
+		return fmt.Errorf("-service must be relay, nats or %s", purgeService)
 	}
 
 	e, closeEnv, err := cm.open(ctx)
@@ -86,7 +91,9 @@ func recovery(ctx context.Context, args []string) error {
 		}
 	}
 	defer func() { // never leave the service stopped
-		_ = e.stack.Start(context.Background(), *service)
+		if *service != purgeService {
+			_ = e.stack.Start(context.Background(), *service)
+		}
 		_ = e.stack.Scale(context.Background(), *relays, *consumers)
 	}()
 
@@ -159,24 +166,37 @@ func (e env) recoveryOnce(ctx context.Context, c recoveryConfig) (recoveryRun, e
 		return out, ctx.Err()
 	case <-time.After(c.steady):
 	}
-	c.mark(experiment.Phase, fmt.Sprintf("repetition %d: stopping %s", c.rep, c.service))
-	stopAt, err := e.dbNow(ctx)
-	if err != nil {
-		return out, err
-	}
-	if err := e.stack.Stop(ctx, c.service); err != nil {
-		return out, err
-	}
-	time.Sleep(c.outage)
-	startAt, err := e.dbNow(ctx)
-	if err != nil {
-		return out, err
-	}
-	if err := e.stack.Start(ctx, c.service); err != nil {
-		return out, err
+	var stopAt, startAt float64
+	var err error
+	if c.service == purgeService {
+		// Not an outage: the broker loses every message it holds, once, under load.
+		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: purging every message from the broker stream", c.rep))
+		if stopAt, err = e.dbNow(ctx); err != nil {
+			return out, err
+		}
+		if err := purgeStream(ctx); err != nil {
+			return out, err
+		}
+		startAt = stopAt
+		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: stream purged, the reconciler has to find the lost deliveries", c.rep))
+	} else {
+		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: stopping %s", c.rep, c.service))
+		if stopAt, err = e.dbNow(ctx); err != nil {
+			return out, err
+		}
+		if err := e.stack.Stop(ctx, c.service); err != nil {
+			return out, err
+		}
+		time.Sleep(c.outage)
+		if startAt, err = e.dbNow(ctx); err != nil {
+			return out, err
+		}
+		if err := e.stack.Start(ctx, c.service); err != nil {
+			return out, err
+		}
+		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: %s restarted, recovering", c.rep, c.service))
 	}
 	out.StopAt, out.StartAt = stopAt, startAt
-	c.mark(experiment.Phase, fmt.Sprintf("repetition %d: %s restarted, recovering", c.rep, c.service))
 	wg.Wait()
 	if loadErr != nil {
 		return out, loadErr
@@ -234,4 +254,27 @@ func (r recoveryRun) print() {
 	for _, f := range r.Verdict.Failures {
 		fmt.Println("    -", f)
 	}
+}
+
+// purgeService is the -service value that deletes the broker's stored messages instead
+// of stopping a container (D22).
+const purgeService = "nats-purge"
+
+// purgeStream deletes every message in the NOTIFY stream, as if the broker's storage
+// had been lost. It is a simulation of loss through the broker's own API, not a disk failure.
+func purgeStream(ctx context.Context) error {
+	nc, err := nats.Connect(config.Load().NATSURL, nats.Name("bench-purge"))
+	if err != nil {
+		return fmt.Errorf("connect nats: %w", err)
+	}
+	defer nc.Close()
+	js, err := jetstream.New(nc)
+	if err != nil {
+		return err
+	}
+	stream, err := js.Stream(ctx, broker.StreamName)
+	if err != nil {
+		return err
+	}
+	return stream.Purge(ctx)
 }
