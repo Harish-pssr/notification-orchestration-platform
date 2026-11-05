@@ -8,8 +8,15 @@ bin/
 # Scratch output of benchmark runs. Curated results live in docs/benchmarks.md and docs/data/.
 benchmark-results*/
 
-# Everything private lives in notes/ (design notes, study guide, planning, scratch results) and in
-# .claude/ (tool settings): kept on the developer's machine, not part of the repository (the
-# repository holds code, documentation and results).
+# Private local files (notes and tool settings) stay on the developer's machine and are not part of the
+# repository, which holds code, documentation and results.
 /notes/
 /.claude/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+__pycache__/

@@ -388,6 +388,8 @@ The relays ran with `RECONCILE_EVERY=5s` and `RECONCILE_AFTER=30s` (defaults: 30
 - **Repaired deliveries:** deliveries whose `reconcile_count` is above zero at the end of the run (the reconciler's own record in the database).
 - **Recovery time:** from the purge until the number of undelivered deliveries is back within two seconds of arrivals (900 deliveries).
 
+Raw data: `docs/data/2026-11-05-reconciler-purge/`.
+
 ### Results
 
 | Rep | Peak events waiting in the outbox | Peak deliveries undelivered | Deliveries repaired by the reconciler | Most repairs for one delivery | Recovery time | Accepted events / delivered (deliveries) | Dead letters | Duplicate side effects |
