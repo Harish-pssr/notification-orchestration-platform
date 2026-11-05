@@ -237,3 +237,7 @@ scripts/    bash and PowerShell helpers
 test/       integration and failure-scenario tests
 docs/       architecture, crash analysis, failure scenarios, benchmarks, limitations, deployment
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).
