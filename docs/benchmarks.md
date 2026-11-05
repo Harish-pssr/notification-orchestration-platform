@@ -1,5 +1,11 @@
 # Benchmarks
 
+> **Scope: what is real and what is mocked.**
+> **Real:** the pipeline (two PostgreSQL databases, NATS JetStream, relays, consumers), the load (sent through the HTTP API), the injected failures (real `SIGKILL`s, real container stops, a real purge of the broker's stream) and the counting (exact, from database timestamps and the provider's tables).
+> **Mocked:** the provider. It stands in for the email, push and webhook services; it has its own database, and an "effect" is a row it records, not a delivered email, push or webhook call. It **honors idempotency keys** (it writes the key and the effect in one transaction).
+> So the headline claim is **"0 duplicate side effects at a provider that honors idempotency keys"**. It is not a measurement of real notification delivery, and it is not "0 duplicate notifications". For a provider that does not honor keys (for example a real SMTP server, the optional real email mode, D21) the guarantee is at-least-once with a rare duplicate. No benchmark here was run with real sending, and the tools refuse to run while it is on.
+> **Environment:** every result is from one Windows laptop under Docker Desktop (no Linux numbers yet); each section records its own environment. Broker loss is simulated by purging the stream, not by a disk failure.
+
 Every number here was measured. Raw data for each experiment is kept in [`docs/data/`](data) (the scripts write to `benchmark-results/`, which is not committed). Nothing is estimated. Each section states its environment, dataset, method and limitations.
 
 ## B1. Relay scaling (relay stage alone)

@@ -3,7 +3,13 @@
 A fault-tolerant asynchronous notification platform built on the transactional
 outbox pattern. When a business operation commits, its notifications (email, push,
 webhook) must reach the downstream systems even if the API, a relay, the message
-broker, a consumer or the external provider crashes, and nobody may be notified twice.
+broker, a consumer or the external provider crashes, and a repeated message must not cause a second side effect.
+
+<p align="center"><img src="docs/images/architecture.svg" alt="Architecture: a client sends an event to the API, which saves it in PostgreSQL in one transaction; a relay publishes it to NATS JetStream; one consumer per channel calls the provider, which records one effect per idempotency key. A reconciler inside the relay repairs deliveries the broker lost." width="100%"></p>
+
+1. The client sends an event with an `Idempotency-Key`. 2. The API saves the business row, an outbox record and one delivery row per channel in **one transaction**. 3. A relay claims due outbox rows with a lease. 4. It publishes one small message per channel to NATS JetStream, waits for the broker's confirmation, then marks the event published. 5. Each channel's consumer pulls its messages. 6. The consumer calls the provider with an idempotency key; the provider records the key and the effect in one transaction. 7. The consumer records the delivery as done. The dashed box is the **reconciler**, a background safety net inside the relay that republishes deliveries the broker lost.
+
+> **Scope: what is real and what is mocked.** The pipeline (two PostgreSQL databases, NATS JetStream, relays, consumers), the load, the injected failures (real `SIGKILL`s, real container stops, a purge of the broker's stream) and the counting are real. **The provider is a mock**: it stands in for the email, push and webhook services, has its own database, and an "effect" is a row it records, not a delivered email or push. It honors idempotency keys, so the claim is **"0 duplicate side effects at a provider that honors idempotency keys"**; it is not a measurement of real notification delivery. For a provider that does not honor keys (for example real SMTP, an optional mode here) the guarantee is at-least-once with a rare duplicate. All results are from one Windows laptop under Docker Desktop; there are no Linux numbers yet.
 
 ## What it demonstrates
 
@@ -29,12 +35,28 @@ broker, a consumer or the external provider crashes, and nobody may be notified 
 
 | | Result |
 |---|---|
-| Reliability under failure | 99,999 events with 3 relay SIGKILLs, about 15,000 injected duplicate messages and about 2% failing provider calls: every delivery completed, 0 dead letters, **0 duplicate side effects** (with the protections off, the same run produced 1,425) |
+| Reliability under failure | 99,999 events with 3 relay SIGKILLs, about 15,000 injected duplicate messages and about 2% failing provider calls: every delivery completed, 0 dead letters, **0 duplicate side effects at a provider that honors idempotency keys** (with the protections off, the same run produced 1,425) |
 | Outages | the relay, and separately the broker, stopped for 60 s under load, 3 times each: nothing lost, backlog drained about 100 s after each restart |
+| Lost broker messages | the broker's stream purged under load, 3 times: about 3,200 lost deliveries per run, all found and republished by the reconciler, 0 duplicate side effects (a simulated loss, not a disk failure) |
 | Capacity | roughly 310 to 370 events per second end to end; running 8 messages at a time per consumer lifted one consumer's capacity from 98 to 153 events/s |
 
 Full method, tables and limitations are in [docs/benchmarks.md](docs/benchmarks.md). These
 figures describe one machine and are not a promise about any other.
+
+## The dashboard
+
+The dashboard is built into the API and explains itself. First, the overview with the system running normally (40 events, every delivery completed, nothing stuck):
+
+<p align="center"><img src="docs/images/dashboard-overview.png" alt="The overview page: 40 events created, 94 of 94 deliveries completed, nothing needing attention, median latency 128 ms, and the pipeline with every channel delivered." width="90%"></p>
+
+The **Duplicates** page runs the central experiment: one payment, every message published twice. On the left, both protections on: six messages arrive, three effects are recorded, **0 duplicate side effects**. On the right, the **negative control** with both protections off: the same duplicates get through (**3 duplicate side effects**), which shows the counters can see duplicates and the zero on the left means something. (The effects are rows at the mock provider.)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/dashboard-duplicates-normal.png" alt="Duplicates page, both protections on: 6 messages received by consumers, 3 stopped by the provider's idempotency key, 3 side effects executed, 0 duplicate side effects."></td>
+<td width="50%"><img src="docs/images/dashboard-duplicates-control.png" alt="Duplicates page, negative control with both protections off: 6 side effects executed, 3 duplicate side effects got through."></td>
+</tr>
+</table>
 
 ## Documentation
 
@@ -54,7 +76,7 @@ Go 1.27 is needed only to run the tests or build the benchmark tools on your mac
 built inside Docker.
 
 ```bash
-git clone <repository-url> && cd <repository-folder>
+# from the root folder of this repository
 scripts/up.sh            # Linux, macOS, or Git Bash on Windows
 # Windows PowerShell:    powershell -ExecutionPolicy Bypass -File scripts\up.ps1
 ```

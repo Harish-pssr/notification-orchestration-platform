@@ -140,7 +140,7 @@ const sections = {
         <div class="card">
           <div class="card-head"><h2>About this project</h2></div>
           <div class="prose">
-            <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project makes sure <strong>every event is delivered, even when parts of the system crash, and nobody is notified twice</strong>.</p>
+            <p class="lead-p">When something happens in a business system (a payment succeeds, a booking is confirmed), the people affected should hear about it by email, push notification or webhook. This project makes sure <strong>every event is delivered, even when parts of the system crash, and a repeat never causes a second side effect</strong> (at a provider that honors idempotency keys, which the mock here does).</p>
             <p class="muted">Delivery is at least once, and the provider makes repeats harmless. Built with Go, PostgreSQL, NATS JetStream and Docker Compose.</p>
           </div>
         </div>
@@ -201,7 +201,7 @@ const sections = {
           <div class="card-head"><h2>Guarantees</h2></div>
           <div class="point-grid">
             ${point("No lost events", "An event exists only once it is committed, and the outbox guarantees it is handed on, even if the relay crashes halfway through.")}
-            ${point("Harmless repeats", "The system delivers <em>at least once</em>: after a crash a message may be sent again. The provider makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
+            ${point("Harmless repeats", "The system delivers <em>at least once</em>: after a crash a message may be sent again. A provider that honors idempotency keys makes sure each notification still happens once. (It does not claim \"exactly once\" delivery.)")}
             ${point("Retried failures", "Temporary errors are retried with growing delays. Permanent ones go to <a href=\"#/dlq\">Dead letters</a>, where an operator can fix the cause and replay them.")}
             ${point("Self-healing", "While a part is down, events wait safely in the database or the broker, and drain when it returns.")}
           </div>
@@ -864,7 +864,7 @@ const sections = {
   idempotency: {
     title: "Duplicates",
     heading: "Duplicate protection",
-    desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and proves that no duplicate notification was actually sent.",
+    desc: "Duplicate messages are expected: the system delivers at least once. This page shows where each duplicate was stopped, and shows whether the provider, a mock that honors idempotency keys, recorded any duplicate side effect.",
     running: false,
     mount(root) {
       const mode = (id, title, text) => `<button type="button" class="mode-card" role="radio" aria-checked="false" data-mode="${id}"><strong>${title}</strong><span class="muted small">${text}</span></button>`;
