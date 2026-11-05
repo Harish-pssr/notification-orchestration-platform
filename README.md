@@ -7,7 +7,7 @@ broker, a consumer or the external provider crashes, and a repeated message must
 
 <p align="center"><img src="docs/images/architecture.svg" alt="Architecture: a client sends an event to the API, which saves it in PostgreSQL in one transaction; a relay publishes it to NATS JetStream; one consumer per channel calls the provider, which records one effect per idempotency key. A reconciler inside the relay repairs deliveries the broker lost." width="100%"></p>
 
-1. The client sends an event with an `Idempotency-Key`. 2. The API saves the business row, an outbox record and one delivery row per channel in **one transaction**. 3. A relay claims due outbox rows with a lease. 4. It publishes one small message per channel to NATS JetStream, waits for the broker's confirmation, then marks the event published. 5. Each channel's consumer pulls its messages. 6. The consumer calls the provider with an idempotency key; the provider records the key and the effect in one transaction. 7. The consumer records the delivery as done. The dashed box is the **reconciler**, a background safety net inside the relay that republishes deliveries the broker lost.
+1. The client sends an event with an `Idempotency-Key`. 2. The API saves the business row, an outbox record and one delivery row per channel in **one transaction**. 3. A relay claims due outbox rows with a lease. 4. It publishes one small message per channel to NATS JetStream, waits for the broker's confirmation, then marks the event published. 5. Each channel's consumer pulls its messages. 6. The consumer calls the provider with an idempotency key; the provider records the key and the effect in one transaction. 7. The consumer records the delivery as done. 8. In the background, the **reconciler** (the dashed box, inside the relay) finds deliveries the broker lost after confirming them and sends them back through the relay to be published again.
 
 > **Scope: what is real and what is mocked.** The pipeline (two PostgreSQL databases, NATS JetStream, relays, consumers), the load, the injected failures (real `SIGKILL`s, real container stops, a purge of the broker's stream) and the counting are real. **The provider is a mock**: it stands in for the email, push and webhook services, has its own database, and an "effect" is a row it records, not a delivered email or push. It honors idempotency keys, so the claim is **"0 duplicate side effects at a provider that honors idempotency keys"**; it is not a measurement of real notification delivery. For a provider that does not honor keys (for example real SMTP, an optional mode here) the guarantee is at-least-once with a rare duplicate. All results are from one Windows laptop under Docker Desktop; there are no Linux numbers yet.
 
@@ -53,8 +53,12 @@ The **Duplicates** page runs the central experiment: one payment, every message 
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/dashboard-duplicates-normal.png" alt="Duplicates page, both protections on: 6 messages received by consumers, 3 stopped by the provider's idempotency key, 3 side effects executed, 0 duplicate side effects."></td>
-<td width="50%"><img src="docs/images/dashboard-duplicates-control.png" alt="Duplicates page, negative control with both protections off: 6 side effects executed, 3 duplicate side effects got through."></td>
+<th width="50%">Both protections on</th>
+<th width="50%">Negative control: both protections off</th>
+</tr>
+<tr>
+<td><img src="docs/images/dashboard-duplicates-normal.png" alt="Result card, both protections on: 6 messages received by consumers, 3 stopped by the provider's idempotency key, 3 side effects executed, 0 duplicate side effects."></td>
+<td><img src="docs/images/dashboard-duplicates-control.png" alt="Result card, negative control with both protections off: 6 side effects executed, 3 duplicate side effects got through."></td>
 </tr>
 </table>
 
