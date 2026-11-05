@@ -15,6 +15,9 @@ broker, a consumer or the external provider crashes, and nobody may be notified 
   claims exactly-once delivery.
 - **Retries, dead letters and replay:** capped exponential backoff with jitter, permanent
   versus transient errors, a poison guard, and a safe operator replay.
+- **A reconciler for lost broker messages:** deliveries still open long after their event
+  was published are sent back through the relay, with a repair limit. Tested by purging
+  the broker's stream mid-run (a simulated loss, not a disk failure).
 - **Failure injection and experiments:** real crashes, duplicates, provider errors and
   outages, with exact counts and a negative control that proves the counters can see duplicates.
 - **Measured, not claimed:** open-loop load through the HTTP API, exact latency from

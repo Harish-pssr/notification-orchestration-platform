@@ -30,7 +30,7 @@ How to read the "Tested" column: **test** = an automated test in `test/` (named)
 | 5b | The `MarkPublished` update itself **fails** (database error) | Messages published; row `PROCESSING` | Same as 5a: the lease expires and the event is republished | Yes, absorbed | not tested separately (same path as 5a) |
 | 5c | A relay is **frozen** past its lease, then wakes and finishes | Another relay already owns the row | The finish is **fenced** on `(locked_by, attempts)`: it matches 0 rows, so the stale relay changes nothing | Possibly one extra publish | tests `TestFenceRejectsAWorkersOwnStaleAttempt`, `TestConcurrentClaimsAreDisjoint` |
 | 6a | The broker is **down** | Events wait in the outbox; the API keeps accepting | Relays retry every second per batch; when NATS returns the backlog drains (about 100 s after a 60 s outage at 250 events/s) | No | experiment B5 (3 repetitions: nothing lost, 0 dead letters, 0 duplicate side effects) |
-| 6b | The broker **loses its stored messages** (disk lost) | Outbox says `PUBLISHED`, but the message is gone and the delivery stays `PENDING` | **Not handled.** See limitations: a reconciler is needed | n/a | not tested |
+| 6b | The broker **loses its stored messages** (disk lost) | Outbox says `PUBLISHED`, but the message is gone and the delivery stays `PENDING` or `RETRYING` | The **reconciler** (D22) notices a delivery still open long after its event was published, returns it to `PENDING` and the event to the relay, which republishes with a new message ID. After 3 repairs the delivery is dead-lettered and can be replayed. Repairing a merely slow message sends a second copy, absorbed downstream | Possible, absorbed | test `TestReconcilerRecoversDeliveriesAfterTheBrokerStreamIsPurged` (the stream is purged with every message in it: a simulated loss, not a real disk failure); store-level tests for the wait, the repair limit and concurrent reconcilers |
 | 7 | Consumer dies **after fetching, before processing** | Message delivered but unacked | After `AckWait` (30 s) the broker redelivers it; `NumDelivered` (the attempt number) grows. If the consumer keeps dying, the **poison guard** dead-letters the delivery once `attempt > MAX_ATTEMPTS`, without calling the provider; the broker stops redelivering at `MAX_ATTEMPTS + 3` | No | poison guard: test `TestPoisonGuardDeadLettersWithoutCallingTheProvider` (**simulated** delivery count); a real crash loop is **not tested** |
 | 8 | The delivery lookup **fails** (database error) | Message unacked | The consumer sends a delayed negative acknowledgement (`NakWithDelay`) and the message returns | No | not tested |
 | 9a | The **provider call fails** (5xx, 408, 429, timeout, connection error) | Delivery row `RETRYING` with `last_error` | Retried by the broker with equal-jitter exponential backoff (or the provider's `Retry-After`, capped), until `MAX_ATTEMPTS`, then dead-lettered; a replay is then possible | No | tests `TestTransientProviderErrorsAreRetriedUntilSuccess`, `TestRetriesExhaustedThenReplayDelivers`, `TestRetryAfterHeaderLengthensTheDelay`; experiment B4 (about 6,500 injected 503s, all retried to success) |
@@ -51,7 +51,7 @@ How to read the "Tested" column: **test** = an automated test in `test/` (named)
 
 - **Before the commit** the event does not exist, so the client simply retries.
 - **After the commit** it exists forever, and every later failure is a retry of an idempotent step.
-- **The only place a duplicate is created** is "work happened but the record of it was lost" (rows 4a, 5, 9c, 11, 12); the receiver's idempotency key is what makes those harmless, and the consumer's "already delivered" check is only an optimisation on top of it.
+- **The only place a duplicate is created** is "work happened but the record of it was lost" (rows 4a, 5, 6b, 9c, 11, 12); the receiver's idempotency key is what makes those harmless, and the consumer's "already delivered" check is only an optimisation on top of it.
 - **No step relies on a lock being held** across a network call: the claim is a lease stored as data (`next_attempt_at`), so a dead worker's work becomes claimable again by itself.
 
 ## What is tested for real, and what is not
@@ -61,7 +61,7 @@ Provoked with **real failures**: relays killed with SIGKILL at random times unde
 **Simulated or not provoked**, stated plainly so nobody has to find it:
 - a real consumer crash loop (the poison guard is verified with a simulated delivery count);
 - a real API crash, a real provider crash (it is a mock), and a Postgres outage;
-- a broker that loses its stored messages (row 6b);
+- a broker that really loses its storage (row 6b is tested by purging the stream through the broker's API, not by failing a disk);
 - the real SMTP send (rows 10c, 10d) is tested only against a fake SMTP server and a fake sender, never a real mail service;
 - provider errors are injected **before** the effect runs, so the "effect committed, response lost" case relies on the crash and redelivery paths above rather than on error injection.
 

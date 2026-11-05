@@ -125,6 +125,22 @@ NATS owns the retry timing; the delivery row only mirrors the state for the dash
 
 Provider failure injection (status, delay, count per channel) is controlled through the provider's own admin endpoints.
 
+## Reconciler (D22)
+
+The outbox makes the step from the database to the broker reliable. Nothing in the flow above covers a broker that accepts a message and then loses it (its storage is lost, or a consumer exhausts the broker's redelivery limit): the event says `PUBLISHED` and its delivery stays `PENDING` or `RETRYING` forever. The reconciler, a loop inside every relay, closes that gap:
+
+```text
+every RECONCILE_EVERY (30 s):
+  find open deliveries (PENDING / RETRYING) whose event is PUBLISHED and that have shown no sign of life
+  for RECONCILE_AFTER (10 min) x 2^repairs so far          -- sign of life = last publish or planned retry time
+  lock their events (SKIP LOCKED), then in one transaction:
+    repairs so far >= RECONCILE_MAX_REPAIRS (3)  -> delivery DLQ, reason names the loss (replayable)
+    otherwise -> delivery PENDING, attempts 0, reconcile_count + 1; event PENDING, due now
+  the relay then claims the event as usual and publishes the PENDING deliveries with message ID <event>:<channel>:recon-N
+```
+
+It publishes nothing itself, so every republish keeps the lease and the fence. A repair of a delivery that was merely slow produces a second copy, which the consumer's check and the provider's idempotency key absorb. Repairs are exported as `notif_reconciler_repaired_total` (zero in normal operation); `RECONCILE_EVERY=0` turns the loop off. See [limitations.md](limitations.md) for what is and is not tested.
+
 ## Health and pause (D9, D8)
 
 Workers are ephemeral, so health is defined per role rather than per instance.
@@ -155,4 +171,4 @@ Design rules: labels are low-cardinality only (`channel`, `event_type`, `outcome
 
 ## Not built
 
-Deliberate gaps (single points of failure, no reconciler for a lossy broker, unbounded table growth, no ordering, one shared token, and others) are listed with their production remedies in [limitations.md](limitations.md). The production Compose setup in [deployment.md](deployment.md) was verified locally and has not been deployed to a public server.
+Deliberate gaps (single points of failure, unbounded table growth, no ordering, one shared token, and others) are listed with their production remedies in [limitations.md](limitations.md). The production Compose setup in [deployment.md](deployment.md) was verified locally and has not been deployed to a public server.

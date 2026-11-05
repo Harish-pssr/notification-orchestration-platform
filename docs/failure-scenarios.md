@@ -185,6 +185,13 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Test:** `TestCrashBetweenSendAndDoneResendsOnlyAfterTheStuckTimeout` (a hook simulates the crash).
 - **Observed:** the second email used a different Message-ID, and exactly one effect was recorded.
 
+### F27. The broker loses its messages (D22)
+
+- **Failure:** every message in the NATS stream is purged while the deliveries they carry are still open (consumers paused so the messages are certainly in the stream), as if the broker's storage were lost.
+- **Expected:** without the reconciler the deliveries would stay `PENDING` forever. With it, each is found after the configured wait, returned to the relay, republished and delivered, with one provider effect per channel.
+- **Test:** `TestReconcilerRecoversDeliveriesAfterTheBrokerStreamIsPurged` (20 events, 60 deliveries; the test first checks that the deliveries really are still `PENDING` after the purge). Supporting tests: `TestReconcilerLeavesHealthyDeliveriesAlone`, `TestReconcilerWaitsLongerAfterEachRepair`, `TestReconcilerGivesUpAfterTheRepairLimit`, `TestConcurrentReconcilersRepairEachDeliveryOnce`, `TestReconciledMessageHasItsOwnBrokerMessageID`.
+- **Observed:** all 60 deliveries were repaired and delivered, with exactly one provider request and one effect per key. The reconciler wait was set to 2 s for the test (default 10 minutes). A purge through the broker's API simulates loss; it is not a disk failure.
+
 ## Not yet covered
 
-Scenarios not provoked for real: a consumer crash after the provider call and before the acknowledgement (the poison guard is verified with a simulated delivery count), a Postgres outage, an API crash, and loss of the broker's storage. They are analysed in [crash-analysis.md](crash-analysis.md).
+Scenarios not provoked for real: a consumer crash after the provider call and before the acknowledgement (the poison guard is verified with a simulated delivery count), a Postgres outage, an API crash, and a real loss of the broker's storage (the purge in F27 simulates it). They are analysed in [crash-analysis.md](crash-analysis.md).
