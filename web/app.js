@@ -188,6 +188,7 @@ const sections = {
               <g class="fail-mark" data-tip="fC" tabindex="0" role="button" aria-label="Failure point C"><circle class="hit" cx="660" cy="100" r="17"/><circle cx="660" cy="100" r="10"/><text x="660" y="100">C</text></g>
               <g class="fail-mark" data-tip="fD" tabindex="0" role="button" aria-label="Failure point D"><circle class="hit" cx="845" cy="100" r="17"/><circle cx="845" cy="100" r="10"/><text x="845" y="100">D</text></g>
               <g class="fail-mark" data-tip="fE" tabindex="0" role="button" aria-label="Failure point E"><circle class="hit" cx="1155" cy="120" r="17"/><circle cx="1155" cy="120" r="10"/><text x="1155" y="120">E</text></g>
+              <g class="fail-mark" data-tip="fF" tabindex="0" role="button" aria-label="Failure point F"><circle class="hit" cx="520" cy="100" r="17"/><circle cx="520" cy="100" r="10"/><text x="520" y="100">F</text></g>
             </svg>
             </div>
             <div class="flow-tip" id="st-tip" role="tooltip" hidden></div>
@@ -225,12 +226,13 @@ const sections = {
               ${term("Retry and backoff", "After a temporary failure, try again after a growing, slightly randomised delay.")}
               ${term("Dead letter", "A delivery that gave up (retries used up, or rejected for good). It is kept with its reason so it can be replayed.")}
               ${term("Replay", "Send a dead-lettered delivery again once the cause is fixed. Safe, because the provider recognises work it already did.")}
+              ${term("Reconciler", "A background check inside the relay. If the broker loses a message, the delivery would wait forever; the reconciler notices deliveries that stay waiting far too long and sends them through again. Safe, because repeats are harmless.")}
               ${term("Backlog", "Work that is waiting or not yet confirmed. It grows when a part is slow or down and drains when it recovers.")}
             </dl>
         </div>`;
       $("#st-fail").onchange = (e) => $("#st-flow").classList.toggle("show-fail", e.target.checked);
       // Hover (or focus, or tap) a numbered step or a failure marker to read what happens there.
-      const TIPS = {s1: {"t": "1 · Send", "d": "The business system sends an event with an Idempotency-Key. A retry with the same key never creates a second event."}, s2: {"t": "2 · Save", "d": "The API writes the business row, an outbox record and one delivery row per channel in one transaction: all saved, or none."}, s3: {"t": "3 · Claim", "d": "A relay claims due outbox records with a short lease. If it dies, the lease expires and another relay takes over."}, s4: {"t": "4 · Publish", "d": "The relay publishes one small message per channel to NATS JetStream and waits for its confirmation."}, s5: {"t": "5 · Pull", "d": "Each channel's consumer pulls its messages. Anything not acknowledged is delivered again."}, s6: {"t": "6 · Send", "d": "The consumer calls the provider with an idempotency key. The provider sends once per key, however many repeats arrive."}, s7: {"t": "7 · Record", "d": "The consumer marks the delivery as delivered and acknowledges the message."}, fA: {"t": "A · API failure before commit", "d": "No state is written. The client retries with the same idempotency key, and the event is created once."}, fB: {"t": "B · Relay failure after publishing", "d": "The lease expires and another relay takes over the record. The republished message is harmless, because delivery is idempotent downstream."}, fC: {"t": "C · Broker unavailable", "d": "Events remain durable in PostgreSQL. Relays back off and retry without consuming attempts, and publishing resumes when the broker recovers."}, fD: {"t": "D · Consumer failure after the provider call", "d": "The unacknowledged message is redelivered. The provider recognises the idempotency key and does not send a second notification."}, fE: {"t": "E · Provider failure", "d": "Transient errors are retried with exponential backoff. Deliveries that exhaust their retries move to Dead letters and can be replayed once the cause is resolved."}};
+      const TIPS = {s1: {"t": "1 · Send", "d": "The business system sends an event with an Idempotency-Key. A retry with the same key never creates a second event."}, s2: {"t": "2 · Save", "d": "The API writes the business row, an outbox record and one delivery row per channel in one transaction: all saved, or none."}, s3: {"t": "3 · Claim", "d": "A relay claims due outbox records with a short lease. If it dies, the lease expires and another relay takes over."}, s4: {"t": "4 · Publish", "d": "The relay publishes one small message per channel to NATS JetStream and waits for its confirmation."}, s5: {"t": "5 · Pull", "d": "Each channel's consumer pulls its messages. Anything not acknowledged is delivered again."}, s6: {"t": "6 · Send", "d": "The consumer calls the provider with an idempotency key. The provider sends once per key, however many repeats arrive."}, s7: {"t": "7 · Record", "d": "The consumer marks the delivery as delivered and acknowledges the message."}, fA: {"t": "A · API failure before commit", "d": "No state is written. The client retries with the same idempotency key, and the event is created once."}, fB: {"t": "B · Relay failure after publishing", "d": "The lease expires and another relay takes over the record. The republished message is harmless, because delivery is idempotent downstream."}, fC: {"t": "C · Broker unavailable", "d": "Events remain durable in PostgreSQL. Relays back off and retry without consuming attempts, and publishing resumes when the broker recovers."}, fD: {"t": "D · Consumer failure after the provider call", "d": "The unacknowledged message is redelivered. The provider recognises the idempotency key and does not send a second notification."}, fF: {"t": "F · Broker loses its messages", "d": "The event says published, but the message is gone, so the delivery never arrives. The reconciler notices deliveries that stay silent for too long, sends them through the relay again, and dead-letters any it cannot recover after three repairs."}, fE: {"t": "E · Provider failure", "d": "Transient errors are retried with exponential backoff. Deliveries that exhaust their retries move to Dead letters and can be replayed once the cause is resolved."}};
       const stage = $("#st-stage"), tip = $("#st-tip");
       const showTip = (el) => {
         const info = TIPS[el.dataset.tip];
@@ -291,6 +293,8 @@ const sections = {
         tile("Deliveries completed", `${num(delivered)}<span class="muted small"> / ${num(total)}</span>`, "one per event and channel"),
         tile("Needs attention", num(trouble), trouble ? "retrying or gave up" : "nothing is stuck", trouble > 0),
         tile("Latency (p50 / p95)", lat.count ? fmtPair(lat.p50_ms, lat.p95_ms) : "–", "saved to delivered, recent events"),
+        // Only after a repair: normally nothing is lost, so the Overview stays as it was (D22).
+        s.reconciled_deliveries > 0 ? tile("Repaired by reconciler", num(s.reconciled_deliveries), "lost by the broker and sent again", true) : "",
       ].join("");
 
       $("#ov-pipeline").innerHTML = `
@@ -552,7 +556,8 @@ const sections = {
           <div class="role-head">
             <div class="role-title"><h2>${pretty[role.name] || esc(role.name)}</h2>${statusChip[role.status] || esc(role.status)}
               <span class="muted small">${role.live} live instance${role.live === 1 ? "" : "s"}</span>
-              <div class="role-desc muted small">${esc(what)}</div></div>
+              <div class="role-desc muted small">${esc(what)}</div>
+              ${role.name === "relay" ? `<div class="role-desc muted small">${reconcilerLine(role, state.summary)}</div>` : ""}</div>
             <div class="role-backlog muted small">${backlog}</div>
             <button class="btn" data-pause="${pausePoint[role.name]}" data-action="${paused ? "resume" : "pause"}" ${usable ? "" : "disabled"}>${paused ? "Resume" : "Pause"}</button>
           </div>
@@ -635,7 +640,7 @@ const sections = {
   dlq: {
     title: "Dead letters",
     heading: "Dead letters",
-    desc: "Deliveries that gave up: their retries ran out, or the provider rejected them for good. Read the reason, fix the cause, then replay. Replaying is safe because the provider recognises work it already did.",
+    desc: "Deliveries that gave up: their retries ran out, or the provider rejected them for good, or the broker kept losing them and the reconciler gave up. Read the reason, fix the cause, then replay. Replaying is safe because the provider recognises work it already did.",
     selected: new Set(),
     data: { deliveries: [], events: [] },
     mount(root) {
@@ -694,7 +699,7 @@ const sections = {
           <td><a href="#" data-event="${esc(d.event_id)}" class="mono">${shortId(d.event_id)}</a></td>
           <td>${esc(d.event_type)}</td><td>${esc(d.channel)}</td><td>${d.attempts}</td><td>${d.replay_count}</td>
           <td>${esc(d.last_error || "")}</td></tr>`).join("")
-        : `<tr><td colspan="7" class="empty">${all.length ? `No dead-lettered deliveries on ${esc(channel)}.` : "No dead-lettered deliveries. Deliveries land here when their retries run out or the provider rejects them for good."}</td></tr>`;
+        : `<tr><td colspan="7" class="empty">${all.length ? `No dead-lettered deliveries on ${esc(channel)}.` : "No dead-lettered deliveries. Deliveries land here when their retries run out, the provider rejects them for good, or the broker keeps losing them."}</td></tr>`;
       const ev = this.data.events;
       $("#dl-events-card").hidden = !ev.length;
       $("#dl-events").innerHTML = ev.map((e) => `<tr><td><a href="#" data-event="${esc(e.id)}" class="mono">${shortId(e.id)}</a></td>
@@ -786,6 +791,11 @@ const sections = {
             <p class="muted">Pausing the relay or a consumer stops it taking work. Nothing is lost: events wait safely in the outbox or in the broker and drain when it resumes. Pause and resume live on the Health page, next to each worker.</p>
             <div class="actions"><a class="btn btn-primary" href="#/health">Open Health</a></div>
           </div>
+          <div class="card scenario scenario-wide">
+            <h2>Broker loses its messages</h2>
+            <p class="muted">Deletes every message the broker is holding, as if its storage had been lost. The events stay safe in the database, but deliveries waiting in the broker will never arrive on their own. The reconciler sends deliveries through again once they have shown no sign of life for <strong id="fc-recon-after">10m</strong>, and gives up after three repairs (they then appear in <a href="#/dlq">Dead letters</a>). The repair count is on <a href="#/health">Health</a>. To watch it quickly on a development stack, start it with a short wait (<span class="mono">RECONCILE_AFTER=30s</span>).</p>
+            <div class="actions"><button class="btn btn-primary" id="fc-purge">Delete broker messages</button></div>
+          </div>
         </div>`;
       const act = (fn, ok) => async () => {
         try { await fn(); toast(ok); } catch (e) { toast(e.message, "bad"); }
@@ -801,6 +811,11 @@ const sections = {
       $("#fc-clear").onclick = act(() => must(adminApi("POST", "/api/provider/failure/clear", {})), "Provider restored");
       $("#fc-dup").onclick = act(() => must(adminApi("PUT", "/api/faults/relay.after_publish", { action: "duplicate", remaining: 1 })), "The next event will be published twice");
       $("#fc-crash").onclick = act(() => must(adminApi("PUT", "/api/faults/relay.after_publish", { action: "crash", remaining: 1 })), "A relay will crash after its next publish");
+      $("#fc-purge").onclick = async () => {
+        if (!confirm("Delete every message the broker is holding?\n\nThe events stay in the database. Deliveries that were waiting in the broker will only arrive again after the reconciler repairs them (see Health).")) return;
+        try { await must(adminApi("POST", "/api/broker/purge", {})); toast("Broker messages deleted"); } catch (e) { toast(e.message, "bad"); }
+        this.update();
+      };
       $("#fc-restore-all").onclick = act(async () => {
         await must(adminApi("DELETE", "/api/faults"));
         await must(adminApi("POST", "/api/provider/failure/clear", {}));
@@ -812,7 +827,14 @@ const sections = {
       setNotice("fc-notice", usable ? "" : !state.config.faults_enabled
         ? "Fault injection is switched off on this server, so these controls are view-only."
         : "Enter the admin token (top right) to use these controls.");
-      for (const id of ["fc-apply", "fc-clear", "fc-dup", "fc-crash", "fc-restore-all"]) $("#" + id).disabled = !usable;
+      for (const id of ["fc-apply", "fc-clear", "fc-dup", "fc-crash", "fc-purge", "fc-restore-all"]) $("#" + id).disabled = !usable;
+      // How long the reconciler waits is reported by the relay's heartbeat.
+      api("/api/health").then((hr) => {
+        const relay = hr.ok && (hr.body.roles || []).find((r) => r.name === "relay");
+        const inst = relay && relay.instances.find((i) => i.fresh && i.config && i.config.reconcile_after);
+        const el = $("#fc-recon-after");
+        if (inst && el) el.textContent = inst.config.reconcile_after;
+      }).catch(() => {});
       const [pf, faultsRes] = await Promise.all([
         api("/api/provider/failures").catch(() => null),
         usable ? adminApi("GET", "/api/faults").catch(() => null) : Promise.resolve(null),
@@ -1058,6 +1080,15 @@ const sections = {
 // ---------- shared rendering ----------
 // An instance's settings as "key value" text, so what a run is configured with is visible (D16).
 const settingsText = (c) => Object.entries(c || {}).map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ") || "-";
+// The reconciler (D22) runs inside the relay; its settings arrive with the relay's heartbeat.
+function reconcilerLine(role, summary) {
+  const inst = (role.instances || []).find((i) => i.fresh && i.config && i.config.reconcile_after);
+  const n = summary ? summary.reconciled_deliveries || 0 : 0;
+  const when = inst
+    ? `every ${esc(inst.config.reconcile_every)} it looks for deliveries still waiting ${esc(inst.config.reconcile_after)} after being published`
+    : "it looks for deliveries that are still waiting long after being published";
+  return `Also runs the reconciler: ${when} (a sign the broker lost them) and sends them through again. Repaired so far: <strong>${num(n)}</strong>${n ? "" : " (normally none)"}.`;
+}
 const tile = (label, value, note, warn) => `<div class="tile${warn ? " attention" : ""}"><div class="tile-label">${label}</div><div class="tile-value">${value}</div><div class="tile-note">${note}</div></div>`;
 
 // One table cell per channel with a short status, so channels line up in columns and are easy to scan.
@@ -1120,7 +1151,7 @@ async function renderDrawer() {
     <div class="card"><div class="card-head"><h2>Channel deliveries</h2></div>
       <div class="table-wrap"><table><thead><tr><th>Channel</th><th>State</th><th>Attempts</th><th>Detail</th></tr></thead><tbody>
       ${e.deliveries.map((d) => `<tr><td>${esc(d.channel)}</td><td>${chip(d.status)}</td><td>${d.attempts}</td>
-        <td>${d.last_error ? esc(d.last_error) : d.delivered_at ? `delivered ${fmtClock(d.delivered_at)}` : "<span class=muted>–</span>"}${d.duplicate_count ? `<div class="muted small">${d.duplicate_count} duplicate message${d.duplicate_count > 1 ? "s" : ""} ignored</div>` : ""}</td></tr>`).join("")}
+        <td>${d.last_error ? esc(d.last_error) : d.delivered_at ? `delivered ${fmtClock(d.delivered_at)}` : "<span class=muted>–</span>"}${d.duplicate_count ? `<div class="muted small">${d.duplicate_count} duplicate message${d.duplicate_count > 1 ? "s" : ""} ignored</div>` : ""}${d.reconcile_count ? `<div class="muted small">republished by the reconciler${d.reconcile_count > 1 ? " " + d.reconcile_count + " times" : ""}</div>` : ""}</td></tr>`).join("")}
       </tbody></table></div></div>
     <div class="card"><div class="card-head"><h2>Timeline</h2></div>
       <ul class="timeline">${timeline.map((t) => `<li><div class="when">${fmtTime(t.at)}</div>${esc(t.text)}</li>`).join("")}</ul></div>

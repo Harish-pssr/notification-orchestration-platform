@@ -201,6 +201,7 @@ pre.json { margin: 0; padding: 10px; background: var(--surface-2); border-radius
 .scenario h2 { font-size: 15px; }
 .scenario p { line-height: 1.55; font-size: 13px; }
 .scenario .actions { margin-top: auto; padding-top: 4px; }
+.scenario-wide { grid-column: 1 / -1; } /* a card that stands on its own row, so an odd number of cards leaves no empty half */
 .scenario .fields-grid { grid-template-columns: 1fr 1fr; }
 a.btn { display: inline-block; }
 
