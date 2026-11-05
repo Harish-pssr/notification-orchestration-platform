@@ -363,3 +363,54 @@ During each dip the WAL flush was **3 to 5 times slower** and the number of flus
 ### Notes on how the data was produced
 
 A first attempt at this investigation was **discarded**: two benchmark processes were accidentally running at the same time (the command I used to launch the first one was chained in a way that started it unexpectedly), so the arrival rate was about 300 events/s (near this configuration's capacity), not 150. The two clean runs above were made after confirming that exactly one benchmark process was running. Switching on `log_checkpoints` is kept in the dev Compose file (`docker-compose.dev.yml`); the other instrumentation was temporary.
+
+## B7. The broker loses every message it holds, under load (the reconciler, D22)
+
+**Question:** if the broker loses the messages it is holding while events are flowing, does the system notice, repair every lost delivery, and avoid a duplicate side effect?
+
+### What is real and what is simulated
+
+The pipeline, the load and the counting are real. The **loss is simulated**: the stream's messages are deleted with the broker's own purge call, as if its storage had been lost. A disk failure, or a clustered broker losing a replica, is not tested. The reconciler's wait is shortened for this run (below), so the recovery time is not a prediction for the default setting.
+
+### Method
+
+Same environment as B4 and B5 (4 relays, 4 consumers per channel, mock provider, Docker Desktop on Windows, AC power, plan "Balanced"; `environment.json` in the data folder). For each of 3 repetitions the system is reset, then steady load of 150 events/s (roughly 40 to 50% of the measured capacity of 310 to 370 events/s) runs through the HTTP API for 150 s in total. At 30 s all consumers are **paused for 8 s**, so that unconsumed messages pile up in the stream (at this rate the consumers otherwise keep the stream almost empty and a purge would find nothing to lose, see the notes below). Then every message in the stream is purged and the consumers resume. The load keeps running until the 150 s are over. A one-second sampler reads exact counts from the database.
+
+The relays ran with `RECONCILE_EVERY=5s` and `RECONCILE_AFTER=30s` (defaults: 30 s and 10 minutes). The wait has to be shorter than the tool's 5-minute drain limit to demonstrate a repair; it must still be longer than a healthy delivery ever takes at this load.
+
+- **Pass criteria:** every accepted event stored, all deliveries `DELIVERED`, zero dead letters, zero duplicate side effects.
+- **Repaired deliveries:** deliveries whose `reconcile_count` is above zero at the end of the run (the reconciler's own record in the database).
+- **Recovery time:** from the purge until the number of undelivered deliveries is back within two seconds of arrivals (900 deliveries).
+
+### Results
+
+| Rep | Peak events waiting in the outbox | Peak deliveries undelivered | Deliveries repaired by the reconciler | Most repairs for one delivery | Recovery time | Accepted events / delivered (deliveries) | Dead letters | Duplicate side effects |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 28 | 3,314 | 3,230 | 1 | 34.9 s | 22,500 / 67,500 | 0 | 0 |
+| 2 | 346 | 4,257 | 3,216 | 1 | 34.0 s | 22,500 / 67,500 | 0 | 0 |
+| 3 | 239 | 3,332 | 3,243 | 1 | 34.0 s | 22,500 / 67,500 | 0 | 0 |
+
+In all three repetitions the provider received exactly one request and recorded exactly one effect for each of the 67,500 keys (67,500 distinct request keys, 67,500 distinct effect keys), consumers ignored no duplicates and the provider suppressed none.
+
+### What the data shows
+
+1. **The reconciler found and repaired every lost delivery.** About 3,200 deliveries were lost in each repetition (the messages for the 8 seconds of arrivals while the consumers were paused: 8 s x 150 events/s x 3 channels is 3,600; this is an arithmetic cross-check, not a separate measurement). Each was repaired once, and all 67,500 deliveries ended `DELIVERED`.
+2. **No duplicate side effects**, with 0 dead letters. The lost messages had never reached the provider, so the repair was the first and only send; the key and the unique message id (`:recon-1`) did their job without being exercised against a duplicate here. Repairing a message that was only *slow* (which would produce a duplicate that the consumer or the provider absorbs) is covered by tests, not by this run.
+3. **Recovery took about 34 s.** That is consistent with the 30 s wait (counted from each lost delivery's last publish, which was up to 8 s after the pause began), the 5 s check interval and the time to republish. It is dominated by the configured wait: with the default 10 minutes it would be about ten minutes.
+
+### Notes on how the data was produced
+
+Three earlier attempts are not used, and the reasons matter:
+
+- **A first run passed but proved nothing about the reconciler.** Without pausing the consumers the stream was nearly empty at the moment of the purge. All three repetitions passed with **zero** repairs (the reconciler's counter showed it had done nothing), so that result is discarded. The 8-second pause was added to the tool for this reason.
+- **A second run failed, for a configuration reason.** The tool recreated the relay containers when it scaled them, and the recreated relays did not have the shortened wait, so they used the 10-minute default. After the tool's 5-minute drain limit 64,320 of 67,500 deliveries were delivered and 3,180 were still waiting, with zero repairs. That was a mistake in how I ran it, not a defect, but it also shows the purge really loses deliveries when nothing repairs them in time. It is not a clean control (the reconciler was running with a long wait), so I do not count it as one.
+- **Two further starts aborted** with a database deadlock during the tool's reset (`TRUNCATE`). I had force-killed the second run, and its load generator, running in its own container, kept posting events and collided with the reset. Stopping the leftover container fixed it. This is a hazard of killing the benchmark tool, not of the platform.
+
+### Limitations
+
+- The loss is a purge through the broker's API with the consumers paused. It does not include messages that were delivered but not yet acknowledged, partly processed messages, or a real storage failure.
+- The reconciler's wait was 30 s instead of the default 10 minutes, so the recovery time above does not describe the default.
+- One arrival rate (150 events/s) and one 8-second backlog; three repetitions.
+- The "Balanced" power plan and Docker Desktop on Windows, like the rest of this document. The correctness result does not depend on speed; the recovery time does.
+- A consumer that is down longer than the whole repair schedule would have its deliveries dead-lettered by the reconciler (see `limitations.md`); this run does not test that.
+

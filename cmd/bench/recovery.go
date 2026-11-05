@@ -33,6 +33,11 @@ type recoveryRun struct {
 	Verdict  bench.ReliabilityVerdict `json:"verdict"`
 	Monitor  string                   `json:"monitor_csv"`
 	DrainS   float64                  `json:"drain_after_load_s"`
+	// Purge runs only (D22): how many deliveries the reconciler had to repair, and the most
+	// repairs any one delivery needed.
+	RepairedByReconciler  int     `json:"deliveries_repaired_by_reconciler"`
+	MaxRepairsOneDelivery int     `json:"max_repairs_for_one_delivery"`
+	StalledSeconds        float64 `json:"consumers_paused_before_purge_s"`
 }
 
 // recoveryReport collects every repetition.
@@ -79,7 +84,7 @@ func recovery(ctx context.Context, args []string) error {
 
 	run := fmt.Sprintf("recovery-%s-%s", *service, time.Now().UTC().Format("20060102T150405Z"))
 	rep := recoveryReport{Run: run, Relays: *relays, Consumers: *consumers,
-		Outage: fmt.Sprintf("%s stopped for %s", *service, *outage), Environment: bench.CaptureEnvironment(ctx)}
+		Outage: outageLabel(*service, *outage), Environment: bench.CaptureEnvironment(ctx)}
 	params := map[string]any{
 		"service_stopped": *service, "outage_s": outage.Seconds(), "rate_per_s": *rate,
 		"relays": *relays, "consumers_per_channel": *consumers, "repetitions": *repeats,
@@ -169,12 +174,26 @@ func (e env) recoveryOnce(ctx context.Context, c recoveryConfig) (recoveryRun, e
 	var stopAt, startAt float64
 	var err error
 	if c.service == purgeService {
-		// Not an outage: the broker loses every message it holds, once, under load.
+		// Not an outage: the broker loses every message it holds, once, under load. At this rate
+		// the consumers keep the stream almost empty, so a purge would find nothing to lose.
+		// Pausing the consumers for a few seconds first lets a backlog of real, unconsumed
+		// messages build up in the stream, which is exactly what a lost broker would take with it.
+		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: pausing the consumers so messages pile up in the stream", c.rep))
+		for _, ch := range events.AllChannels {
+			if err := e.admin.SetFault(ctx, "consumer."+string(ch)+".pause", map[string]any{"action": "pause"}); err != nil {
+				return out, err
+			}
+		}
+		out.StalledSeconds = purgeStallS
+		time.Sleep(time.Duration(purgeStallS * float64(time.Second)))
 		c.mark(experiment.Phase, fmt.Sprintf("repetition %d: purging every message from the broker stream", c.rep))
 		if stopAt, err = e.dbNow(ctx); err != nil {
 			return out, err
 		}
 		if err := purgeStream(ctx); err != nil {
+			return out, err
+		}
+		if err := e.admin.ClearFaults(ctx); err != nil { // resume the consumers
 			return out, err
 		}
 		startAt = stopAt
@@ -226,6 +245,13 @@ func (e env) recoveryOnce(ctx context.Context, c recoveryConfig) (recoveryRun, e
 		return out, err
 	}
 	out.Verdict = bench.JudgeReliability(out.Load.Created, c.perEvent, out.Counts, false)
+	if c.service == purgeService {
+		if err := e.pool.QueryRow(ctx,
+			`SELECT count(*) FILTER (WHERE reconcile_count > 0), coalesce(max(reconcile_count), 0) FROM channel_deliveries`,
+		).Scan(&out.RepairedByReconciler, &out.MaxRepairsOneDelivery); err != nil {
+			return out, err
+		}
+	}
 	samples, err := bench.ReadSamples(out.Monitor)
 	if err != nil {
 		return out, err
@@ -242,6 +268,10 @@ func (r recoveryRun) print() {
 		fmt.Println("  recovery: backlog did NOT return to normal")
 	} else {
 		fmt.Printf("  recovery: %.0f s after restart (below %.0f deliveries) | peak delivery rate %.0f/s\n", v.RecoveryS, v.ThresholdDeliveries, v.PeakDeliveryRatePerS)
+	}
+	if r.Service == purgeService {
+		fmt.Printf("  consumers paused %.0f s, then the stream was purged | the reconciler repaired %d deliveries (most repairs for one delivery: %d)\n",
+			r.StalledSeconds, r.RepairedByReconciler, r.MaxRepairsOneDelivery)
 	}
 	c := r.Counts
 	fmt.Printf("  accepted %d, stored %d, delivered %d of %d, dead-lettered %d, duplicate side effects %d => ",
@@ -260,6 +290,9 @@ func (r recoveryRun) print() {
 // of stopping a container (D22).
 const purgeService = "nats-purge"
 
+// purgeStallS is how long the consumers are paused before the purge, in seconds.
+const purgeStallS = 8.0
+
 // purgeStream deletes every message in the NOTIFY stream, as if the broker's storage
 // had been lost. It is a simulation of loss through the broker's own API, not a disk failure.
 func purgeStream(ctx context.Context) error {
@@ -277,4 +310,13 @@ func purgeStream(ctx context.Context) error {
 		return err
 	}
 	return stream.Purge(ctx)
+}
+
+// outageLabel describes the failure in the report. A purge is not an outage, so it must
+// not read as "stopped for 1m0s".
+func outageLabel(service string, outage time.Duration) string {
+	if service == purgeService {
+		return fmt.Sprintf("every broker message purged after the consumers were paused for %.0f s", purgeStallS)
+	}
+	return fmt.Sprintf("%s stopped for %s", service, outage)
 }

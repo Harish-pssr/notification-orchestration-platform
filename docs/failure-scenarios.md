@@ -191,6 +191,7 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **Expected:** without the reconciler the deliveries would stay `PENDING` forever. With it, each is found after the configured wait, returned to the relay, republished and delivered, with one provider effect per channel.
 - **Test:** `TestReconcilerRecoversDeliveriesAfterTheBrokerStreamIsPurged` (20 events, 60 deliveries; the test first checks that the deliveries really are still `PENDING` after the purge). Supporting tests: `TestReconcilerLeavesHealthyDeliveriesAlone`, `TestReconcilerWaitsLongerAfterEachRepair`, `TestReconcilerGivesUpAfterTheRepairLimit`, `TestConcurrentReconcilersRepairEachDeliveryOnce`, `TestReconciledMessageHasItsOwnBrokerMessageID`.
 - **Observed:** all 60 deliveries were repaired and delivered, with exactly one provider request and one effect per key. The reconciler wait was set to 2 s for the test (default 10 minutes). A purge through the broker's API simulates loss; it is not a disk failure.
+- **Under load (B7):** the same purge during steady load of 150 events/s, 3 repetitions: about 3,200 deliveries lost per run, every one repaired once, 22,500 events and 67,500 deliveries delivered each time, 0 dead letters, 0 duplicate side effects, recovery about 34 s with the shortened 30 s wait.
 
 ## Not yet covered
 
