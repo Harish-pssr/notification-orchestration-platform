@@ -372,3 +372,45 @@ func TestReconcilerRecoversDeliveriesAfterTheBrokerStreamIsPurged(t *testing.T) 
 		}
 	}
 }
+
+// The dashboard shows the reconciler's work: the summary counts repaired deliveries, and an event
+// reports how often each of its deliveries was repaired.
+func TestSummaryAndEventDetailReportReconciledDeliveries(t *testing.T) {
+	if testing.Short() {
+		t.Skip("integration test")
+	}
+	store, pool := isolatedStore(t)
+	ctx := context.Background()
+	repaired := publishedEvent(t, store, pool, time.Hour)
+	untouched := publishedEvent(t, store, pool, time.Hour)
+	if _, err := pool.Exec(ctx, `UPDATE channel_deliveries SET reconcile_count = 2 WHERE event_id = $1 AND channel = 'email'`, repaired); err != nil {
+		t.Fatal(err)
+	}
+
+	sum, err := store.Summary(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sum.Reconciled != 1 {
+		t.Errorf("summary.Reconciled = %d, want 1 (one delivery was repaired)", sum.Reconciled)
+	}
+	detail, err := store.GetEvent(ctx, repaired)
+	if err != nil || detail == nil {
+		t.Fatalf("GetEvent = %v, %v", detail, err)
+	}
+	for _, d := range detail.Deliveries {
+		want := 0
+		if d.Channel == "email" {
+			want = 2
+		}
+		if d.ReconcileCount != want {
+			t.Errorf("%s reconcile_count = %d, want %d", d.Channel, d.ReconcileCount, want)
+		}
+	}
+	other, _ := store.GetEvent(ctx, untouched)
+	for _, d := range other.Deliveries {
+		if d.ReconcileCount != 0 {
+			t.Errorf("untouched event: %s reconcile_count = %d, want 0", d.Channel, d.ReconcileCount)
+		}
+	}
+}

@@ -44,6 +44,9 @@ type Deps struct {
 	// deployment every write uses the one credential and reading stays open. Off locally.
 	CreateRequiresToken bool
 	ProviderURL         string // base URL of the mock provider
+	// PurgeBroker deletes every message in the broker's stream, to demonstrate the reconciler (D22).
+	// Optional; the route exists only with FAULTS_ENABLED like the other failure controls.
+	PurgeBroker func(ctx context.Context) error
 }
 
 // NewHandler returns the API's routes.
@@ -107,6 +110,9 @@ func NewHandler(d Deps) http.Handler {
 		mux.HandleFunc("GET /api/provider/email", f.forwardGet("/email"))
 		mux.Handle("POST /api/provider/email", adm(f.forwardToProvider("/admin/email")))
 		mux.Handle("POST /api/provider/email/test", adm(f.forwardToProviderSlow("/admin/email/test")))
+		if d.PurgeBroker != nil {
+			mux.Handle("POST /api/broker/purge", adm(f.purgeBroker(d.PurgeBroker)))
+		}
 	}
 
 	mux.Handle("GET /", http.FileServerFS(web.FS)) // the dashboard, embedded in the binary

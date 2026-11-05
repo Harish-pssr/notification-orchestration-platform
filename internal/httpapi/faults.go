@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -211,3 +212,17 @@ var (
 )
 
 func newHTTPClient() *http.Client { return &http.Client{Timeout: providerTimeout} }
+
+// purgeBroker deletes every message the broker holds, as if its storage had been lost. The events
+// stay in the database, so the reconciler (D22) can find the deliveries that will now never arrive.
+func (h *faultsHandler) purgeBroker(purge func(ctx context.Context) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := purge(r.Context()); err != nil {
+			slog.Error("purge broker stream failed", "error", err)
+			writeError(w, http.StatusBadGateway, "could not purge the broker stream")
+			return
+		}
+		slog.Warn("broker stream purged on request", "status", "broker_purged")
+		writeJSON(w, http.StatusOK, map[string]any{"purged": true})
+	}
+}

@@ -148,6 +148,14 @@ func run() error {
 		// On a public deployment every write uses the one admin token (D19).
 		CreateRequiresToken: config.Getenv("CREATE_REQUIRES_TOKEN", "false") == "true",
 		ProviderURL:         config.Getenv("PROVIDER_URL", "http://localhost:9090"),
+		// Failure control: delete every message in the stream (D22). Only reachable with FAULTS_ENABLED and the token.
+		PurgeBroker: func(ctx context.Context) error {
+			stream, err := js.Stream(ctx, broker.StreamName)
+			if err != nil {
+				return err
+			}
+			return stream.Purge(ctx)
+		},
 		Checks: map[string]httpapi.Check{
 			"postgres": func(ctx context.Context) error { return pool.Ping(ctx) },
 			"nats": func(context.Context) error {

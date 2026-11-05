@@ -109,6 +109,9 @@ func run() error {
 			"batch":        config.GetenvInt("RELAY_BATCH", 10),
 			"poll":         config.Getenv("RELAY_POLL", "200ms"),
 			"max_attempts": config.GetenvInt("MAX_ATTEMPTS", 5),
+			// The reconciler's settings (D22), so the Health page can say how long it waits.
+			"reconcile_every": config.Getenv("RECONCILE_EVERY", "30s"),
+			"reconcile_after": config.Getenv("RECONCILE_AFTER", "10m"),
 		}, log)
 
 	return r.Run(ctx)

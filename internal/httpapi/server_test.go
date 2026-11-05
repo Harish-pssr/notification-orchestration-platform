@@ -81,3 +81,44 @@ func TestTestEmailRouteWaitsLongerThanTheQuickProviderCalls(t *testing.T) {
 		t.Fatalf("the test email route: %d, want 200 (it must wait for the slow send)", code)
 	}
 }
+
+// The "delete broker messages" control (D22) is a failure control like the others: it needs the failure switch
+// and the admin token, and it reports a broker error instead of pretending it worked.
+func TestPurgeBrokerRouteNeedsTheTokenAndReportsFailure(t *testing.T) {
+	calls := 0
+	var purgeErr error
+	build := func(enabled bool) http.Handler {
+		return NewHandler(Deps{
+			Faults:        faults.New(nil, true, time.Second, slog.New(slog.NewTextHandler(io.Discard, nil))),
+			FaultsEnabled: enabled, AdminToken: "tok",
+			PurgeBroker: func(context.Context) error { calls++; return purgeErr },
+		})
+	}
+	call := func(h http.Handler, token string) int {
+		req := httptest.NewRequest(http.MethodPost, "/api/broker/purge", strings.NewReader(`{}`))
+		if token != "" {
+			req.Header.Set("Authorization", "Bearer "+token)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec.Code
+	}
+
+	on := build(true)
+	if code := call(on, ""); code != http.StatusUnauthorized || calls != 0 {
+		t.Fatalf("no token: %d with %d purges, want 401 and none", code, calls)
+	}
+	if code := call(on, "wrong"); code != http.StatusUnauthorized || calls != 0 {
+		t.Fatalf("wrong token: %d with %d purges, want 401 and none", code, calls)
+	}
+	if code := call(build(false), "tok"); code == http.StatusOK || calls != 0 {
+		t.Fatalf("failure controls switched off: %d with %d purges, want the route unavailable", code, calls)
+	}
+	if code := call(on, "tok"); code != http.StatusOK || calls != 1 {
+		t.Fatalf("valid request: %d with %d purges, want 200 and one", code, calls)
+	}
+	purgeErr = errors.New("nats down")
+	if code := call(on, "tok"); code != http.StatusBadGateway {
+		t.Fatalf("broker error: %d, want 502", code)
+	}
+}

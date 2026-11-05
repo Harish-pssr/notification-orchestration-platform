@@ -59,6 +59,9 @@ type DeliveryDetail struct {
 	// DuplicateCount is how many extra messages for this delivery the consumer
 	// recognised and ignored.
 	DuplicateCount int `json:"duplicate_count"`
+	// ReconcileCount is how many times the reconciler republished this delivery because the
+	// broker seemed to have lost it (D22).
+	ReconcileCount int `json:"reconcile_count"`
 }
 
 // EventDetail is the full state of one event.
@@ -90,7 +93,7 @@ func (s *Store) GetEvent(ctx context.Context, id uuid.UUID) (*EventDetail, error
 	}
 
 	rows, err := s.pool.Query(ctx, `
-		SELECT channel, status, attempts, last_error, delivered_at, duplicate_count
+		SELECT channel, status, attempts, last_error, delivered_at, duplicate_count, reconcile_count
 		FROM channel_deliveries WHERE event_id = $1 ORDER BY channel`, id)
 	if err != nil {
 		return nil, fmt.Errorf("get deliveries: %w", err)
@@ -99,7 +102,7 @@ func (s *Store) GetEvent(ctx context.Context, id uuid.UUID) (*EventDetail, error
 	e.Deliveries = []DeliveryDetail{}
 	for rows.Next() {
 		var d DeliveryDetail
-		if err := rows.Scan(&d.Channel, &d.Status, &d.Attempts, &d.LastError, &d.DeliveredAt, &d.DuplicateCount); err != nil {
+		if err := rows.Scan(&d.Channel, &d.Status, &d.Attempts, &d.LastError, &d.DeliveredAt, &d.DuplicateCount, &d.ReconcileCount); err != nil {
 			return nil, err
 		}
 		e.Deliveries = append(e.Deliveries, d)

@@ -16,6 +16,9 @@ type Summary struct {
 	Events map[string]int64 `json:"events"`
 	// Channels counts delivery rows by channel, then by status.
 	Channels map[string]map[string]int64 `json:"channels"`
+	// Reconciled counts deliveries the reconciler has republished at least once because the
+	// broker seemed to have lost them (D22). Zero in normal operation.
+	Reconciled int64 `json:"reconciled_deliveries"`
 	// Latency covers the last LatencyWindow delivered notifications:
 	// event created -> delivered, in milliseconds. It is a live view; benchmark
 	// numbers are computed offline from complete data.
@@ -106,17 +109,19 @@ func (s *Store) Summary(ctx context.Context) (*Summary, error) {
 		return nil, err
 	}
 
-	rows, err = s.pool.Query(ctx, `SELECT channel, status, count(*) FROM channel_deliveries GROUP BY channel, status`)
+	rows, err = s.pool.Query(ctx, `SELECT channel, status, count(*), count(*) FILTER (WHERE reconcile_count > 0)
+		 FROM channel_deliveries GROUP BY channel, status`)
 	if err != nil {
 		return nil, fmt.Errorf("count deliveries: %w", err)
 	}
 	for rows.Next() {
 		var channel, status string
-		var n int64
-		if err := rows.Scan(&channel, &status, &n); err != nil {
+		var n, repaired int64
+		if err := rows.Scan(&channel, &status, &n, &repaired); err != nil {
 			rows.Close()
 			return nil, err
 		}
+		out.Reconciled += repaired
 		if out.Channels[channel] == nil {
 			out.Channels[channel] = map[string]int64{}
 		}
