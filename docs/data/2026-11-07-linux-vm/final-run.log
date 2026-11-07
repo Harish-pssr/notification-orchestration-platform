@@ -1,0 +1,143 @@
+##### F1 B4: 100,000 events at 150/s, 3 relay kills, 5% duplicates, 2% provider errors
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== reliability-20261107T164619Z: 100000 events at 150/s (about 11m7s), 4 relay(s), 4 consumer(s) per channel ===
+[16:46:22] start: configuring failure injection
+[16:46:25] load running: 100000 events at 150/s
+[16:47:34] relay crash 1 of 3: SIGKILL notifplatform-relay-1
+[16:52:01] relay crash 2 of 3: SIGKILL notifplatform-relay-4
+[16:54:25] relay crash 3 of 3: SIGKILL notifplatform-relay-4
+load finished: 99999 created, 0 rejected, 0 errors
+[16:57:32] load finished: waiting for every delivery to finish
+[16:57:33] finished: PASS
+
+events accepted by the API         99999
+events stored                      99999
+deliveries                        299997  (delivered 299997, dead-lettered 0, unfinished 0)
+deliveries that needed a retry      5709
+relay crashes                          3
+provider requests                 320858  (distinct keys 299997, injected errors 6395)
+duplicate copies absorbed          15018  (stopped by consumers 552, by the provider 14466)
+provider side effects             299997  (distinct keys 299997)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+##### F2 negative control: protections off
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== reliability-control-20261107T165733Z: 10000 events at 150/s (about 1m7s), 4 relay(s), 4 consumer(s) per channel ===
+[16:57:33] start: configuring failure injection
+[16:57:36] load running: 10000 events at 150/s
+load finished: 9999 created, 0 rejected, 0 errors
+[16:58:43] load finished: waiting for every delivery to finish
+[16:58:46] finished: PASS
+
+events accepted by the API          9999
+events stored                       9999
+deliveries                         29997  (delivered 29997, dead-lettered 0, unfinished 0)
+deliveries that needed a retry       575
+relay crashes                          0
+provider requests                  32176  (distinct keys 29997, injected errors 649)
+duplicate copies absorbed              0  (stopped by consumers 0, by the provider 0)
+provider side effects              31527  (distinct keys 29997)
+DUPLICATE SIDE EFFECTS              1530
+RESULT: PASS
+##### F3 chaos at 500/s: 300,000 events, 15 relay + 6 consumer + 2 Postgres kills
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== chaos500-20261107T165846Z: 300000 events at 500/s (about 10m0s), 4 relay(s), 4 consumer(s) per channel ===
+[16:58:46] start: configuring failure injection
+[16:58:49] load running: 300000 events at 500/s
+[17:00:19] relay crash 1 of 15: SIGKILL notifplatform-relay-3
+[17:00:49] relay crash 2 of 15: SIGKILL notifplatform-relay-3
+[17:00:54] postgres crash 1 of 2: SIGKILL notifplatform-postgres-platform-1
+[17:01:00] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:55384->127.0.0.1:15433: read: connection reset by peer
+[17:01:09] consumer crash 1 of 6: SIGKILL notifplatform-consumer-webhook-1
+[17:01:19] relay crash 3 of 15: SIGKILL notifplatform-relay-1
+[17:01:49] relay crash 4 of 15: SIGKILL notifplatform-relay-1
+[17:02:14] consumer crash 2 of 6: SIGKILL notifplatform-consumer-push-3
+[17:02:19] relay crash 5 of 15: SIGKILL notifplatform-relay-2
+[17:02:49] relay crash 6 of 15: SIGKILL notifplatform-relay-1
+[17:02:52] consumer crash 3 of 6: SIGKILL notifplatform-consumer-webhook-1
+[17:03:19] relay crash 7 of 15: SIGKILL notifplatform-relay-1
+[17:03:49] relay crash 8 of 15: SIGKILL notifplatform-relay-2
+[17:04:19] relay crash 9 of 15: SIGKILL notifplatform-relay-3
+[17:04:49] relay crash 10 of 15: SIGKILL notifplatform-relay-1
+[17:05:19] relay crash 11 of 15: SIGKILL notifplatform-relay-3
+[17:05:49] relay crash 12 of 15: SIGKILL notifplatform-relay-3
+[17:06:19] relay crash 13 of 15: SIGKILL notifplatform-relay-4
+[17:06:22] consumer crash 4 of 6: SIGKILL notifplatform-consumer-email-3
+[17:06:25] postgres crash 2 of 2: SIGKILL notifplatform-postgres-platform-1
+[17:06:31] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:52450->127.0.0.1:15433: read: connection reset by peer
+[17:06:49] relay crash 14 of 15: SIGKILL notifplatform-relay-1
+[17:07:06] consumer crash 5 of 6: SIGKILL notifplatform-consumer-webhook-2
+[17:07:19] relay crash 15 of 15: SIGKILL notifplatform-relay-3
+[17:07:36] consumer crash 6 of 6: SIGKILL notifplatform-consumer-webhook-1
+load finished: 289894 created, 10106 rejected, 0 errors
+[17:08:50] load finished: waiting for every delivery to finish
+[17:08:52] finished: PASS
+
+events accepted by the API        289894
+events stored                     289896
+deliveries                        869688  (delivered 869688, dead-lettered 0, unfinished 0)
+deliveries that needed a retry     16640
+relay crashes                         15
+consumer crashes                       6
+platform Postgres kills                2  (10106 API requests with an unknown outcome)
+provider requests                 929843  (distinct keys 869688, injected errors 18672)
+duplicate copies absorbed          43215  (stopped by consumers 1732, by the provider 41483)
+provider side effects             869688  (distinct keys 869688)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+##### F4 long Postgres outage: 2 kills, database down 45 s each
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== pgout45-20261107T170852Z: 60000 events at 150/s (about 6m40s), 4 relay(s), 4 consumer(s) per channel ===
+[17:08:52] start: configuring failure injection
+[17:08:55] load running: 60000 events at 150/s
+[17:12:34] postgres crash 1 of 2: SIGKILL notifplatform-postgres-platform-1
+[17:13:20] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:56152->127.0.0.1:15433: read: connection reset by peer
+[17:14:19] postgres crash 2 of 2: SIGKILL notifplatform-postgres-platform-1
+[17:15:05] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:37368->127.0.0.1:15433: read: connection reset by peer
+load finished: 45674 created, 14319 rejected, 7 errors
+[17:15:36] load finished: waiting for every delivery to finish
+[17:15:38] finished: PASS
+
+events accepted by the API         45674
+events stored                      45674
+deliveries                        137022  (delivered 137022, dead-lettered 0, unfinished 0)
+deliveries that needed a retry      2634
+relay crashes                          0
+consumer crashes                       0
+platform Postgres kills                2  (14326 API requests with an unknown outcome)
+provider requests                 146583  (distinct keys 137022, injected errors 2964)
+duplicate copies absorbed           6889  (stopped by consumers 292, by the provider 6597)
+provider side effects             137022  (distinct keys 137022)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+##### F5 capacity spot check: 4 relays, 4 consumers per channel
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r4c4: 4 relay(s), 4 consumer(s) per channel ===
+  ramp: cap-r4c4  R=4 C=4  rate   150/s  achieved  150.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    192/    210 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   188/s  achieved  188.0  API p99    5.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     107/    198/    218 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   234/s  achieved  234.0  API p99    6.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     101/    190/    209 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   293/s  achieved  293.0  API p99    6.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      98/    181/    205 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   366/s  achieved  366.0  API p99    6.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      59/    158/    182 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   458/s  achieved  458.0  API p99    4.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99       9/     49/    161 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   572/s  achieved  572.0  API p99    4.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     17/     19 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   715/s  achieved  715.0  API p99    7.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      22/     40/     49 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   17.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      40/     90/    107 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99   79.0 ms  backlog@end  5687  drain 4.9s           e2e p50/p95/p99    3228/   5115/   5281 ms  NOT sustained: backlog at end of load is 5687 events, above the bound of 2236 (2 s of arrivals)
+  ramp: cap-r4c4  R=4 C=4  rate  1397/s  achieved 1397.0  API p99  247.6 ms  backlog@end 15472  drain 13.8s          e2e p50/p95/p99    9065/  13301/  13548 ms  NOT sustained: backlog at end of load is 15472 events, above the bound of 2794 (2 s of arrivals)
+    confirm 894/s rep 1: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   22.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      40/    212/    278 ms  sustained
+    confirm 894/s rep 2: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   21.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      48/    151/    172 ms  sustained
+  confirmation at 894/s: 2 of 2 repetitions sustained => true
+    confirm 1118/s rep 1: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99  104.1 ms  backlog@end 11549  drain 9.5s           e2e p50/p95/p99    6488/  10235/  10585 ms  NOT sustained: backlog at end of load is 11549 events, above the bound of 2236 (2 s of arrivals)
+    confirm 1118/s rep 2: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99   68.1 ms  backlog@end 11250  drain 9.1s           e2e p50/p95/p99    6256/   9970/  10280 ms  NOT sustained: backlog at end of load is 11250 events, above the bound of 2236 (2 s of arrivals)
+  confirmation at 1118/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 894 events/s (ramp alone suggested 894)
+  latency at 70% (626/s) rep 1: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99    8.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      30/     74/    100 ms  sustained
+  latency at 70% (626/s) rep 2: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99   14.8 ms  backlog@end 11868  drain 9.7s           e2e p50/p95/p99    8103/  18831/  19391 ms  NOT sustained: backlog at end of load is 11868 events, above the bound of 1252 (2 s of arrivals)
+  latency at 70% (626/s) rep 3: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99    5.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     23/     34 ms  sustained
+done
+DONE
+EXIT 0

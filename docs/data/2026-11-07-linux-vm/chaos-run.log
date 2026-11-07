@@ -1,0 +1,48 @@
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== chaos-20261107T135708Z: 150000 events at 150/s (about 16m40s), 4 relay(s), 4 consumer(s) per channel ===
+[13:57:09] start: configuring failure injection
+[13:57:12] load running: 150000 events at 150/s
+[13:59:42] relay crash 1 of 15: SIGKILL notifplatform-relay-1
+[14:00:15] consumer crash 1 of 6: SIGKILL notifplatform-consumer-email-4
+[14:00:32] relay crash 2 of 15: SIGKILL notifplatform-relay-4
+[14:00:48] consumer crash 2 of 6: SIGKILL notifplatform-consumer-push-2
+[14:01:22] relay crash 3 of 15: SIGKILL notifplatform-relay-2
+[14:02:12] relay crash 4 of 15: SIGKILL notifplatform-relay-1
+[14:03:02] relay crash 5 of 15: SIGKILL notifplatform-relay-2
+[14:03:45] postgres crash 1 of 2: SIGKILL notifplatform-postgres-platform-1
+[14:03:51] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:50738->127.0.0.1:15433: read: connection reset by peer
+[14:03:54] relay crash 6 of 15: SIGKILL notifplatform-relay-3
+[14:04:42] relay crash 7 of 15: SIGKILL notifplatform-relay-4
+[14:05:32] relay crash 8 of 15: SIGKILL notifplatform-relay-4
+[14:06:15] consumer crash 3 of 6: SIGKILL notifplatform-consumer-push-2
+[14:06:22] relay crash 9 of 15: SIGKILL notifplatform-relay-4
+[14:07:12] relay crash 10 of 15: SIGKILL notifplatform-relay-4
+[14:08:02] relay crash 11 of 15: SIGKILL notifplatform-relay-4
+[14:08:52] relay crash 12 of 15: SIGKILL notifplatform-relay-4
+[14:09:14] consumer crash 4 of 6: SIGKILL notifplatform-consumer-email-2
+[14:09:42] relay crash 13 of 15: SIGKILL notifplatform-relay-1
+[14:10:19] consumer crash 5 of 6: SIGKILL notifplatform-consumer-email-4
+[14:10:32] relay crash 14 of 15: SIGKILL notifplatform-relay-1
+[14:11:22] relay crash 15 of 15: SIGKILL notifplatform-relay-4
+[14:11:54] postgres crash 2 of 2: SIGKILL notifplatform-postgres-platform-1
+[14:12:00] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:38482->127.0.0.1:15433: read: connection reset by peer
+[14:12:04] consumer crash 6 of 6: SIGKILL notifplatform-consumer-email-3
+load finished: 147396 created, 2604 rejected, 0 errors
+[14:13:53] load finished: waiting for every delivery to finish
+[14:21:58] finished: PASS
+
+events accepted by the API        147396
+events stored                     147396
+deliveries                        442188  (delivered 442188, dead-lettered 0, unfinished 0)
+deliveries that needed a retry      8446
+relay crashes                         15
+consumer crashes                       6
+platform Postgres kills                2  (2604 API requests with an unknown outcome)
+provider requests                 472848  (distinct keys 442188, injected errors 9510)
+duplicate copies absorbed          22042  (stopped by consumers 892, by the provider 21150)
+provider side effects             442188  (distinct keys 442188)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+EXIT 0

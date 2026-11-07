@@ -1,0 +1,30 @@
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== recovery-nats-purge-20261107T142309Z: repetition 1 of 3 ===
+[14:23:11] repetition 1 of the nats-purge outage: steady load
+[14:23:41] repetition 1: pausing the consumers so messages pile up in the stream
+[14:23:49] repetition 1: purging every message from the broker stream
+[14:23:49] repetition 1: stream purged, the reconciler has to find the lost deliveries
+  outage 0 s | peak backlog: 34 events in the outbox, 3347 deliveries undelivered (steady about 54)
+  recovery: 36 s after restart (below 900 deliveries) | peak delivery rate 697/s
+  consumers paused 8 s, then the stream was purged | the reconciler repaired 3263 deliveries (most repairs for one delivery: 1)
+  accepted 22500, stored 22500, delivered 67500 of 67500, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-nats-purge-20261107T142309Z: repetition 2 of 3 ===
+[14:25:44] repetition 2 of the nats-purge outage: steady load
+[14:26:14] repetition 2: pausing the consumers so messages pile up in the stream
+[14:26:22] repetition 2: purging every message from the broker stream
+[14:26:22] repetition 2: stream purged, the reconciler has to find the lost deliveries
+  outage 0 s | peak backlog: 121 events in the outbox, 3315 deliveries undelivered (steady about 51)
+  recovery: 34 s after restart (below 900 deliveries) | peak delivery rate 698/s
+  consumers paused 8 s, then the stream was purged | the reconciler repaired 3231 deliveries (most repairs for one delivery: 1)
+  accepted 22500, stored 22500, delivered 67500 of 67500, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+=== recovery-nats-purge-20261107T142309Z: repetition 3 of 3 ===
+[14:28:17] repetition 3 of the nats-purge outage: steady load
+[14:28:47] repetition 3: pausing the consumers so messages pile up in the stream
+[14:28:55] repetition 3: purging every message from the broker stream
+[14:28:55] repetition 3: stream purged, the reconciler has to find the lost deliveries
+  outage 0 s | peak backlog: 121 events in the outbox, 3380 deliveries undelivered (steady about 54)
+  recovery: 35 s after restart (below 900 deliveries) | peak delivery rate 695/s
+  consumers paused 8 s, then the stream was purged | the reconciler repaired 3293 deliveries (most repairs for one delivery: 1)
+  accepted 22500, stored 22500, delivered 67500 of 67500, dead-lettered 0, duplicate side effects 0 => PASS (nothing lost)
+[14:30:50] finished all repetitions
+EXIT 0

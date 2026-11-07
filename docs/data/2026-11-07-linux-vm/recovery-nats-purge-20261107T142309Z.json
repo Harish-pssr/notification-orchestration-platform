@@ -1,0 +1,223 @@
+{
+  "run": "recovery-nats-purge-20261107T142309Z",
+  "relays": 4,
+  "consumers": 4,
+  "outage": "every broker message purged after the consumers were paused for 8 s",
+  "runs": [
+    {
+      "service": "nats-purge",
+      "repetition": 1,
+      "rate": 150,
+      "stopped_at_db_epoch_s": 1794061429.725458,
+      "started_at_db_epoch_s": 1794061429.725458,
+      "recovery": {
+        "outage_s": 0,
+        "steady_deliveries_waiting": 54,
+        "peak_outbox_waiting_events": 34,
+        "peak_deliveries_waiting": 3347,
+        "recovered_below_deliveries": 900,
+        "recovery_s": 35.98254203796387,
+        "peak_delivery_rate_per_s": 697.2,
+        "dead_lettered_by_end_of_run": 0,
+        "samples_before_outage": 39,
+        "samples_after_restart": 114
+      },
+      "load": {
+        "run": "recovery-nats-purge-20261107T142309Z-1",
+        "target_rate": 150,
+        "duration_s": 150,
+        "planned": 22500,
+        "sent": 22500,
+        "created": 22500,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 150,
+        "max_inflight": 29,
+        "schedule_lag_p50_ms": 0.579915,
+        "schedule_lag_p99_ms": 1.1232056099999999,
+        "schedule_lag_max_ms": 3.291319,
+        "api_p50_ms": 2.6127215,
+        "api_p95_ms": 3.9474548499999997,
+        "api_p99_ms": 5.065245389999997,
+        "api_max_ms": 190.834464,
+        "generator_kept_up": true
+      },
+      "counts": {
+        "events": 22500,
+        "deliveries": 67500,
+        "deliveries_by_status": {
+          "DELIVERED": 67500
+        },
+        "delivered": 67500,
+        "dead_lettered": 0,
+        "not_finished": 0,
+        "retried_deliveries": 0,
+        "ignored_by_consumers": 0,
+        "provider_requests": 67500,
+        "provider_distinct_request_keys": 67500,
+        "provider_effects": 67500,
+        "provider_distinct_effect_keys": 67500,
+        "provider_injected_failures": 0,
+        "duplicate_deliveries": 0,
+        "duplicate_side_effects": 0,
+        "suppressed_by_provider": 0
+      },
+      "verdict": {
+        "pass": true
+      },
+      "monitor_csv": "benchmark-results/recovery-nats-purge-20261107T142309Z-rep1.csv",
+      "drain_after_load_s": 0.082094023,
+      "deliveries_repaired_by_reconciler": 3263,
+      "max_repairs_for_one_delivery": 1,
+      "consumers_paused_before_purge_s": 8
+    },
+    {
+      "service": "nats-purge",
+      "repetition": 2,
+      "rate": 150,
+      "stopped_at_db_epoch_s": 1794061582.752999,
+      "started_at_db_epoch_s": 1794061582.752999,
+      "recovery": {
+        "outage_s": 0,
+        "steady_deliveries_waiting": 51,
+        "peak_outbox_waiting_events": 121,
+        "peak_deliveries_waiting": 3315,
+        "recovered_below_deliveries": 900,
+        "recovery_s": 33.99100089073181,
+        "peak_delivery_rate_per_s": 697.8,
+        "dead_lettered_by_end_of_run": 0,
+        "samples_before_outage": 39,
+        "samples_after_restart": 114
+      },
+      "load": {
+        "run": "recovery-nats-purge-20261107T142309Z-2",
+        "target_rate": 150,
+        "duration_s": 150,
+        "planned": 22500,
+        "sent": 22500,
+        "created": 22500,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 150,
+        "max_inflight": 3,
+        "schedule_lag_p50_ms": 0.578722,
+        "schedule_lag_p99_ms": 1.12403536,
+        "schedule_lag_max_ms": 2.450231,
+        "api_p50_ms": 2.6155445,
+        "api_p95_ms": 3.91271855,
+        "api_p99_ms": 4.838652519999997,
+        "api_max_ms": 19.27554,
+        "generator_kept_up": true
+      },
+      "counts": {
+        "events": 22500,
+        "deliveries": 67500,
+        "deliveries_by_status": {
+          "DELIVERED": 67500
+        },
+        "delivered": 67500,
+        "dead_lettered": 0,
+        "not_finished": 0,
+        "retried_deliveries": 0,
+        "ignored_by_consumers": 0,
+        "provider_requests": 67500,
+        "provider_distinct_request_keys": 67500,
+        "provider_effects": 67500,
+        "provider_distinct_effect_keys": 67500,
+        "provider_injected_failures": 0,
+        "duplicate_deliveries": 0,
+        "duplicate_side_effects": 0,
+        "suppressed_by_provider": 0
+      },
+      "verdict": {
+        "pass": true
+      },
+      "monitor_csv": "benchmark-results/recovery-nats-purge-20261107T142309Z-rep2.csv",
+      "drain_after_load_s": 0.080637039,
+      "deliveries_repaired_by_reconciler": 3231,
+      "max_repairs_for_one_delivery": 1,
+      "consumers_paused_before_purge_s": 8
+    },
+    {
+      "service": "nats-purge",
+      "repetition": 3,
+      "rate": 150,
+      "stopped_at_db_epoch_s": 1794061735.766432,
+      "started_at_db_epoch_s": 1794061735.766432,
+      "recovery": {
+        "outage_s": 0,
+        "steady_deliveries_waiting": 54,
+        "peak_outbox_waiting_events": 121,
+        "peak_deliveries_waiting": 3380,
+        "recovered_below_deliveries": 900,
+        "recovery_s": 34.992568016052246,
+        "peak_delivery_rate_per_s": 695.4608847421888,
+        "dead_lettered_by_end_of_run": 0,
+        "samples_before_outage": 39,
+        "samples_after_restart": 114
+      },
+      "load": {
+        "run": "recovery-nats-purge-20261107T142309Z-3",
+        "target_rate": 150,
+        "duration_s": 150,
+        "planned": 22500,
+        "sent": 22500,
+        "created": 22500,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 150,
+        "max_inflight": 7,
+        "schedule_lag_p50_ms": 0.5699745,
+        "schedule_lag_p99_ms": 1.1281590799999999,
+        "schedule_lag_max_ms": 1.976959,
+        "api_p50_ms": 2.6874915,
+        "api_p95_ms": 3.9667153499999994,
+        "api_p99_ms": 4.915740329999994,
+        "api_max_ms": 46.172967,
+        "generator_kept_up": true
+      },
+      "counts": {
+        "events": 22500,
+        "deliveries": 67500,
+        "deliveries_by_status": {
+          "DELIVERED": 67500
+        },
+        "delivered": 67500,
+        "dead_lettered": 0,
+        "not_finished": 0,
+        "retried_deliveries": 0,
+        "ignored_by_consumers": 0,
+        "provider_requests": 67500,
+        "provider_distinct_request_keys": 67500,
+        "provider_effects": 67500,
+        "provider_distinct_effect_keys": 67500,
+        "provider_injected_failures": 0,
+        "duplicate_deliveries": 0,
+        "duplicate_side_effects": 0,
+        "suppressed_by_provider": 0
+      },
+      "verdict": {
+        "pass": true
+      },
+      "monitor_csv": "benchmark-results/recovery-nats-purge-20261107T142309Z-rep3.csv",
+      "drain_after_load_s": 0.070130287,
+      "deliveries_repaired_by_reconciler": 3293,
+      "max_repairs_for_one_delivery": 1,
+      "consumers_paused_before_purge_s": 8
+    }
+  ],
+  "environment": {
+    "captured_at": "2026-11-07T14:23:09.249649981Z",
+    "os": "linux",
+    "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+    "logical_cpus": 16,
+    "clock_mhz": 2800,
+    "power_source": "ac",
+    "vm_product": "Google Compute Engine",
+    "docker_cpus": 16,
+    "docker_mem_gb": 62.786582946777344
+  }
+}

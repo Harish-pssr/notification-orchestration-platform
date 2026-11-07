@@ -1,0 +1,67 @@
+{
+  "run": "reliability-control-20261107T133712Z",
+  "negative_control": true,
+  "relays": 4,
+  "consumers": 4,
+  "rate": 150,
+  "duplicate_probability": 0.05,
+  "provider_error_probability": 0.02,
+  "load": {
+    "run": "reliability-control-20261107T133712Z",
+    "target_rate": 150,
+    "duration_s": 66.666666666,
+    "planned": 9999,
+    "sent": 9999,
+    "created": 9999,
+    "rejected": 0,
+    "errors": 0,
+    "skipped": 0,
+    "achieved_rate": 149.98500000149986,
+    "max_inflight": 4,
+    "schedule_lag_p50_ms": 0.572879,
+    "schedule_lag_p99_ms": 1.1451755,
+    "schedule_lag_max_ms": 2.08471,
+    "api_p50_ms": 3.199131,
+    "api_p95_ms": 4.270020700000001,
+    "api_p99_ms": 5.4374904000000015,
+    "api_max_ms": 22.444273,
+    "generator_kept_up": true
+  },
+  "relay_crashes": null,
+  "drain_after_load_s": 2.116150864,
+  "counts": {
+    "events": 9999,
+    "deliveries": 29997,
+    "deliveries_by_status": {
+      "DELIVERED": 29997
+    },
+    "delivered": 29997,
+    "dead_lettered": 0,
+    "not_finished": 0,
+    "retried_deliveries": 572,
+    "ignored_by_consumers": 0,
+    "provider_requests": 32191,
+    "provider_distinct_request_keys": 29997,
+    "provider_effects": 31545,
+    "provider_distinct_effect_keys": 29997,
+    "provider_injected_failures": 646,
+    "duplicate_deliveries": 1548,
+    "duplicate_side_effects": 1548,
+    "suppressed_by_provider": 0
+  },
+  "verdict": {
+    "pass": true
+  },
+  "environment": {
+    "captured_at": "2026-11-07T13:37:12.093301504Z",
+    "os": "linux",
+    "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+    "logical_cpus": 16,
+    "clock_mhz": 2800,
+    "power_source": "ac",
+    "vm_product": "Google Compute Engine",
+    "docker_cpus": 16,
+    "docker_mem_gb": 62.786582946777344
+  },
+  "started_at": "2026-11-07T13:37:12Z"
+}

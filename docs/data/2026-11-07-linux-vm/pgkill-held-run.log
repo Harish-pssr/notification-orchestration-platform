@@ -1,0 +1,27 @@
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== pgkill-held-20261107T163257Z: 40000 events at 150/s (about 4m27s), 4 relay(s), 4 consumer(s) per channel ===
+[16:32:59] start: configuring failure injection
+[16:33:02] load running: 40000 events at 150/s
+[16:33:59] postgres crash 1 of 2: SIGKILL notifplatform-postgres-platform-1
+[16:34:05] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:34266->127.0.0.1:15433: read: connection reset by peer
+[16:37:00] postgres crash 2 of 2: SIGKILL notifplatform-postgres-platform-1
+[16:37:05] platform Postgres started again; waiting for it to accept connections
+marker: failed to connect to `user=notif database=platform`: 127.0.0.1:15433 (localhost): failed to receive message: read tcp 127.0.0.1:54088->127.0.0.1:15433: read: connection reset by peer
+load finished: 38097 created, 1902 rejected, 0 errors
+[16:37:29] load finished: waiting for every delivery to finish
+[16:37:30] finished: PASS
+
+events accepted by the API         38097
+events stored                      38097
+deliveries                        114291  (delivered 114291, dead-lettered 0, unfinished 0)
+deliveries that needed a retry      2075
+relay crashes                          0
+consumer crashes                       0
+platform Postgres kills                2  (1902 API requests with an unknown outcome)
+provider requests                 122416  (distinct keys 114291, injected errors 2369)
+duplicate copies absorbed           6012  (stopped by consumers 256, by the provider 5756)
+provider side effects             114291  (distinct keys 114291)
+DUPLICATE SIDE EFFECTS                 0
+RESULT: PASS
+EXIT 0

@@ -1,0 +1,2899 @@
+{
+  "label": "cap-r4c2",
+  "relays": 4,
+  "consumers": 2,
+  "ramp_best_rate": 745,
+  "confirmed_capacity": 745,
+  "ramp": [
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 100,
+      "load": {
+        "run": "cap-r4c2-100-26d75d",
+        "target_rate": 100,
+        "duration_s": 30,
+        "planned": 3000,
+        "sent": 3000,
+        "created": 3000,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 100,
+        "max_inflight": 2,
+        "schedule_lag_p50_ms": 0.5828675,
+        "schedule_lag_p99_ms": 1.11521816,
+        "schedule_lag_max_ms": 1.665236,
+        "api_p50_ms": 3.484671,
+        "api_p95_ms": 4.18289285,
+        "api_p99_ms": 4.648431489999994,
+        "api_max_ms": 16.808297,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000302143,
+      "analysis": {
+        "run": "cap-r4c2-100-26d75d",
+        "events": 3000,
+        "events_in_window": 2000,
+        "completed_in_window": 2000,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 100,
+        "end_to_end": {
+          "n": 2000,
+          "p50_ms": 100.385,
+          "p95_ms": 192.45364999999998,
+          "p99_ms": 205.37473,
+          "max_ms": 222.767
+        },
+        "publish": {
+          "n": 2000,
+          "p50_ms": 95.2345,
+          "p95_ms": 187.56699999999998,
+          "p99_ms": 200.17431000000002,
+          "max_ms": 217.928
+        },
+        "per_channel": {
+          "email": {
+            "n": 2000,
+            "p50_ms": 100.0235,
+            "p95_ms": 191.95095,
+            "p99_ms": 205.37351999999998,
+            "max_ms": 222.466
+          },
+          "push": {
+            "n": 2000,
+            "p50_ms": 99.9745,
+            "p95_ms": 192.3678,
+            "p99_ms": 205.29603,
+            "max_ms": 222.767
+          },
+          "webhook": {
+            "n": 2000,
+            "p50_ms": 99.92699999999999,
+            "p95_ms": 191.8507,
+            "p99_ms": 205.04312,
+            "max_ms": 222.76
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-100-26d75d.csv",
+      "cpu": {
+        "api": {
+          "mean": 13.169,
+          "max": 13.76,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 10.608,
+          "max": 12.07,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 10.162000000000003,
+          "max": 12.600000000000001,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 10.355,
+          "max": 11.72,
+          "samples": 10
+        },
+        "loadgen-run-9f0dedf2b4a1": {
+          "mean": 7.935,
+          "max": 8.26,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 12.940999999999997,
+          "max": 15.54,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 38.573,
+          "max": 44.75,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 28.168999999999993,
+          "max": 49.02,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.168,
+          "max": 0.28,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 21.304000000000006,
+          "max": 23.55,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 7.042,
+          "max": 8.13,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 125,
+      "load": {
+        "run": "cap-r4c2-125-906901",
+        "target_rate": 125,
+        "duration_s": 30,
+        "planned": 3750,
+        "sent": 3750,
+        "created": 3750,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 125,
+        "max_inflight": 3,
+        "schedule_lag_p50_ms": 0.551566,
+        "schedule_lag_p99_ms": 1.11903704,
+        "schedule_lag_max_ms": 1.356403,
+        "api_p50_ms": 3.4265415,
+        "api_p95_ms": 4.4102330499999995,
+        "api_p99_ms": 5.271696699999997,
+        "api_max_ms": 20.076189,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.001756398,
+      "analysis": {
+        "run": "cap-r4c2-125-906901",
+        "events": 3750,
+        "events_in_window": 2500,
+        "completed_in_window": 2500,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 125,
+        "end_to_end": {
+          "n": 2500,
+          "p50_ms": 104.029,
+          "p95_ms": 194.13664999999992,
+          "p99_ms": 210.2154599999999,
+          "max_ms": 229.911
+        },
+        "publish": {
+          "n": 2500,
+          "p50_ms": 97.32249999999999,
+          "p95_ms": 187.9997,
+          "p99_ms": 201.5848099999999,
+          "max_ms": 220.733
+        },
+        "per_channel": {
+          "email": {
+            "n": 2500,
+            "p50_ms": 103.0975,
+            "p95_ms": 193.55589999999998,
+            "p99_ms": 208.36799999999988,
+            "max_ms": 229.424
+          },
+          "push": {
+            "n": 2500,
+            "p50_ms": 103.56450000000001,
+            "p95_ms": 193.43959999999998,
+            "p99_ms": 208.92825999999988,
+            "max_ms": 229.425
+          },
+          "webhook": {
+            "n": 2500,
+            "p50_ms": 103.63999999999999,
+            "p95_ms": 193.56795,
+            "p99_ms": 209.31670999999997,
+            "max_ms": 229.911
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-125-906901.csv",
+      "cpu": {
+        "api": {
+          "mean": 15.553999999999998,
+          "max": 16.64,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 13.842000000000002,
+          "max": 15.39,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 13.595000000000002,
+          "max": 15.280000000000001,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 13.925,
+          "max": 16.08,
+          "samples": 10
+        },
+        "loadgen-run-2b761e1886bb": {
+          "mean": 8.834,
+          "max": 9.27,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 15.166,
+          "max": 17.96,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 50.337,
+          "max": 56.42,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 33.061,
+          "max": 37.81,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.25,
+          "max": 0.46,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 26.82,
+          "max": 29.51,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 8.709999999999999,
+          "max": 10.25,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 156,
+      "load": {
+        "run": "cap-r4c2-156-f8c27c",
+        "target_rate": 156,
+        "duration_s": 30,
+        "planned": 4680,
+        "sent": 4680,
+        "created": 4680,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 156,
+        "max_inflight": 4,
+        "schedule_lag_p50_ms": 0.6025855,
+        "schedule_lag_p99_ms": 1.16515656,
+        "schedule_lag_max_ms": 1.662355,
+        "api_p50_ms": 3.3631845,
+        "api_p95_ms": 4.548065950000001,
+        "api_p99_ms": 5.44458917,
+        "api_max_ms": 20.528119,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.004019757,
+      "analysis": {
+        "run": "cap-r4c2-156-f8c27c",
+        "events": 4680,
+        "events_in_window": 3120,
+        "completed_in_window": 3120,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 156,
+        "end_to_end": {
+          "n": 3120,
+          "p50_ms": 101.87700000000001,
+          "p95_ms": 193.3565,
+          "p99_ms": 210.58903999999995,
+          "max_ms": 234.665
+        },
+        "publish": {
+          "n": 3120,
+          "p50_ms": 94.2765,
+          "p95_ms": 186.4057,
+          "p99_ms": 201.08957,
+          "max_ms": 224.191
+        },
+        "per_channel": {
+          "email": {
+            "n": 3120,
+            "p50_ms": 101.0465,
+            "p95_ms": 192.40994999999995,
+            "p99_ms": 209.05686,
+            "max_ms": 231.655
+          },
+          "push": {
+            "n": 3120,
+            "p50_ms": 100.6845,
+            "p95_ms": 192.42305,
+            "p99_ms": 209.83393999999998,
+            "max_ms": 231.687
+          },
+          "webhook": {
+            "n": 3120,
+            "p50_ms": 101.22550000000001,
+            "p95_ms": 192.8542,
+            "p99_ms": 209.55084,
+            "max_ms": 234.665
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-156-f8c27c.csv",
+      "cpu": {
+        "api": {
+          "mean": 18.648000000000003,
+          "max": 20.16,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 19.212000000000007,
+          "max": 20.17,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 18.537999999999997,
+          "max": 19.72,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 18.758,
+          "max": 20.4,
+          "samples": 10
+        },
+        "loadgen-run-1486d9940949": {
+          "mean": 9.940000000000001,
+          "max": 10.29,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 20.694,
+          "max": 26.2,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 64.94300000000001,
+          "max": 70.03,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 44.24399999999999,
+          "max": 47.53,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.15499999999999997,
+          "max": 0.3,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 36.41100000000001,
+          "max": 38.87,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 11.792,
+          "max": 12.490000000000002,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 195,
+      "load": {
+        "run": "cap-r4c2-195-f0bba3",
+        "target_rate": 195,
+        "duration_s": 30,
+        "planned": 5850,
+        "sent": 5850,
+        "created": 5850,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 195,
+        "max_inflight": 4,
+        "schedule_lag_p50_ms": 0.6016985,
+        "schedule_lag_p99_ms": 1.1634075600000002,
+        "schedule_lag_max_ms": 1.501853,
+        "api_p50_ms": 3.2433365,
+        "api_p95_ms": 4.567779250000001,
+        "api_p99_ms": 5.752228860000002,
+        "api_max_ms": 19.849898,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.002473655,
+      "analysis": {
+        "run": "cap-r4c2-195-f0bba3",
+        "events": 5850,
+        "events_in_window": 3900,
+        "completed_in_window": 3900,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 195,
+        "end_to_end": {
+          "n": 3900,
+          "p50_ms": 92.82249999999999,
+          "p95_ms": 184.55925,
+          "p99_ms": 203.86969,
+          "max_ms": 233.465
+        },
+        "publish": {
+          "n": 3900,
+          "p50_ms": 85.0335,
+          "p95_ms": 177.74185,
+          "p99_ms": 194.27823999999993,
+          "max_ms": 217.67
+        },
+        "per_channel": {
+          "email": {
+            "n": 3900,
+            "p50_ms": 91.9005,
+            "p95_ms": 183.80589999999995,
+            "p99_ms": 202.03588999999994,
+            "max_ms": 233.465
+          },
+          "push": {
+            "n": 3900,
+            "p50_ms": 92.061,
+            "p95_ms": 183.87909999999994,
+            "p99_ms": 202.11914,
+            "max_ms": 232.353
+          },
+          "webhook": {
+            "n": 3900,
+            "p50_ms": 91.89150000000001,
+            "p95_ms": 183.93039999999996,
+            "p99_ms": 203.41732,
+            "max_ms": 232.763
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-195-f0bba3.csv",
+      "cpu": {
+        "api": {
+          "mean": 22.781,
+          "max": 24.04,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 22.186999999999998,
+          "max": 24.9,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 22.049000000000003,
+          "max": 25.630000000000003,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 22.220000000000002,
+          "max": 25.21,
+          "samples": 10
+        },
+        "loadgen-run-8118d5dfa29b": {
+          "mean": 10.242,
+          "max": 10.85,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 23.737000000000002,
+          "max": 26.96,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 81.80800000000002,
+          "max": 95.12,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 52.13199999999999,
+          "max": 60.5,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.344,
+          "max": 0.6,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 43.709999999999994,
+          "max": 50.34,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 13.52,
+          "max": 15.169999999999998,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 244,
+      "load": {
+        "run": "cap-r4c2-244-4ef16a",
+        "target_rate": 244,
+        "duration_s": 30,
+        "planned": 7320,
+        "sent": 7320,
+        "created": 7320,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 244,
+        "max_inflight": 4,
+        "schedule_lag_p50_ms": 0.5929845,
+        "schedule_lag_p99_ms": 1.2005823399999993,
+        "schedule_lag_max_ms": 2.01101,
+        "api_p50_ms": 3.169212,
+        "api_p95_ms": 4.520660249999995,
+        "api_p99_ms": 5.961961519999995,
+        "api_max_ms": 16.155828,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000546169,
+      "analysis": {
+        "run": "cap-r4c2-244-4ef16a",
+        "events": 7320,
+        "events_in_window": 4880,
+        "completed_in_window": 4880,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 244,
+        "end_to_end": {
+          "n": 4880,
+          "p50_ms": 17.286,
+          "p95_ms": 161.4896,
+          "p99_ms": 191.0223,
+          "max_ms": 229.869
+        },
+        "publish": {
+          "n": 4880,
+          "p50_ms": 11.3205,
+          "p95_ms": 154.02205000000004,
+          "p99_ms": 182.99311,
+          "max_ms": 213.905
+        },
+        "per_channel": {
+          "email": {
+            "n": 4880,
+            "p50_ms": 16.950499999999998,
+            "p95_ms": 160.73280000000003,
+            "p99_ms": 190.31330000000003,
+            "max_ms": 226.795
+          },
+          "push": {
+            "n": 4880,
+            "p50_ms": 16.719,
+            "p95_ms": 160.3128,
+            "p99_ms": 190.14997000000002,
+            "max_ms": 229.869
+          },
+          "webhook": {
+            "n": 4880,
+            "p50_ms": 16.614,
+            "p95_ms": 161.0294,
+            "p99_ms": 190.67062,
+            "max_ms": 227.141
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-244-4ef16a.csv",
+      "cpu": {
+        "api": {
+          "mean": 27.934999999999995,
+          "max": 30.54,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 26.284999999999997,
+          "max": 31.05,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 26.889999999999997,
+          "max": 29.68,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 26.933,
+          "max": 30.02,
+          "samples": 10
+        },
+        "loadgen-run-2f54c5db344a": {
+          "mean": 11.95,
+          "max": 13.56,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 29.182,
+          "max": 34.3,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 104.572,
+          "max": 139.86,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 66.527,
+          "max": 100.11,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.188,
+          "max": 0.34,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 53.337,
+          "max": 59.17,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 17.512,
+          "max": 21.97,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 305,
+      "load": {
+        "run": "cap-r4c2-305-e3fc21",
+        "target_rate": 305,
+        "duration_s": 30,
+        "planned": 9150,
+        "sent": 9150,
+        "created": 9150,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 305,
+        "max_inflight": 5,
+        "schedule_lag_p50_ms": 0.5957315,
+        "schedule_lag_p99_ms": 1.55303112,
+        "schedule_lag_max_ms": 3.804644,
+        "api_p50_ms": 3.129426,
+        "api_p95_ms": 5.0656802,
+        "api_p99_ms": 6.447250810000001,
+        "api_max_ms": 16.281291,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000687466,
+      "analysis": {
+        "run": "cap-r4c2-305-e3fc21",
+        "events": 9150,
+        "events_in_window": 6100,
+        "completed_in_window": 6100,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 305,
+        "end_to_end": {
+          "n": 6100,
+          "p50_ms": 79.24549999999999,
+          "p95_ms": 171.34255000000002,
+          "p99_ms": 194.69247000000001,
+          "max_ms": 237.72
+        },
+        "publish": {
+          "n": 6100,
+          "p50_ms": 67.2585,
+          "p95_ms": 164.01794999999998,
+          "p99_ms": 185.38711000000004,
+          "max_ms": 216.487
+        },
+        "per_channel": {
+          "email": {
+            "n": 6100,
+            "p50_ms": 77.9355,
+            "p95_ms": 170.78335,
+            "p99_ms": 193.96992000000003,
+            "max_ms": 237.72
+          },
+          "push": {
+            "n": 6100,
+            "p50_ms": 78.07149999999999,
+            "p95_ms": 170.5909,
+            "p99_ms": 194.14126000000002,
+            "max_ms": 234.545
+          },
+          "webhook": {
+            "n": 6100,
+            "p50_ms": 78.18,
+            "p95_ms": 170.7391,
+            "p99_ms": 194.48026,
+            "max_ms": 233.692
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-305-e3fc21.csv",
+      "cpu": {
+        "api": {
+          "mean": 33.42,
+          "max": 35.1,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 32.66700000000001,
+          "max": 36.96,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 32.80800000000001,
+          "max": 38.36,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 32.717000000000006,
+          "max": 36.980000000000004,
+          "samples": 10
+        },
+        "loadgen-run-ff68bdc915bc": {
+          "mean": 13.173000000000002,
+          "max": 14.12,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 34.879999999999995,
+          "max": 38.39,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 114.04299999999998,
+          "max": 122.27,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 76.631,
+          "max": 82.87,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.24500000000000002,
+          "max": 0.43,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 64.614,
+          "max": 70.45,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 20.627000000000002,
+          "max": 22.8,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 381,
+      "load": {
+        "run": "cap-r4c2-381-864993",
+        "target_rate": 381,
+        "duration_s": 30,
+        "planned": 11430,
+        "sent": 11430,
+        "created": 11430,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 381,
+        "max_inflight": 8,
+        "schedule_lag_p50_ms": 0.568393,
+        "schedule_lag_p99_ms": 1.626003949999999,
+        "schedule_lag_max_ms": 3.416635,
+        "api_p50_ms": 3.1927825,
+        "api_p95_ms": 4.30557665,
+        "api_p99_ms": 5.798574789999982,
+        "api_max_ms": 21.579771,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000448992,
+      "analysis": {
+        "run": "cap-r4c2-381-864993",
+        "events": 11430,
+        "events_in_window": 7620,
+        "completed_in_window": 7620,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 381,
+        "end_to_end": {
+          "n": 7620,
+          "p50_ms": 10.2045,
+          "p95_ms": 99.61404999999971,
+          "p99_ms": 178.96133999999998,
+          "max_ms": 240.937
+        },
+        "publish": {
+          "n": 7620,
+          "p50_ms": 6.542,
+          "p95_ms": 79.48799999999991,
+          "p99_ms": 167.26222999999976,
+          "max_ms": 221.014
+        },
+        "per_channel": {
+          "email": {
+            "n": 7620,
+            "p50_ms": 9.967,
+            "p95_ms": 98.32429999999995,
+            "p99_ms": 177.6869099999997,
+            "max_ms": 240.937
+          },
+          "push": {
+            "n": 7620,
+            "p50_ms": 9.9635,
+            "p95_ms": 98.59854999999995,
+            "p99_ms": 178.44464,
+            "max_ms": 237.387
+          },
+          "webhook": {
+            "n": 7620,
+            "p50_ms": 9.901499999999999,
+            "p95_ms": 98.54604999999992,
+            "p99_ms": 178.57673999999992,
+            "max_ms": 235.9
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-381-864993.csv",
+      "cpu": {
+        "api": {
+          "mean": 46.12,
+          "max": 48.2,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 40.783,
+          "max": 50.67,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 39.785000000000004,
+          "max": 48.58,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 40.899,
+          "max": 48.400000000000006,
+          "samples": 10
+        },
+        "loadgen-run-54c494865f8d": {
+          "mean": 16.566000000000003,
+          "max": 17.43,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 45.827,
+          "max": 49.9,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 156.987,
+          "max": 175.46,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 98.446,
+          "max": 112.5,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.225,
+          "max": 0.4,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 88.723,
+          "max": 104.89,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 28.614000000000004,
+          "max": 32.11,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 477,
+      "load": {
+        "run": "cap-r4c2-477-dea873",
+        "target_rate": 477,
+        "duration_s": 30,
+        "planned": 14310,
+        "sent": 14310,
+        "created": 14310,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 477,
+        "max_inflight": 10,
+        "schedule_lag_p50_ms": 0.5783415,
+        "schedule_lag_p99_ms": 1.5680530699999993,
+        "schedule_lag_max_ms": 2.868811,
+        "api_p50_ms": 3.2447169999999996,
+        "api_p95_ms": 4.083922449999999,
+        "api_p99_ms": 4.67250285,
+        "api_max_ms": 20.52497,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000755335,
+      "analysis": {
+        "run": "cap-r4c2-477-dea873",
+        "events": 14310,
+        "events_in_window": 9541,
+        "completed_in_window": 9541,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 477.05,
+        "end_to_end": {
+          "n": 9541,
+          "p50_ms": 12.208,
+          "p95_ms": 17.365,
+          "p99_ms": 20.149,
+          "max_ms": 31.156
+        },
+        "publish": {
+          "n": 9541,
+          "p50_ms": 8.531,
+          "p95_ms": 13.512,
+          "p99_ms": 15.998000000000006,
+          "max_ms": 27.066
+        },
+        "per_channel": {
+          "email": {
+            "n": 9541,
+            "p50_ms": 12.016,
+            "p95_ms": 17.163,
+            "p99_ms": 19.801600000000004,
+            "max_ms": 30.814
+          },
+          "push": {
+            "n": 9541,
+            "p50_ms": 11.989,
+            "p95_ms": 17.133,
+            "p99_ms": 19.843400000000006,
+            "max_ms": 31.156
+          },
+          "webhook": {
+            "n": 9541,
+            "p50_ms": 11.943,
+            "p95_ms": 17.134,
+            "p99_ms": 19.819800000000004,
+            "max_ms": 30.276
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-477-dea873.csv",
+      "cpu": {
+        "api": {
+          "mean": 55.38499999999999,
+          "max": 59.22,
+          "samples": 10
+        },
+        "consumer-email": {
+          "mean": 47.569,
+          "max": 50.93000000000001,
+          "samples": 10
+        },
+        "consumer-push": {
+          "mean": 46.951,
+          "max": 50.87,
+          "samples": 10
+        },
+        "consumer-webhook": {
+          "mean": 47.674,
+          "max": 50.95,
+          "samples": 10
+        },
+        "loadgen-run-0a742d57e0bf": {
+          "mean": 20.208,
+          "max": 22.7,
+          "samples": 10
+        },
+        "nats": {
+          "mean": 53.830999999999996,
+          "max": 60.16,
+          "samples": 10
+        },
+        "postgres-platform": {
+          "mean": 186.081,
+          "max": 201.21,
+          "samples": 10
+        },
+        "postgres-provider": {
+          "mean": 120.585,
+          "max": 132.51,
+          "samples": 10
+        },
+        "prometheus": {
+          "mean": 0.599,
+          "max": 2.39,
+          "samples": 10
+        },
+        "provider": {
+          "mean": 105.622,
+          "max": 113.92,
+          "samples": 10
+        },
+        "relay": {
+          "mean": 31.500000000000007,
+          "max": 33.900000000000006,
+          "samples": 10
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 596,
+      "load": {
+        "run": "cap-r4c2-596-263683",
+        "target_rate": 596,
+        "duration_s": 30,
+        "planned": 17880,
+        "sent": 17880,
+        "created": 17880,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 596,
+        "max_inflight": 12,
+        "schedule_lag_p50_ms": 0.631152,
+        "schedule_lag_p99_ms": 1.6123844299999999,
+        "schedule_lag_max_ms": 4.109477,
+        "api_p50_ms": 3.3781635000000003,
+        "api_p95_ms": 4.6075349,
+        "api_p99_ms": 6.251681349999997,
+        "api_max_ms": 22.193137,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.000599482,
+      "analysis": {
+        "run": "cap-r4c2-596-263683",
+        "events": 17880,
+        "events_in_window": 11920,
+        "completed_in_window": 11920,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 596,
+        "end_to_end": {
+          "n": 11920,
+          "p50_ms": 16.747500000000002,
+          "p95_ms": 43.03844999999999,
+          "p99_ms": 167.02878999999993,
+          "max_ms": 225.367
+        },
+        "publish": {
+          "n": 11920,
+          "p50_ms": 12.636,
+          "p95_ms": 30.567399999999996,
+          "p99_ms": 145.95342999999988,
+          "max_ms": 204.375
+        },
+        "per_channel": {
+          "email": {
+            "n": 11920,
+            "p50_ms": 16.438499999999998,
+            "p95_ms": 41.13214999999994,
+            "p99_ms": 165.96320999999995,
+            "max_ms": 224.607
+          },
+          "push": {
+            "n": 11920,
+            "p50_ms": 16.467,
+            "p95_ms": 41.85869999999998,
+            "p99_ms": 164.35362999999995,
+            "max_ms": 220.784
+          },
+          "webhook": {
+            "n": 11920,
+            "p50_ms": 16.427999999999997,
+            "p95_ms": 41.65694999999994,
+            "p99_ms": 166.43894999999955,
+            "max_ms": 225.367
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-596-263683.csv",
+      "cpu": {
+        "api": {
+          "mean": 69.68444444444444,
+          "max": 70.75,
+          "samples": 9
+        },
+        "consumer-email": {
+          "mean": 61.227777777777774,
+          "max": 62.269999999999996,
+          "samples": 9
+        },
+        "consumer-push": {
+          "mean": 60.68777777777778,
+          "max": 62.26,
+          "samples": 9
+        },
+        "consumer-webhook": {
+          "mean": 61.54333333333333,
+          "max": 63.53,
+          "samples": 9
+        },
+        "loadgen-run-aa22c01926a9": {
+          "mean": 24.364444444444445,
+          "max": 26.12,
+          "samples": 9
+        },
+        "nats": {
+          "mean": 68.73777777777778,
+          "max": 76.09,
+          "samples": 9
+        },
+        "postgres-platform": {
+          "mean": 231.48333333333338,
+          "max": 240,
+          "samples": 9
+        },
+        "postgres-provider": {
+          "mean": 160.03444444444446,
+          "max": 165.21,
+          "samples": 9
+        },
+        "prometheus": {
+          "mean": 0.4,
+          "max": 0.81,
+          "samples": 9
+        },
+        "provider": {
+          "mean": 137.35333333333335,
+          "max": 139.31,
+          "samples": 9
+        },
+        "relay": {
+          "mean": 37.84777777777778,
+          "max": 40.09,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 745,
+      "load": {
+        "run": "cap-r4c2-745-402858",
+        "target_rate": 745,
+        "duration_s": 30,
+        "planned": 22350,
+        "sent": 22350,
+        "created": 22350,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 745,
+        "max_inflight": 16,
+        "schedule_lag_p50_ms": 0.590113,
+        "schedule_lag_p99_ms": 1.7600431199999986,
+        "schedule_lag_max_ms": 4.184602,
+        "api_p50_ms": 3.986156,
+        "api_p95_ms": 7.6640681499999985,
+        "api_p99_ms": 11.505264249999984,
+        "api_max_ms": 23.88468,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.004303504,
+      "analysis": {
+        "run": "cap-r4c2-745-402858",
+        "events": 22350,
+        "events_in_window": 14900,
+        "completed_in_window": 14900,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 745,
+        "end_to_end": {
+          "n": 14900,
+          "p50_ms": 30.564500000000002,
+          "p95_ms": 70.5153,
+          "p99_ms": 96.60471000000007,
+          "max_ms": 140.939
+        },
+        "publish": {
+          "n": 14900,
+          "p50_ms": 22.1905,
+          "p95_ms": 55.129349999999995,
+          "p99_ms": 70.17811,
+          "max_ms": 98.5
+        },
+        "per_channel": {
+          "email": {
+            "n": 14900,
+            "p50_ms": 29.6875,
+            "p95_ms": 68.64174999999997,
+            "p99_ms": 94.51332000000004,
+            "max_ms": 135.933
+          },
+          "push": {
+            "n": 14900,
+            "p50_ms": 29.858,
+            "p95_ms": 69.26254999999999,
+            "p99_ms": 94.67440000000002,
+            "max_ms": 140.939
+          },
+          "webhook": {
+            "n": 14900,
+            "p50_ms": 29.8275,
+            "p95_ms": 69.06224999999999,
+            "p99_ms": 95.49901,
+            "max_ms": 137.146
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-745-402858.csv",
+      "cpu": {
+        "api": {
+          "mean": 77.90777777777777,
+          "max": 79.18,
+          "samples": 9
+        },
+        "consumer-email": {
+          "mean": 78.12777777777778,
+          "max": 85.97,
+          "samples": 9
+        },
+        "consumer-push": {
+          "mean": 77.8011111111111,
+          "max": 87.14,
+          "samples": 9
+        },
+        "consumer-webhook": {
+          "mean": 77.94999999999999,
+          "max": 88.11,
+          "samples": 9
+        },
+        "loadgen-run-67d93f13ace8": {
+          "mean": 26.406666666666666,
+          "max": 28.25,
+          "samples": 9
+        },
+        "nats": {
+          "mean": 78.62666666666665,
+          "max": 86.51,
+          "samples": 9
+        },
+        "postgres-platform": {
+          "mean": 294.34777777777776,
+          "max": 329.4,
+          "samples": 9
+        },
+        "postgres-provider": {
+          "mean": 193.77555555555557,
+          "max": 204,
+          "samples": 9
+        },
+        "prometheus": {
+          "mean": 0.37333333333333335,
+          "max": 0.53,
+          "samples": 9
+        },
+        "provider": {
+          "mean": 160.3188888888889,
+          "max": 171.35,
+          "samples": 9
+        },
+        "relay": {
+          "mean": 45.474444444444444,
+          "max": 47.02,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 931,
+      "load": {
+        "run": "cap-r4c2-931-312d49",
+        "target_rate": 931,
+        "duration_s": 30,
+        "planned": 27930,
+        "sent": 27930,
+        "created": 27930,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 931,
+        "max_inflight": 49,
+        "schedule_lag_p50_ms": 0.6239395,
+        "schedule_lag_p99_ms": 1.9194302699999994,
+        "schedule_lag_max_ms": 5.663754,
+        "api_p50_ms": 6.7139705,
+        "api_p95_ms": 19.2717029,
+        "api_p99_ms": 30.25006340999999,
+        "api_max_ms": 67.05375,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 2249,
+        "deliveries": 6636,
+        "dead": 0
+      },
+      "drain_after_load_s": 2.180921639,
+      "analysis": {
+        "run": "cap-r4c2-931-312d49",
+        "events": 27930,
+        "events_in_window": 18621,
+        "completed_in_window": 18621,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 931.05,
+        "end_to_end": {
+          "n": 18621,
+          "p50_ms": 1484.986,
+          "p95_ms": 2337.9,
+          "p99_ms": 2393.3856,
+          "max_ms": 2446.722
+        },
+        "publish": {
+          "n": 18621,
+          "p50_ms": 50.269,
+          "p95_ms": 108.917,
+          "p99_ms": 144.2696,
+          "max_ms": 180.182
+        },
+        "per_channel": {
+          "email": {
+            "n": 18621,
+            "p50_ms": 1420.073,
+            "p95_ms": 2255.156,
+            "p99_ms": 2311.3482,
+            "max_ms": 2356.73
+          },
+          "push": {
+            "n": 18621,
+            "p50_ms": 1484.986,
+            "p95_ms": 2335.518,
+            "p99_ms": 2393.3856,
+            "max_ms": 2446.722
+          },
+          "webhook": {
+            "n": 18621,
+            "p50_ms": 1473.728,
+            "p95_ms": 2336.434,
+            "p99_ms": 2384.3581999999997,
+            "max_ms": 2429.905
+          }
+        }
+      },
+      "verdict": {
+        "sustained": false,
+        "reason": "backlog at end of load is 2249 events, above the bound of 1862 (2 s of arrivals)"
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-931-312d49.csv",
+      "cpu": {
+        "api": {
+          "mean": 85.06444444444443,
+          "max": 86.46,
+          "samples": 9
+        },
+        "consumer-email": {
+          "mean": 95.74111111111112,
+          "max": 99.45,
+          "samples": 9
+        },
+        "consumer-push": {
+          "mean": 95.48777777777778,
+          "max": 97.75,
+          "samples": 9
+        },
+        "consumer-webhook": {
+          "mean": 95.61999999999999,
+          "max": 99.19999999999999,
+          "samples": 9
+        },
+        "loadgen-run-98fb9f4740e6": {
+          "mean": 27.704444444444448,
+          "max": 28.92,
+          "samples": 9
+        },
+        "nats": {
+          "mean": 93.76999999999998,
+          "max": 100.05,
+          "samples": 9
+        },
+        "postgres-platform": {
+          "mean": 352.4377777777778,
+          "max": 368.72,
+          "samples": 9
+        },
+        "postgres-provider": {
+          "mean": 218.64777777777778,
+          "max": 223.8,
+          "samples": 9
+        },
+        "prometheus": {
+          "mean": 0.30222222222222217,
+          "max": 0.46,
+          "samples": 9
+        },
+        "provider": {
+          "mean": 166.49666666666667,
+          "max": 170.72,
+          "samples": 9
+        },
+        "relay": {
+          "mean": 56.84888888888888,
+          "max": 58.65,
+          "samples": 9
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 1164,
+      "load": {
+        "run": "cap-r4c2-1164-50c9ce",
+        "target_rate": 1164,
+        "duration_s": 30,
+        "planned": 34920,
+        "sent": 34920,
+        "created": 34920,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 1164,
+        "max_inflight": 92,
+        "schedule_lag_p50_ms": 0.6032455,
+        "schedule_lag_p99_ms": 1.9510326999999947,
+        "schedule_lag_max_ms": 10.655005,
+        "api_p50_ms": 10.172805499999999,
+        "api_p95_ms": 39.61214884999996,
+        "api_p99_ms": 58.06776026999975,
+        "api_max_ms": 88.110187,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 10083,
+        "deliveries": 30218,
+        "dead": 0
+      },
+      "drain_after_load_s": 9.650946060999999,
+      "analysis": {
+        "run": "cap-r4c2-1164-50c9ce",
+        "events": 34920,
+        "events_in_window": 23325,
+        "completed_in_window": 23325,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 5,
+        "window_s": 20,
+        "events_per_s_in_window": 1166.25,
+        "end_to_end": {
+          "n": 23325,
+          "p50_ms": 6331.015,
+          "p95_ms": 10037.146799999999,
+          "p99_ms": 10159.647719999999,
+          "max_ms": 10233.769
+        },
+        "publish": {
+          "n": 23325,
+          "p50_ms": 3792.92,
+          "p95_ms": 7400.4412,
+          "p99_ms": 7441.0927599999995,
+          "max_ms": 7476.646
+        },
+        "per_channel": {
+          "email": {
+            "n": 23325,
+            "p50_ms": 6319.794,
+            "p95_ms": 10009.9674,
+            "p99_ms": 10137.7876,
+            "max_ms": 10210.955
+          },
+          "push": {
+            "n": 23325,
+            "p50_ms": 6330.848,
+            "p95_ms": 10037.146799999999,
+            "p99_ms": 10159.647719999999,
+            "max_ms": 10233.769
+          },
+          "webhook": {
+            "n": 23325,
+            "p50_ms": 6326.799,
+            "p95_ms": 10021.571,
+            "p99_ms": 10150.82104,
+            "max_ms": 10216.085
+          }
+        }
+      },
+      "verdict": {
+        "sustained": false,
+        "reason": "backlog at end of load is 10083 events, above the bound of 2328 (2 s of arrivals)"
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-1164-50c9ce.csv",
+      "cpu": {
+        "api": {
+          "mean": 98.22,
+          "max": 102.18,
+          "samples": 9
+        },
+        "consumer-email": {
+          "mean": 92.64444444444445,
+          "max": 96.68,
+          "samples": 9
+        },
+        "consumer-push": {
+          "mean": 92.37,
+          "max": 94.07,
+          "samples": 9
+        },
+        "consumer-webhook": {
+          "mean": 90.85111111111112,
+          "max": 95.59,
+          "samples": 9
+        },
+        "loadgen-run-af8f0cb42d8b": {
+          "mean": 31.654444444444444,
+          "max": 33.83,
+          "samples": 9
+        },
+        "nats": {
+          "mean": 87.32333333333334,
+          "max": 96.22,
+          "samples": 9
+        },
+        "postgres-platform": {
+          "mean": 397.34777777777776,
+          "max": 415.26,
+          "samples": 9
+        },
+        "postgres-provider": {
+          "mean": 208.12444444444446,
+          "max": 214.2,
+          "samples": 9
+        },
+        "prometheus": {
+          "mean": 0.26,
+          "max": 0.44,
+          "samples": 9
+        },
+        "provider": {
+          "mean": 159.44555555555553,
+          "max": 163.31,
+          "samples": 9
+        },
+        "relay": {
+          "mean": 55.080000000000005,
+          "max": 62.16,
+          "samples": 9
+        }
+      }
+    }
+  ],
+  "confirmations": [
+    {
+      "rate": 745,
+      "passes": 2,
+      "reps": [
+        {
+          "label": "cap-r4c2",
+          "relays": 4,
+          "consumers": 2,
+          "rate": 745,
+          "load": {
+            "run": "cap-r4c2-745-171503",
+            "target_rate": 745,
+            "duration_s": 60,
+            "planned": 44700,
+            "sent": 44700,
+            "created": 44700,
+            "rejected": 0,
+            "errors": 0,
+            "skipped": 0,
+            "achieved_rate": 745,
+            "max_inflight": 161,
+            "schedule_lag_p50_ms": 0.6211855,
+            "schedule_lag_p99_ms": 1.9266448200000008,
+            "schedule_lag_max_ms": 5.150119,
+            "api_p50_ms": 4.4178165,
+            "api_p95_ms": 47.10153019999996,
+            "api_p99_ms": 147.70053206000009,
+            "api_max_ms": 329.850067,
+            "generator_kept_up": true
+          },
+          "backlog_at_end_of_load": {
+            "events": 34637,
+            "deliveries": 103911,
+            "dead": 0
+          },
+          "drain_after_load_s": 37.821810926,
+          "analysis": {
+            "run": "cap-r4c2-745-171503",
+            "events": 44700,
+            "events_in_window": 29802,
+            "completed_in_window": 29802,
+            "incomplete_in_window": 0,
+            "dead_lettered_deliveries": 0,
+            "warmup_s": 10,
+            "window_s": 40,
+            "events_per_s_in_window": 745.05,
+            "end_to_end": {
+              "n": 29802,
+              "p50_ms": 45751.583,
+              "p95_ms": 50577.017799999994,
+              "p99_ms": 51015.145059999995,
+              "max_ms": 51286.504
+            },
+            "publish": {
+              "n": 29802,
+              "p50_ms": 41299.8685,
+              "p95_ms": 50084.363549999995,
+              "p99_ms": 50885.70564,
+              "max_ms": 51265.539
+            },
+            "per_channel": {
+              "email": {
+                "n": 29802,
+                "p50_ms": 45743.795,
+                "p95_ms": 50567.09515,
+                "p99_ms": 51007.68089,
+                "max_ms": 51286.139
+              },
+              "push": {
+                "n": 29802,
+                "p50_ms": 45751.583,
+                "p95_ms": 50572.99195,
+                "p99_ms": 51015.145059999995,
+                "max_ms": 51286.504
+              },
+              "webhook": {
+                "n": 29802,
+                "p50_ms": 45746.454,
+                "p95_ms": 50577.017799999994,
+                "p99_ms": 51009.03293,
+                "max_ms": 51285.887
+              }
+            }
+          },
+          "verdict": {
+            "sustained": false,
+            "reason": "backlog at end of load is 34637 events, above the bound of 1490 (2 s of arrivals)"
+          },
+          "monitor_csv": "benchmark-results/cap-r4c2-745-171503.csv",
+          "cpu": {
+            "api": {
+              "mean": 63.25789473684211,
+              "max": 73.73,
+              "samples": 19
+            },
+            "consumer-email": {
+              "mean": 21.263684210526325,
+              "max": 74.03999999999999,
+              "samples": 19
+            },
+            "consumer-push": {
+              "mean": 20.94157894736842,
+              "max": 74.83,
+              "samples": 19
+            },
+            "consumer-webhook": {
+              "mean": 20.044210526315783,
+              "max": 63.06,
+              "samples": 19
+            },
+            "loadgen-run-39be73a80f11": {
+              "mean": 21.739999999999995,
+              "max": 24.99,
+              "samples": 19
+            },
+            "nats": {
+              "mean": 23.43684210526316,
+              "max": 87.18,
+              "samples": 19
+            },
+            "postgres-platform": {
+              "mean": 554.2878947368422,
+              "max": 1004.51,
+              "samples": 19
+            },
+            "postgres-provider": {
+              "mean": 198.03894736842108,
+              "max": 429.89,
+              "samples": 19
+            },
+            "prometheus": {
+              "mean": 0.25210526315789467,
+              "max": 0.46,
+              "samples": 19
+            },
+            "provider": {
+              "mean": 38.57052631578947,
+              "max": 143.68,
+              "samples": 19
+            },
+            "relay": {
+              "mean": 11.91263157894737,
+              "max": 55.44,
+              "samples": 19
+            }
+          }
+        },
+        {
+          "label": "cap-r4c2",
+          "relays": 4,
+          "consumers": 2,
+          "rate": 745,
+          "load": {
+            "run": "cap-r4c2-745-0a452d",
+            "target_rate": 745,
+            "duration_s": 60,
+            "planned": 44700,
+            "sent": 44700,
+            "created": 44700,
+            "rejected": 0,
+            "errors": 0,
+            "skipped": 0,
+            "achieved_rate": 745,
+            "max_inflight": 123,
+            "schedule_lag_p50_ms": 0.5869895,
+            "schedule_lag_p99_ms": 1.7614121300000003,
+            "schedule_lag_max_ms": 7.228168,
+            "api_p50_ms": 3.8708495000000003,
+            "api_p95_ms": 7.962297849999998,
+            "api_p99_ms": 19.703946990000006,
+            "api_max_ms": 164.446683,
+            "generator_kept_up": true
+          },
+          "backlog_at_end_of_load": {
+            "events": 0,
+            "deliveries": 0,
+            "dead": 0
+          },
+          "drain_after_load_s": 0.001212909,
+          "analysis": {
+            "run": "cap-r4c2-745-0a452d",
+            "events": 44700,
+            "events_in_window": 29799,
+            "completed_in_window": 29799,
+            "incomplete_in_window": 0,
+            "dead_lettered_deliveries": 0,
+            "warmup_s": 10,
+            "window_s": 40,
+            "events_per_s_in_window": 744.975,
+            "end_to_end": {
+              "n": 29799,
+              "p50_ms": 30.729,
+              "p95_ms": 83.58539999999998,
+              "p99_ms": 234.8497800000002,
+              "max_ms": 373.419
+            },
+            "publish": {
+              "n": 29799,
+              "p50_ms": 21.832,
+              "p95_ms": 57.154,
+              "p99_ms": 80.97066000000001,
+              "max_ms": 214.797
+            },
+            "per_channel": {
+              "email": {
+                "n": 29799,
+                "p50_ms": 29.943,
+                "p95_ms": 79.65319999999996,
+                "p99_ms": 219.90144000000015,
+                "max_ms": 361.457
+              },
+              "push": {
+                "n": 29799,
+                "p50_ms": 29.923,
+                "p95_ms": 82.04909999999997,
+                "p99_ms": 234.20898000000003,
+                "max_ms": 366.284
+              },
+              "webhook": {
+                "n": 29799,
+                "p50_ms": 29.94,
+                "p95_ms": 79.69429999999996,
+                "p99_ms": 232.56322000000011,
+                "max_ms": 373.419
+              }
+            }
+          },
+          "verdict": {
+            "sustained": true,
+            "reason": ""
+          },
+          "monitor_csv": "benchmark-results/cap-r4c2-745-0a452d.csv",
+          "cpu": {
+            "api": {
+              "mean": 76.27263157894737,
+              "max": 80.46,
+              "samples": 19
+            },
+            "consumer-email": {
+              "mean": 74.70736842105264,
+              "max": 80.02,
+              "samples": 19
+            },
+            "consumer-push": {
+              "mean": 74.53157894736843,
+              "max": 78.61,
+              "samples": 19
+            },
+            "consumer-webhook": {
+              "mean": 75.51999999999998,
+              "max": 78.50999999999999,
+              "samples": 19
+            },
+            "loadgen-run-f424c49de2c2": {
+              "mean": 26.78666666666667,
+              "max": 30.56,
+              "samples": 18
+            },
+            "nats": {
+              "mean": 78.19736842105264,
+              "max": 91.66,
+              "samples": 19
+            },
+            "postgres-platform": {
+              "mean": 289.6878947368421,
+              "max": 376.86,
+              "samples": 19
+            },
+            "postgres-provider": {
+              "mean": 194.01210526315788,
+              "max": 254.17,
+              "samples": 19
+            },
+            "prometheus": {
+              "mean": 0.3052631578947369,
+              "max": 0.61,
+              "samples": 19
+            },
+            "provider": {
+              "mean": 157.31105263157897,
+              "max": 165.1,
+              "samples": 19
+            },
+            "relay": {
+              "mean": 43.6157894736842,
+              "max": 52.94,
+              "samples": 19
+            }
+          }
+        },
+        {
+          "label": "cap-r4c2",
+          "relays": 4,
+          "consumers": 2,
+          "rate": 745,
+          "load": {
+            "run": "cap-r4c2-745-3fc28d",
+            "target_rate": 745,
+            "duration_s": 60,
+            "planned": 44700,
+            "sent": 44700,
+            "created": 44700,
+            "rejected": 0,
+            "errors": 0,
+            "skipped": 0,
+            "achieved_rate": 745,
+            "max_inflight": 121,
+            "schedule_lag_p50_ms": 0.5939194999999999,
+            "schedule_lag_p99_ms": 1.7585336800000013,
+            "schedule_lag_max_ms": 5.576039,
+            "api_p50_ms": 3.9495015,
+            "api_p95_ms": 7.732781049999994,
+            "api_p99_ms": 16.212052360000033,
+            "api_max_ms": 161.420702,
+            "generator_kept_up": true
+          },
+          "backlog_at_end_of_load": {
+            "events": 0,
+            "deliveries": 0,
+            "dead": 0
+          },
+          "drain_after_load_s": 0.001014028,
+          "analysis": {
+            "run": "cap-r4c2-745-3fc28d",
+            "events": 44700,
+            "events_in_window": 29800,
+            "completed_in_window": 29800,
+            "incomplete_in_window": 0,
+            "dead_lettered_deliveries": 0,
+            "warmup_s": 10,
+            "window_s": 40,
+            "events_per_s_in_window": 745,
+            "end_to_end": {
+              "n": 29800,
+              "p50_ms": 29.97,
+              "p95_ms": 84.24449999999999,
+              "p99_ms": 216.39254999999974,
+              "max_ms": 329.532
+            },
+            "publish": {
+              "n": 29800,
+              "p50_ms": 21.094,
+              "p95_ms": 59.30009999999999,
+              "p99_ms": 94.54523999999996,
+              "max_ms": 223.066
+            },
+            "per_channel": {
+              "email": {
+                "n": 29800,
+                "p50_ms": 29.2405,
+                "p95_ms": 82.3073,
+                "p99_ms": 214.7522,
+                "max_ms": 327.738
+              },
+              "push": {
+                "n": 29800,
+                "p50_ms": 29.2205,
+                "p95_ms": 82.2734,
+                "p99_ms": 214.45269999999957,
+                "max_ms": 329.532
+              },
+              "webhook": {
+                "n": 29800,
+                "p50_ms": 29.1705,
+                "p95_ms": 82.59519999999999,
+                "p99_ms": 212.29858999999928,
+                "max_ms": 320.301
+              }
+            }
+          },
+          "verdict": {
+            "sustained": true,
+            "reason": ""
+          },
+          "monitor_csv": "benchmark-results/cap-r4c2-745-3fc28d.csv",
+          "cpu": {
+            "api": {
+              "mean": 75.82789473684211,
+              "max": 79.67,
+              "samples": 19
+            },
+            "consumer-email": {
+              "mean": 74.7178947368421,
+              "max": 81.37,
+              "samples": 19
+            },
+            "consumer-push": {
+              "mean": 75.1984210526316,
+              "max": 82.51,
+              "samples": 19
+            },
+            "consumer-webhook": {
+              "mean": 75.23631578947368,
+              "max": 80.82,
+              "samples": 19
+            },
+            "loadgen-run-c49c12b4df2b": {
+              "mean": 27.09666666666666,
+              "max": 31.57,
+              "samples": 18
+            },
+            "nats": {
+              "mean": 77.26105263157895,
+              "max": 91.21,
+              "samples": 19
+            },
+            "postgres-platform": {
+              "mean": 285.34368421052636,
+              "max": 312.64,
+              "samples": 19
+            },
+            "postgres-provider": {
+              "mean": 189.75684210526313,
+              "max": 200.85,
+              "samples": 19
+            },
+            "prometheus": {
+              "mean": 0.4605263157894737,
+              "max": 2.21,
+              "samples": 19
+            },
+            "provider": {
+              "mean": 155.82736842105263,
+              "max": 164.96,
+              "samples": 19
+            },
+            "relay": {
+              "mean": 43.38421052631578,
+              "max": 47.74999999999999,
+              "samples": 19
+            }
+          }
+        }
+      ],
+      "majority_sustained": true
+    },
+    {
+      "rate": 931,
+      "passes": 0,
+      "reps": [
+        {
+          "label": "cap-r4c2",
+          "relays": 4,
+          "consumers": 2,
+          "rate": 931,
+          "load": {
+            "run": "cap-r4c2-931-fa6fc8",
+            "target_rate": 931,
+            "duration_s": 60,
+            "planned": 55860,
+            "sent": 55860,
+            "created": 55860,
+            "rejected": 0,
+            "errors": 0,
+            "skipped": 0,
+            "achieved_rate": 931,
+            "max_inflight": 420,
+            "schedule_lag_p50_ms": 0.6161085,
+            "schedule_lag_p99_ms": 1.8630906599999988,
+            "schedule_lag_max_ms": 7.064823,
+            "api_p50_ms": 6.383884,
+            "api_p95_ms": 22.98074369999999,
+            "api_p99_ms": 179.65434996999932,
+            "api_max_ms": 457.695195,
+            "generator_kept_up": true
+          },
+          "backlog_at_end_of_load": {
+            "events": 2456,
+            "deliveries": 7235,
+            "dead": 0
+          },
+          "drain_after_load_s": 2.000001741,
+          "analysis": {
+            "run": "cap-r4c2-931-fa6fc8",
+            "events": 55860,
+            "events_in_window": 37239,
+            "completed_in_window": 37239,
+            "incomplete_in_window": 0,
+            "dead_lettered_deliveries": 0,
+            "warmup_s": 10,
+            "window_s": 40,
+            "events_per_s_in_window": 930.975,
+            "end_to_end": {
+              "n": 37239,
+              "p50_ms": 1807.105,
+              "p95_ms": 2707.831,
+              "p99_ms": 2741.8112,
+              "max_ms": 2784.226
+            },
+            "publish": {
+              "n": 37239,
+              "p50_ms": 48.262,
+              "p95_ms": 285.7895999999993,
+              "p99_ms": 433.6554200000006,
+              "max_ms": 613.091
+            },
+            "per_channel": {
+              "email": {
+                "n": 37239,
+                "p50_ms": 1737.964,
+                "p95_ms": 2627.3097,
+                "p99_ms": 2665.6684800000003,
+                "max_ms": 2705.964
+              },
+              "push": {
+                "n": 37239,
+                "p50_ms": 1746.849,
+                "p95_ms": 2670.4496,
+                "p99_ms": 2705.60964,
+                "max_ms": 2740.462
+              },
+              "webhook": {
+                "n": 37239,
+                "p50_ms": 1807.105,
+                "p95_ms": 2707.831,
+                "p99_ms": 2741.8112,
+                "max_ms": 2784.226
+              }
+            }
+          },
+          "verdict": {
+            "sustained": false,
+            "reason": "backlog at end of load is 2456 events, above the bound of 1862 (2 s of arrivals)"
+          },
+          "monitor_csv": "benchmark-results/cap-r4c2-931-fa6fc8.csv",
+          "cpu": {
+            "api": {
+              "mean": 81.49333333333334,
+              "max": 85.56,
+              "samples": 18
+            },
+            "consumer-email": {
+              "mean": 93.815,
+              "max": 101.15,
+              "samples": 18
+            },
+            "consumer-push": {
+              "mean": 93.64555555555556,
+              "max": 101.22999999999999,
+              "samples": 18
+            },
+            "consumer-webhook": {
+              "mean": 95.00944444444445,
+              "max": 101.00999999999999,
+              "samples": 18
+            },
+            "loadgen-run-557da5512bb0": {
+              "mean": 27.893888888888892,
+              "max": 43.05,
+              "samples": 18
+            },
+            "nats": {
+              "mean": 88.45444444444445,
+              "max": 108.57,
+              "samples": 18
+            },
+            "postgres-platform": {
+              "mean": 343.8905555555555,
+              "max": 366.93,
+              "samples": 18
+            },
+            "postgres-provider": {
+              "mean": 215.04166666666663,
+              "max": 254.89,
+              "samples": 18
+            },
+            "prometheus": {
+              "mean": 0.365,
+              "max": 0.66,
+              "samples": 18
+            },
+            "provider": {
+              "mean": 163.82611111111115,
+              "max": 176.02,
+              "samples": 18
+            },
+            "relay": {
+              "mean": 52.35888888888889,
+              "max": 58.269999999999996,
+              "samples": 18
+            }
+          }
+        },
+        {
+          "label": "cap-r4c2",
+          "relays": 4,
+          "consumers": 2,
+          "rate": 931,
+          "load": {
+            "run": "cap-r4c2-931-deb509",
+            "target_rate": 931,
+            "duration_s": 60,
+            "planned": 55860,
+            "sent": 55860,
+            "created": 55860,
+            "rejected": 0,
+            "errors": 0,
+            "skipped": 0,
+            "achieved_rate": 931,
+            "max_inflight": 456,
+            "schedule_lag_p50_ms": 0.6095585,
+            "schedule_lag_p99_ms": 1.8624157099999983,
+            "schedule_lag_max_ms": 5.333226,
+            "api_p50_ms": 6.1408000000000005,
+            "api_p95_ms": 21.082282549999988,
+            "api_p99_ms": 234.79034412999383,
+            "api_max_ms": 489.480739,
+            "generator_kept_up": true
+          },
+          "backlog_at_end_of_load": {
+            "events": 2164,
+            "deliveries": 6240,
+            "dead": 0
+          },
+          "drain_after_load_s": 1.986520122,
+          "analysis": {
+            "run": "cap-r4c2-931-deb509",
+            "events": 55860,
+            "events_in_window": 37238,
+            "completed_in_window": 37238,
+            "incomplete_in_window": 0,
+            "dead_lettered_deliveries": 0,
+            "warmup_s": 10,
+            "window_s": 40,
+            "events_per_s_in_window": 930.95,
+            "end_to_end": {
+              "n": 37238,
+              "p50_ms": 1655.8105,
+              "p95_ms": 2386.7853,
+              "p99_ms": 2419.36915,
+              "max_ms": 2447.018
+            },
+            "publish": {
+              "n": 37238,
+              "p50_ms": 43.048500000000004,
+              "p95_ms": 214.8931000000003,
+              "p99_ms": 450.71996999999993,
+              "max_ms": 587.479
+            },
+            "per_channel": {
+              "email": {
+                "n": 37238,
+                "p50_ms": 1531.1915,
+                "p95_ms": 2196.23425,
+                "p99_ms": 2219.9651,
+                "max_ms": 2252.008
+              },
+              "push": {
+                "n": 37238,
+                "p50_ms": 1600.877,
+                "p95_ms": 2311.9085,
+                "p99_ms": 2334.5223,
+                "max_ms": 2360.972
+              },
+              "webhook": {
+                "n": 37238,
+                "p50_ms": 1655.8105,
+                "p95_ms": 2386.7853,
+                "p99_ms": 2419.36915,
+                "max_ms": 2447.018
+              }
+            }
+          },
+          "verdict": {
+            "sustained": false,
+            "reason": "backlog at end of load is 2164 events, above the bound of 1862 (2 s of arrivals)"
+          },
+          "monitor_csv": "benchmark-results/cap-r4c2-931-deb509.csv",
+          "cpu": {
+            "api": {
+              "mean": 82.05111111111111,
+              "max": 85.28,
+              "samples": 18
+            },
+            "consumer-email": {
+              "mean": 94.57777777777778,
+              "max": 100.41,
+              "samples": 18
+            },
+            "consumer-push": {
+              "mean": 94.70444444444442,
+              "max": 100.52,
+              "samples": 18
+            },
+            "consumer-webhook": {
+              "mean": 94.82722222222222,
+              "max": 100.84,
+              "samples": 18
+            },
+            "loadgen-run-19067c3d7c59": {
+              "mean": 27.662222222222226,
+              "max": 41.37,
+              "samples": 18
+            },
+            "nats": {
+              "mean": 91.36333333333333,
+              "max": 103.74,
+              "samples": 18
+            },
+            "postgres-platform": {
+              "mean": 354.1127777777778,
+              "max": 402.15,
+              "samples": 18
+            },
+            "postgres-provider": {
+              "mean": 217.15611111111113,
+              "max": 230.97,
+              "samples": 18
+            },
+            "prometheus": {
+              "mean": 0.2744444444444445,
+              "max": 0.68,
+              "samples": 18
+            },
+            "provider": {
+              "mean": 167.67055555555555,
+              "max": 177.08,
+              "samples": 18
+            },
+            "relay": {
+              "mean": 50.73555555555556,
+              "max": 54.94,
+              "samples": 18
+            }
+          }
+        }
+      ],
+      "majority_sustained": false
+    }
+  ],
+  "latency_rate": 522,
+  "latency": [
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 522,
+      "load": {
+        "run": "cap-r4c2-522-14b9cd",
+        "target_rate": 522,
+        "duration_s": 60,
+        "planned": 31320,
+        "sent": 31320,
+        "created": 31320,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 522,
+        "max_inflight": 38,
+        "schedule_lag_p50_ms": 0.5562579999999999,
+        "schedule_lag_p99_ms": 1.4415434500000008,
+        "schedule_lag_max_ms": 4.01262,
+        "api_p50_ms": 3.1212885000000004,
+        "api_p95_ms": 3.92565975,
+        "api_p99_ms": 4.5304031700000005,
+        "api_max_ms": 72.188528,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.024522936,
+      "analysis": {
+        "run": "cap-r4c2-522-14b9cd",
+        "events": 31320,
+        "events_in_window": 20880,
+        "completed_in_window": 20880,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 10,
+        "window_s": 40,
+        "events_per_s_in_window": 522,
+        "end_to_end": {
+          "n": 20880,
+          "p50_ms": 11.4535,
+          "p95_ms": 16.264,
+          "p99_ms": 20.626259999999995,
+          "max_ms": 103.834
+        },
+        "publish": {
+          "n": 20880,
+          "p50_ms": 7.904,
+          "p95_ms": 12.53405,
+          "p99_ms": 16.09342,
+          "max_ms": 100.397
+        },
+        "per_channel": {
+          "email": {
+            "n": 20880,
+            "p50_ms": 11.224,
+            "p95_ms": 16.001199999999997,
+            "p99_ms": 20.29328999999996,
+            "max_ms": 103.624
+          },
+          "push": {
+            "n": 20880,
+            "p50_ms": 11.2135,
+            "p95_ms": 16.032049999999998,
+            "p99_ms": 20.237229999999943,
+            "max_ms": 103.834
+          },
+          "webhook": {
+            "n": 20880,
+            "p50_ms": 11.1775,
+            "p95_ms": 16.02,
+            "p99_ms": 20.271519999999988,
+            "max_ms": 103.569
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-522-14b9cd.csv",
+      "cpu": {
+        "api": {
+          "mean": 61.72210526315789,
+          "max": 63.12,
+          "samples": 19
+        },
+        "consumer-email": {
+          "mean": 52.02789473684211,
+          "max": 53,
+          "samples": 19
+        },
+        "consumer-push": {
+          "mean": 51.81315789473684,
+          "max": 52.92,
+          "samples": 19
+        },
+        "consumer-webhook": {
+          "mean": 52.21157894736842,
+          "max": 54.150000000000006,
+          "samples": 19
+        },
+        "loadgen-run-c3e156f467e0": {
+          "mean": 20.61736842105263,
+          "max": 23.62,
+          "samples": 19
+        },
+        "nats": {
+          "mean": 59.995263157894726,
+          "max": 70.57,
+          "samples": 19
+        },
+        "postgres-platform": {
+          "mean": 208.4105263157895,
+          "max": 238.11,
+          "samples": 19
+        },
+        "postgres-provider": {
+          "mean": 137.93736842105264,
+          "max": 175.07,
+          "samples": 19
+        },
+        "prometheus": {
+          "mean": 0.3736842105263158,
+          "max": 0.77,
+          "samples": 19
+        },
+        "provider": {
+          "mean": 119.46000000000001,
+          "max": 121.79,
+          "samples": 19
+        },
+        "relay": {
+          "mean": 34.22157894736842,
+          "max": 41.14999999999999,
+          "samples": 19
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 522,
+      "load": {
+        "run": "cap-r4c2-522-7fe97f",
+        "target_rate": 522,
+        "duration_s": 60,
+        "planned": 31320,
+        "sent": 31320,
+        "created": 31320,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 522,
+        "max_inflight": 145,
+        "schedule_lag_p50_ms": 0.5729485,
+        "schedule_lag_p99_ms": 1.6029976000000017,
+        "schedule_lag_max_ms": 3.596489,
+        "api_p50_ms": 3.181324,
+        "api_p95_ms": 4.1751612499999995,
+        "api_p99_ms": 27.179571640000248,
+        "api_max_ms": 279.382875,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.001036233,
+      "analysis": {
+        "run": "cap-r4c2-522-7fe97f",
+        "events": 31320,
+        "events_in_window": 20880,
+        "completed_in_window": 20880,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 10,
+        "window_s": 40,
+        "events_per_s_in_window": 522,
+        "end_to_end": {
+          "n": 20880,
+          "p50_ms": 12.217,
+          "p95_ms": 24.30114999999991,
+          "p99_ms": 163.1023699999995,
+          "max_ms": 386.383
+        },
+        "publish": {
+          "n": 20880,
+          "p50_ms": 8.61,
+          "p95_ms": 17.640199999999997,
+          "p99_ms": 117.55613999999971,
+          "max_ms": 372.723
+        },
+        "per_channel": {
+          "email": {
+            "n": 20880,
+            "p50_ms": 11.9855,
+            "p95_ms": 24.087149999999998,
+            "p99_ms": 162.52292999999997,
+            "max_ms": 385.012
+          },
+          "push": {
+            "n": 20880,
+            "p50_ms": 11.988,
+            "p95_ms": 24.0811,
+            "p99_ms": 158.74546999999998,
+            "max_ms": 386.383
+          },
+          "webhook": {
+            "n": 20880,
+            "p50_ms": 11.967,
+            "p95_ms": 24.06815,
+            "p99_ms": 162.28450999999978,
+            "max_ms": 385.203
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-522-7fe97f.csv",
+      "cpu": {
+        "api": {
+          "mean": 61.82578947368421,
+          "max": 63.7,
+          "samples": 19
+        },
+        "consumer-email": {
+          "mean": 53.292631578947365,
+          "max": 60.86,
+          "samples": 19
+        },
+        "consumer-push": {
+          "mean": 52.83052631578946,
+          "max": 58.55,
+          "samples": 19
+        },
+        "consumer-webhook": {
+          "mean": 53.578421052631576,
+          "max": 61.379999999999995,
+          "samples": 19
+        },
+        "loadgen-run-45a78d967af1": {
+          "mean": 21.64578947368421,
+          "max": 23.08,
+          "samples": 19
+        },
+        "nats": {
+          "mean": 60.69263157894737,
+          "max": 70.71,
+          "samples": 19
+        },
+        "postgres-platform": {
+          "mean": 208.9442105263158,
+          "max": 215.48,
+          "samples": 19
+        },
+        "postgres-provider": {
+          "mean": 138.49157894736842,
+          "max": 151.12,
+          "samples": 19
+        },
+        "prometheus": {
+          "mean": 0.29526315789473684,
+          "max": 0.76,
+          "samples": 19
+        },
+        "provider": {
+          "mean": 120.67578947368419,
+          "max": 126.05,
+          "samples": 19
+        },
+        "relay": {
+          "mean": 34.113684210526316,
+          "max": 37.66,
+          "samples": 19
+        }
+      }
+    },
+    {
+      "label": "cap-r4c2",
+      "relays": 4,
+      "consumers": 2,
+      "rate": 522,
+      "load": {
+        "run": "cap-r4c2-522-11c8a4",
+        "target_rate": 522,
+        "duration_s": 60,
+        "planned": 31320,
+        "sent": 31320,
+        "created": 31320,
+        "rejected": 0,
+        "errors": 0,
+        "skipped": 0,
+        "achieved_rate": 522,
+        "max_inflight": 44,
+        "schedule_lag_p50_ms": 0.5837375,
+        "schedule_lag_p99_ms": 1.5103318900000013,
+        "schedule_lag_max_ms": 3.76965,
+        "api_p50_ms": 3.20453,
+        "api_p95_ms": 4.084361799999999,
+        "api_p99_ms": 5.182894240000001,
+        "api_max_ms": 84.67924,
+        "generator_kept_up": true
+      },
+      "backlog_at_end_of_load": {
+        "events": 0,
+        "deliveries": 0,
+        "dead": 0
+      },
+      "drain_after_load_s": 0.001390194,
+      "analysis": {
+        "run": "cap-r4c2-522-11c8a4",
+        "events": 31320,
+        "events_in_window": 20880,
+        "completed_in_window": 20880,
+        "incomplete_in_window": 0,
+        "dead_lettered_deliveries": 0,
+        "warmup_s": 10,
+        "window_s": 40,
+        "events_per_s_in_window": 522,
+        "end_to_end": {
+          "n": 20880,
+          "p50_ms": 12.406,
+          "p95_ms": 22.11324999999997,
+          "p99_ms": 119.15851999999973,
+          "max_ms": 213.275
+        },
+        "publish": {
+          "n": 20880,
+          "p50_ms": 8.729,
+          "p95_ms": 17.28364999999999,
+          "p99_ms": 97.53048999999986,
+          "max_ms": 205.696
+        },
+        "per_channel": {
+          "email": {
+            "n": 20880,
+            "p50_ms": 12.163499999999999,
+            "p95_ms": 21.799149999999997,
+            "p99_ms": 118.52876999999997,
+            "max_ms": 211.014
+          },
+          "push": {
+            "n": 20880,
+            "p50_ms": 12.167,
+            "p95_ms": 21.89549999999999,
+            "p99_ms": 118.25202999999986,
+            "max_ms": 213.275
+          },
+          "webhook": {
+            "n": 20880,
+            "p50_ms": 12.155,
+            "p95_ms": 21.783949999999987,
+            "p99_ms": 118.00907999999995,
+            "max_ms": 212.206
+          }
+        }
+      },
+      "verdict": {
+        "sustained": true,
+        "reason": ""
+      },
+      "monitor_csv": "benchmark-results/cap-r4c2-522-11c8a4.csv",
+      "cpu": {
+        "api": {
+          "mean": 62.35842105263156,
+          "max": 63.6,
+          "samples": 19
+        },
+        "consumer-email": {
+          "mean": 53.342631578947376,
+          "max": 60.379999999999995,
+          "samples": 19
+        },
+        "consumer-push": {
+          "mean": 53.25157894736842,
+          "max": 59.93,
+          "samples": 19
+        },
+        "consumer-webhook": {
+          "mean": 53.47894736842106,
+          "max": 58.69,
+          "samples": 19
+        },
+        "loadgen-run-ffd39bba6dee": {
+          "mean": 21.630000000000003,
+          "max": 23.25,
+          "samples": 19
+        },
+        "nats": {
+          "mean": 62.26315789473683,
+          "max": 73.74,
+          "samples": 19
+        },
+        "postgres-platform": {
+          "mean": 208.9278947368421,
+          "max": 225.33,
+          "samples": 19
+        },
+        "postgres-provider": {
+          "mean": 140.1531578947368,
+          "max": 161.83,
+          "samples": 19
+        },
+        "prometheus": {
+          "mean": 0.29894736842105263,
+          "max": 0.94,
+          "samples": 19
+        },
+        "provider": {
+          "mean": 121.20631578947369,
+          "max": 125.27,
+          "samples": 19
+        },
+        "relay": {
+          "mean": 34.03736842105264,
+          "max": 35.66,
+          "samples": 19
+        }
+      }
+    }
+  ],
+  "environment": {
+    "captured_at": "2026-11-07T11:39:56.632054978Z",
+    "os": "linux",
+    "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+    "logical_cpus": 16,
+    "clock_mhz": 2800,
+    "power_source": "ac",
+    "vm_product": "Google Compute Engine",
+    "docker_cpus": 16,
+    "docker_mem_gb": 62.786582946777344
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-11-07T14:23:09.197136413Z",
+  "os": "linux",
+  "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+  "logical_cpus": 16,
+  "clock_mhz": 2800,
+  "power_source": "ac",
+  "vm_product": "Google Compute Engine",
+  "docker_cpus": 16,
+  "docker_mem_gb": 62.786582946777344
+}

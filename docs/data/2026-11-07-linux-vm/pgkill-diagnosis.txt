@@ -1,0 +1,30 @@
+Postgres-kill finding: what the chaos run showed, how it was traced, and what was fixed.
+All times 2026-11-07 UTC, from the instrumented rerun "pgkill" (40,000 events at 150/s, 2 SIGKILLs of the platform Postgres, default reconciler wait of 10 minutes).
+
+1. The P1d chaos run (15 relay + 6 consumer + 2 Postgres kills) passed but took 485 s to drain after the load ended (load finished
+   14:13:53, "every delivery finished" 14:21:58). The second Postgres kill was at 14:11:54; plus the reconciler's 10 minute wait = 14:21:54.
+
+2. The rerun "pgkill" (first kill 16:10:32, second 16:13:08): 11 deliveries stayed RETRYING with attempts=1 from the moment of the first kill,
+   and nothing waited for them in the broker (consumers: 0 waiting, 0 awaiting acknowledgement). Trace of one of them in its consumer's log:
+     16:10:32.25 attempt=1 WARN  provider call failed, will retry        (an injected 503, recorded)
+     16:10:32.51 attempt=2 ERROR load delivery failed                    (database down)
+     16:10:33.52 attempt=3 ERROR load delivery failed
+     16:10:34.53 attempt=4 ERROR load delivery failed
+     16:10:35.55 attempt=5 ERROR load delivery failed
+     16:10:36.56 attempt=6 ERROR load delivery failed
+     16:10:37.57 attempt=7 ERROR load delivery failed
+     16:10:38.57 attempt=8 ERROR load delivery failed                    (the broker's limit: MaxDeliver = MaxAttempts + 3 = 8; nothing after this)
+   The consumer gave each message back after a FIXED one second, so a database outage of about eight seconds used up all eight deliveries and
+   the broker dropped the message. The reconciler repaired the 11 deliveries at 16:20:32 (5) and 16:23:10 (6), exactly ten minutes after
+   each kill, and the run finished at 16:23:11. Stored events = accepted events (37,351): none of the 2,648 requests rejected during the
+   outages had committed.
+
+3. First fix (exponential back-off after a database error): drain was immediate, but the re-test ("pgkill-fixed") FAILED with one
+   dead-lettered delivery. Its log: attempt 1 injected 503 (recorded), attempts 2 to 4 "load delivery failed" (database down), attempt 5 the
+   database was back and the provider returned another injected 503, so the consumer saw "attempt 5 of 5" and dead-lettered it as
+   "retries exhausted: provider returned 503" although it had made only two real provider attempts. The broker's delivery count includes
+   redeliveries caused by database errors.
+
+4. Final fix (hold the message and retry the database call in place, up to DB_WAIT = 2 minutes, telling the broker "still working" with
+   InProgress so no redelivery is counted): the re-test ("pgkill-held") PASSED: 38,097 events stored (= accepted), 114,291 deliveries all
+   delivered, 0 dead-lettered, 0 duplicate side effects, 0 reconciler repairs, drain 0.1 s after the load ended.

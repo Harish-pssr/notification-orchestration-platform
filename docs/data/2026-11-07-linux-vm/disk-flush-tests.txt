@@ -1,0 +1,18 @@
+Disk measurements on the Linux VM (Google Compute Engine n2-standard-16, us-central1-a).
+Taken with fio 3.36 on the boot disk, after the capacity matrix. Purpose: how fast can this disk flush small
+writes, since every event needs several synchronous database commits.
+
+Commands (4 KiB random writes, O_DIRECT):
+  1 writer, flush after every write:    fio --rw=randwrite --bs=4k --fsync=1 --direct=1 --numjobs=1  --runtime=10
+  16 writers, flush after every write:  fio --rw=randwrite --bs=4k --fsync=1 --direct=1 --numjobs=16 --runtime=15
+  raw ceiling, deep queue, no flush:    fio --rw=randwrite --bs=4k --direct=1 --iodepth=64 --ioengine=libaio --numjobs=4 --runtime=15
+
+                                          boot disk 50 GB (SSD)    boot disk 500 GB (SSD)
+  1 writer, flushed (writes/s)                    850                      930
+  16 writers, flushed (writes/s)                6,715                    9,131
+  raw 4 KiB random-write ceiling (writes/s)     7,615                   23,400
+
+The disk was resized live from 50 GB to 500 GB in the console and the filesystem grown, with nothing else changed.
+Other checks on the 50 GB disk: a plain synchronous dd of 1,000 x 4 KiB took 1.18 s (about 1.2 ms per write);
+CPU steal since boot: 0.000%; the platform database was 39 MB with no dead rows after the runs; no live-migration
+maintenance event was visible when checked.

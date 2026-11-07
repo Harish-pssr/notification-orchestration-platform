@@ -1,0 +1,22 @@
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+##### B6 run 1 starting 14:32:29
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+rep 1: stall-linux-run1  R=4 C=4  rate   150/s  achieved  150.0  API p99    5.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    191/    208 ms  sustained
+##### B6 run 1 finished 14:42:34
+##### B6 run 2 starting 14:42:34
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+rep 1: stall-linux-run2  R=4 C=4  rate   150/s  achieved  150.0  API p99    4.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    191/    208 ms  sustained
+##### B6 run 2 finished 14:52:37
+ALTER SYSTEM
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+DONE
+EXIT 0

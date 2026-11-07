@@ -1,0 +1,11 @@
+VM details captured 2026-11-07T11:02:02Z
+provider: Google Compute Engine, zone us-central1-a, machine type n2-standard-16 (standard, not Spot), boot disk: 50 GB SSD persistent disk (per console)
+os: Ubuntu 24.04.5 LTS, kernel 7.0.0-1017-gcp
+cpu: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 vCPU, 2 threads/core, platform Intel Cascade Lake
+memory: 62Gi
+docker: Docker version 29.9.3, build 5457199
+compose: Docker Compose version v5.7.0
+go: go version go1.27.0 linux/amd64
+images: nats:2-alpine notifplatform-api notifplatform-consumer-email notifplatform-consumer-push notifplatform-consumer-webhook notifplatform-migrate-platform notifplatform-migrate-provider notifplatform-provider notifplatform-relay postgres:17-alpine prom/prometheus:v3.1.0 
+repo commit: 6f5e6bf when the VM was set up (relay scaling and the capacity matrix ran on it). Before the reliability runs the benchmark tool was updated to 72938e0, which only adds the -consumer-kills and -postgres-kills options to `bench reliability` (no platform code changed).
+background agents stopped: google-cloud-ops-agent, unattended-upgrades, apt-daily timers

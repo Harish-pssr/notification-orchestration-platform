@@ -1,0 +1,49 @@
+##### stop the dev stack and remove its data
+ Network notifplatform_default Removed 
+ Volume notifplatform_pg-provider Removed 
+ Volume notifplatform_prometheus-data Removed 
+##### write a throwaway .env (random secrets, never printed, never committed)
+##### start the production stack
+ Container notifplatform-caddy-1 Starting 
+ Container notifplatform-consumer-push-1 Started 
+ Container notifplatform-consumer-email-1 Started 
+ Container notifplatform-caddy-1 Started 
+##### waiting for https://localhost/healthz (local CA, so -k)
+healthy over HTTPS: 1
+##### containers and published ports
+SERVICE             STATUS                   PORTS
+api                 Up 3 seconds             
+caddy               Up 3 seconds             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 0.0.0.0:443->443/udp, [::]:443->443/udp, 2019/tcp
+consumer-email      Up 3 seconds             
+consumer-push       Up 3 seconds             
+consumer-webhook    Up 3 seconds             
+nats                Up 7 seconds (healthy)   4222/tcp, 6222/tcp, 8222/tcp
+postgres-platform   Up 7 seconds (healthy)   5432/tcp
+postgres-provider   Up 7 seconds (healthy)   5432/tcp
+prometheus          Up 7 seconds             9090/tcp
+provider            Up 4 seconds             
+relay               Up 3 seconds             
+##### what the VM listens on (tcp)
+0.0.0.0:22 0.0.0.0:443 0.0.0.0:80 127.0.0.53%lo:53 127.0.0.54:53 [::]:22 [::]:443 [::]:80 
+##### smoke test (EXPECT_AUTH=1)
+ok:   healthz is 200
+ok:   creating an event without the admin token is refused (401)
+ok:   created event 01a1b683-d13a-7e6e-b1e8-e8da0be17e23
+ok:   the same key replays the stored response
+ok:   event published and every delivery is delivered
+ok:   PUT /api/faults/relay.pause without a token is refused (403)
+ok:   POST /api/replay without a token is refused (401)
+smoke test passed
+smoke exit: 0
+##### checks a visitor should NOT be able to do
+create an event without the token -> HTTP 401
+fault injection endpoint without the token -> HTTP 403
+plain HTTP on port 80 -> HTTP 308 redirect to https://localhost/healthz
+database port 5432 reachable from the host? no
+NATS port 4222 reachable from the host? no
+API port 8080 reachable from the host? no
+##### tear the production stack down and remove the throwaway secrets
+ Volume notifplatform_caddy-config Removed 
+ Network notifplatform_default Removed 
+DONE
+EXIT 0

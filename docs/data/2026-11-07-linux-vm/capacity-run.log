@@ -1,0 +1,222 @@
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r1c1-first: 1 relay(s), 1 consumer(s) per channel ===
+  ramp: cap-r1c1-first  R=1 C=1  rate    50/s  achieved   50.0  API p99    4.5 ms  backlog@end     1  drain 0.2s           e2e p50/p95/p99     109/    202/    208 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate    63/s  achieved   63.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     106/    205/    213 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate    78/s  achieved   78.0  API p99    4.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    206/    216 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate    98/s  achieved   98.0  API p99    4.1 ms  backlog@end     8  drain 0.2s           e2e p50/p95/p99     112/    204/    216 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   122/s  achieved  122.0  API p99    4.1 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     107/    204/    216 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   153/s  achieved  153.0  API p99    4.1 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     108/    204/    215 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   191/s  achieved  191.0  API p99    4.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     104/    202/    216 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   238/s  achieved  238.0  API p99    3.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     104/    199/    211 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   298/s  achieved  298.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/    189/    210 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   373/s  achieved  373.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      23/    191/    208 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   466/s  achieved  466.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99       9/     14/    149 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   582/s  achieved  582.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      15/     27/     36 ms  sustained
+  ramp: cap-r1c1-first  R=1 C=1  rate   728/s  achieved  728.0  API p99    4.6 ms  backlog@end  5302  drain 9.4s           e2e p50/p95/p99    3820/   8365/   8577 ms  NOT sustained: backlog at end of load is 5302 events, above the bound of 1456 (2 s of arrivals)
+  ramp: cap-r1c1-first  R=1 C=1  rate   909/s  achieved  909.0  API p99    4.8 ms  backlog@end 12617  drain 27.3s          e2e p50/p95/p99   12472/  22994/  23712 ms  NOT sustained: backlog at end of load is 12617 events, above the bound of 1818 (2 s of arrivals)
+    confirm 582/s rep 1: cap-r1c1-first  R=1 C=1  rate   582/s  achieved  582.0  API p99   25.2 ms  backlog@end 13269  drain 20.0s          e2e p50/p95/p99   20781/  22937/  23134 ms  NOT sustained: backlog at end of load is 13269 events, above the bound of 1164 (2 s of arrivals)
+    confirm 582/s rep 2: cap-r1c1-first  R=1 C=1  rate   582/s  achieved  582.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      16/    118/    192 ms  sustained
+    confirm 582/s rep 3: cap-r1c1-first  R=1 C=1  rate   582/s  achieved  582.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      17/    151/    208 ms  sustained
+  confirmation at 582/s: 2 of 3 repetitions sustained => true
+    confirm 728/s rep 1: cap-r1c1-first  R=1 C=1  rate   728/s  achieved  728.0  API p99    4.8 ms  backlog@end 11932  drain 18.3s          e2e p50/p95/p99   14235/  17389/  17581 ms  NOT sustained: backlog at end of load is 11932 events, above the bound of 1456 (2 s of arrivals)
+    confirm 728/s rep 2: cap-r1c1-first  R=1 C=1  rate   728/s  achieved  728.0  API p99    7.5 ms  backlog@end  6555  drain 10.1s          e2e p50/p95/p99    5173/   8545/   8854 ms  NOT sustained: backlog at end of load is 6555 events, above the bound of 1456 (2 s of arrivals)
+  confirmation at 728/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 582 events/s (ramp alone suggested 582)
+  latency at 70% (407/s) rep 1: cap-r1c1-first  R=1 C=1  rate   407/s  achieved  407.0  API p99    4.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99       9/     84/    184 ms  sustained
+  latency at 70% (407/s) rep 2: cap-r1c1-first  R=1 C=1  rate   407/s  achieved  407.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99       9/     30/    170 ms  sustained
+  latency at 70% (407/s) rep 3: cap-r1c1-first  R=1 C=1  rate   407/s  achieved  407.0  API p99   15.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99       9/    123/    207 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r4c1: 4 relay(s), 1 consumer(s) per channel ===
+  ramp: cap-r4c1  R=4 C=1  rate    50/s  achieved   50.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     103/    191/    205 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate    63/s  achieved   63.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    193/    205 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate    78/s  achieved   78.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    197/    205 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate    98/s  achieved   98.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     101/    196/    210 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   122/s  achieved  122.0  API p99    4.7 ms  backlog@end     4  drain 0.2s           e2e p50/p95/p99     106/    197/    210 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   153/s  achieved  153.0  API p99    4.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     103/    195/    210 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   191/s  achieved  191.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      97/    188/    208 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   238/s  achieved  238.0  API p99    5.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      15/    154/    188 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   298/s  achieved  298.0  API p99    5.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      51/    164/    192 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   373/s  achieved  373.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/    149/    195 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   466/s  achieved  466.0  API p99    8.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     34/     71 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   582/s  achieved  582.0  API p99    5.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      20/     37/     46 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   728/s  achieved  728.0  API p99    8.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      35/     69/     85 ms  sustained
+  ramp: cap-r4c1  R=4 C=1  rate   909/s  achieved  909.0  API p99   15.7 ms  backlog@end  2220  drain 2.4s           e2e p50/p95/p99    1320/   2203/   2252 ms  NOT sustained: backlog at end of load is 2220 events, above the bound of 1818 (2 s of arrivals)
+  ramp: cap-r4c1  R=4 C=1  rate  1137/s  achieved 1137.0  API p99   35.6 ms  backlog@end 13646  drain 13.3s          e2e p50/p95/p99   10200/  13307/  13325 ms  NOT sustained: backlog at end of load is 13646 events, above the bound of 2274 (2 s of arrivals)
+    confirm 728/s rep 1: cap-r4c1  R=4 C=1  rate   728/s  achieved  728.0  API p99   17.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      74/    397/    463 ms  sustained
+    confirm 728/s rep 2: cap-r4c1  R=4 C=1  rate   728/s  achieved  728.0  API p99  145.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      38/    390/    613 ms  sustained
+  confirmation at 728/s: 2 of 2 repetitions sustained => true
+    confirm 909/s rep 1: cap-r4c1  R=4 C=1  rate   909/s  achieved  909.0  API p99   54.2 ms  backlog@end  8849  drain 9.0s           e2e p50/p95/p99    4252/   9377/   9618 ms  NOT sustained: backlog at end of load is 8849 events, above the bound of 1818 (2 s of arrivals)
+    confirm 909/s rep 2: cap-r4c1  R=4 C=1  rate   909/s  achieved  909.0  API p99   33.6 ms  backlog@end  9331  drain 9.3s           e2e p50/p95/p99    4636/  10148/  10569 ms  NOT sustained: backlog at end of load is 9331 events, above the bound of 1818 (2 s of arrivals)
+  confirmation at 909/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 728 events/s (ramp alone suggested 728)
+  latency at 70% (510/s) rep 1: cap-r4c1  R=4 C=1  rate   510/s  achieved  510.0  API p99    5.1 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     21/     38 ms  sustained
+  latency at 70% (510/s) rep 2: cap-r4c1  R=4 C=1  rate   510/s  achieved  510.0  API p99    5.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     25/    151 ms  sustained
+  latency at 70% (510/s) rep 3: cap-r4c1  R=4 C=1  rate   510/s  achieved  510.0  API p99    5.1 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     23/     39 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r4c2: 4 relay(s), 2 consumer(s) per channel ===
+  ramp: cap-r4c2  R=4 C=2  rate   100/s  achieved  100.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     100/    192/    205 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   125/s  achieved  125.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     104/    194/    210 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   156/s  achieved  156.0  API p99    5.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     102/    193/    211 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   195/s  achieved  195.0  API p99    5.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      93/    185/    204 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   244/s  achieved  244.0  API p99    6.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      17/    161/    191 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   305/s  achieved  305.0  API p99    6.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      79/    171/    195 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   381/s  achieved  381.0  API p99    5.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      10/    100/    179 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   477/s  achieved  477.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     17/     20 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   596/s  achieved  596.0  API p99    6.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      17/     43/    167 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   745/s  achieved  745.0  API p99   11.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      31/     71/     97 ms  sustained
+  ramp: cap-r4c2  R=4 C=2  rate   931/s  achieved  931.0  API p99   30.3 ms  backlog@end  2249  drain 2.2s           e2e p50/p95/p99    1485/   2338/   2393 ms  NOT sustained: backlog at end of load is 2249 events, above the bound of 1862 (2 s of arrivals)
+  ramp: cap-r4c2  R=4 C=2  rate  1164/s  achieved 1164.0  API p99   58.1 ms  backlog@end 10083  drain 9.7s           e2e p50/p95/p99    6331/  10037/  10160 ms  NOT sustained: backlog at end of load is 10083 events, above the bound of 2328 (2 s of arrivals)
+    confirm 745/s rep 1: cap-r4c2  R=4 C=2  rate   745/s  achieved  745.0  API p99  147.7 ms  backlog@end 34637  drain 37.8s          e2e p50/p95/p99   45752/  50577/  51015 ms  NOT sustained: backlog at end of load is 34637 events, above the bound of 1490 (2 s of arrivals)
+    confirm 745/s rep 2: cap-r4c2  R=4 C=2  rate   745/s  achieved  745.0  API p99   19.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      31/     84/    235 ms  sustained
+    confirm 745/s rep 3: cap-r4c2  R=4 C=2  rate   745/s  achieved  745.0  API p99   16.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      30/     84/    216 ms  sustained
+  confirmation at 745/s: 2 of 3 repetitions sustained => true
+    confirm 931/s rep 1: cap-r4c2  R=4 C=2  rate   931/s  achieved  931.0  API p99  179.7 ms  backlog@end  2456  drain 2.0s           e2e p50/p95/p99    1807/   2708/   2742 ms  NOT sustained: backlog at end of load is 2456 events, above the bound of 1862 (2 s of arrivals)
+    confirm 931/s rep 2: cap-r4c2  R=4 C=2  rate   931/s  achieved  931.0  API p99  234.8 ms  backlog@end  2164  drain 2.0s           e2e p50/p95/p99    1656/   2387/   2419 ms  NOT sustained: backlog at end of load is 2164 events, above the bound of 1862 (2 s of arrivals)
+  confirmation at 931/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 745 events/s (ramp alone suggested 745)
+  latency at 70% (522/s) rep 1: cap-r4c2  R=4 C=2  rate   522/s  achieved  522.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/     16/     21 ms  sustained
+  latency at 70% (522/s) rep 2: cap-r4c2  R=4 C=2  rate   522/s  achieved  522.0  API p99   27.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     24/    163 ms  sustained
+  latency at 70% (522/s) rep 3: cap-r4c2  R=4 C=2  rate   522/s  achieved  522.0  API p99    5.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     22/    119 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r4c4: 4 relay(s), 4 consumer(s) per channel ===
+  ramp: cap-r4c4  R=4 C=4  rate   150/s  achieved  150.0  API p99    5.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     101/    192/    209 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   188/s  achieved  188.0  API p99    5.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     107/    199/    222 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   234/s  achieved  234.0  API p99   12.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      75/    185/    229 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   293/s  achieved  293.0  API p99    6.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      82/    172/    196 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   366/s  achieved  366.0  API p99    5.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      10/    101/    180 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   458/s  achieved  458.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     16/     17 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   572/s  achieved  572.0  API p99    5.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      16/     26/     32 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   715/s  achieved  715.0  API p99    9.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      25/     52/     68 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   28.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      65/    135/    153 ms  sustained
+  ramp: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99  141.7 ms  backlog@end  7961  drain 7.4s           e2e p50/p95/p99    4940/   8022/   8122 ms  NOT sustained: backlog at end of load is 7961 events, above the bound of 2236 (2 s of arrivals)
+  ramp: cap-r4c4  R=4 C=4  rate  1397/s  achieved 1397.0  API p99  198.1 ms  backlog@end 16344  drain 15.7s          e2e p50/p95/p99    9873/  14745/  15069 ms  NOT sustained: backlog at end of load is 16344 events, above the bound of 2794 (2 s of arrivals)
+    confirm 894/s rep 1: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99  274.1 ms  backlog@end   624  drain 0.6s           e2e p50/p95/p99     124/    710/    730 ms  sustained
+    confirm 894/s rep 2: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   63.7 ms  backlog@end  4128  drain 3.7s           e2e p50/p95/p99     909/   4359/   4525 ms  NOT sustained: backlog at end of load is 4128 events, above the bound of 1788 (2 s of arrivals)
+    confirm 894/s rep 3: cap-r4c4  R=4 C=4  rate   894/s  achieved  894.0  API p99   96.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     147/    553/    581 ms  sustained
+  confirmation at 894/s: 2 of 3 repetitions sustained => true
+    confirm 1118/s rep 1: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99  109.7 ms  backlog@end 18868  drain 18.0s          e2e p50/p95/p99   12957/  18193/  18398 ms  NOT sustained: backlog at end of load is 18868 events, above the bound of 2236 (2 s of arrivals)
+    confirm 1118/s rep 2: cap-r4c4  R=4 C=4  rate  1118/s  achieved 1118.0  API p99  280.2 ms  backlog@end 15207  drain 13.7s          e2e p50/p95/p99    9148/  14703/  14853 ms  NOT sustained: backlog at end of load is 15207 events, above the bound of 2236 (2 s of arrivals)
+  confirmation at 1118/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 894 events/s (ramp alone suggested 894)
+  latency at 70% (626/s) rep 1: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99   10.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      19/     40/    196 ms  sustained
+  latency at 70% (626/s) rep 2: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99    8.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      22/     45/    125 ms  sustained
+  latency at 70% (626/s) rep 3: cap-r4c4  R=4 C=4  rate   626/s  achieved  626.0  API p99    9.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      20/     43/    176 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r4c8: 4 relay(s), 8 consumer(s) per channel ===
+  ramp: cap-r4c8  R=4 C=8  rate   200/s  achieved  200.0  API p99    5.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     100/    190/    208 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   250/s  achieved  250.0  API p99    6.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      86/    178/    197 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   313/s  achieved  313.0  API p99    5.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/    139/    187 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   391/s  achieved  391.0  API p99    5.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/     92/    172 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   488/s  achieved  488.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     23/    141 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   610/s  achieved  610.0  API p99    7.1 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      20/     39/     49 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   763/s  achieved  763.0  API p99   12.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      30/     69/     97 ms  sustained
+  ramp: cap-r4c8  R=4 C=8  rate   954/s  achieved  954.0  API p99   68.3 ms  backlog@end  2745  drain 2.4s           e2e p50/p95/p99    1691/   2817/   2885 ms  NOT sustained: backlog at end of load is 2745 events, above the bound of 1908 (2 s of arrivals)
+  ramp: cap-r4c8  R=4 C=8  rate  1192/s  achieved 1192.0  API p99  140.5 ms  backlog@end 10713  drain 10.4s          e2e p50/p95/p99    6544/  10473/  10626 ms  NOT sustained: backlog at end of load is 10713 events, above the bound of 2384 (2 s of arrivals)
+    confirm 763/s rep 1: cap-r4c8  R=4 C=8  rate   763/s  achieved  763.0  API p99   17.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      32/     98/    227 ms  sustained
+    confirm 763/s rep 2: cap-r4c8  R=4 C=8  rate   763/s  achieved  763.0  API p99  120.7 ms  backlog@end 26651  drain 24.6s          e2e p50/p95/p99   30654/  35110/  35454 ms  NOT sustained: backlog at end of load is 26651 events, above the bound of 1526 (2 s of arrivals)
+    confirm 763/s rep 3: cap-r4c8  R=4 C=8  rate   763/s  achieved  763.0  API p99   81.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      34/    216/    388 ms  sustained
+  confirmation at 763/s: 2 of 3 repetitions sustained => true
+    confirm 954/s rep 1: cap-r4c8  R=4 C=8  rate   954/s  achieved  954.0  API p99  351.3 ms  backlog@end  6416  drain 5.8s           e2e p50/p95/p99    4500/   6351/   6493 ms  NOT sustained: backlog at end of load is 6416 events, above the bound of 1908 (2 s of arrivals)
+    confirm 954/s rep 2: cap-r4c8  R=4 C=8  rate   954/s  achieved  954.0  API p99   91.2 ms  backlog@end  5633  drain 4.9s           e2e p50/p95/p99    3584/   5472/   5656 ms  NOT sustained: backlog at end of load is 5633 events, above the bound of 1908 (2 s of arrivals)
+  confirmation at 954/s: 0 of 2 repetitions sustained => false
+  confirmed capacity: 763 events/s (ramp alone suggested 763)
+  latency at 70% (534/s) rep 1: cap-r4c8  R=4 C=8  rate   534/s  achieved  534.0  API p99    6.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     23/    113 ms  sustained
+  latency at 70% (534/s) rep 2: cap-r4c8  R=4 C=8  rate   534/s  achieved  534.0  API p99    5.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     24/     51 ms  sustained
+  latency at 70% (534/s) rep 3: cap-r4c8  R=4 C=8  rate   534/s  achieved  534.0  API p99   69.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      14/     24/    121 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r1c8: 1 relay(s), 8 consumer(s) per channel ===
+  ramp: cap-r1c8  R=1 C=8  rate   100/s  achieved  100.0  API p99    4.4 ms  backlog@end     5  drain 0.2s           e2e p50/p95/p99     113/    206/    218 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   125/s  achieved  125.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     106/    206/    218 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   156/s  achieved  156.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     108/    204/    216 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   195/s  achieved  195.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     106/    203/    217 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   244/s  achieved  244.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     104/    200/    214 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   305/s  achieved  305.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      13/    184/    209 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   381/s  achieved  381.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/     15/    164 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   477/s  achieved  477.0  API p99    4.6 ms  backlog@end    58  drain 0.2s           e2e p50/p95/p99      25/     54/     62 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   596/s  achieved  596.0  API p99    4.8 ms  backlog@end   177  drain 0.4s           e2e p50/p95/p99      73/    171/    182 ms  sustained
+  ramp: cap-r1c8  R=1 C=8  rate   745/s  achieved  745.0  API p99    4.9 ms  backlog@end  7520  drain 11.9s          e2e p50/p95/p99    7369/  11282/  11432 ms  NOT sustained: backlog at end of load is 7520 events, above the bound of 1490 (2 s of arrivals)
+  ramp: cap-r1c8  R=1 C=8  rate   931/s  achieved  931.0  API p99    5.3 ms  backlog@end 11110  drain 18.5s          e2e p50/p95/p99   10001/  15748/  16192 ms  NOT sustained: backlog at end of load is 11110 events, above the bound of 1862 (2 s of arrivals)
+    confirm 596/s rep 1: cap-r1c8  R=1 C=8  rate   596/s  achieved  596.0  API p99    5.0 ms  backlog@end  5572  drain 8.9s           e2e p50/p95/p99    4972/   9539/   9569 ms  NOT sustained: backlog at end of load is 5572 events, above the bound of 1192 (2 s of arrivals)
+    confirm 596/s rep 2: cap-r1c8  R=1 C=8  rate   596/s  achieved  596.0  API p99    5.1 ms  backlog@end  2126  drain 3.5s           e2e p50/p95/p99    3001/   3691/   3701 ms  NOT sustained: backlog at end of load is 2126 events, above the bound of 1192 (2 s of arrivals)
+  confirmation at 596/s: 0 of 2 repetitions sustained => false
+    confirm 477/s rep 1: cap-r1c8  R=1 C=8  rate   477/s  achieved  477.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      17/    675/    785 ms  sustained
+    confirm 477/s rep 2: cap-r1c8  R=1 C=8  rate   477/s  achieved  477.0  API p99    4.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      35/    992/   1116 ms  sustained
+  confirmation at 477/s: 2 of 2 repetitions sustained => true
+  confirmed capacity: 477 events/s (ramp alone suggested 596)
+  latency at 70% (334/s) rep 1: cap-r1c8  R=1 C=8  rate   334/s  achieved  334.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      18/    192/    214 ms  sustained
+  latency at 70% (334/s) rep 2: cap-r1c8  R=1 C=8  rate   334/s  achieved  334.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/    146/    198 ms  sustained
+  latency at 70% (334/s) rep 3: cap-r1c8  R=1 C=8  rate   334/s  achieved  334.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/    184/    207 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r2c8: 2 relay(s), 8 consumer(s) per channel ===
+  ramp: cap-r2c8  R=2 C=8  rate   150/s  achieved  150.0  API p99    4.9 ms  backlog@end     7  drain 0.2s           e2e p50/p95/p99     102/    203/    216 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   188/s  achieved  188.0  API p99    4.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     107/    199/    213 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   234/s  achieved  234.0  API p99    5.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     103/    197/    212 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   293/s  achieved  293.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      97/    188/    207 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   366/s  achieved  366.0  API p99    5.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      19/    180/    203 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   458/s  achieved  458.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      17/     32/    104 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   572/s  achieved  572.0  API p99    6.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      29/     59/     77 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   715/s  achieved  715.0  API p99    7.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      38/     65/     75 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate   894/s  achieved  894.0  API p99   11.9 ms  backlog@end  1697  drain 1.7s           e2e p50/p95/p99    1058/   1942/   1963 ms  sustained
+  ramp: cap-r2c8  R=2 C=8  rate  1118/s  achieved 1118.0  API p99   12.3 ms  backlog@end  9110  drain 9.2s           e2e p50/p95/p99    5878/   9132/   9231 ms  NOT sustained: backlog at end of load is 9110 events, above the bound of 2236 (2 s of arrivals)
+  ramp: cap-r2c8  R=2 C=8  rate  1397/s  achieved 1397.0  API p99   23.8 ms  backlog@end 18589  drain 18.8s          e2e p50/p95/p99   12196/  17336/  17651 ms  NOT sustained: backlog at end of load is 18589 events, above the bound of 2794 (2 s of arrivals)
+    confirm 894/s rep 1: cap-r2c8  R=2 C=8  rate   894/s  achieved  894.0  API p99   22.1 ms  backlog@end  2325  drain 2.5s           e2e p50/p95/p99    1734/   2424/   2532 ms  NOT sustained: backlog at end of load is 2325 events, above the bound of 1788 (2 s of arrivals)
+    confirm 894/s rep 2: cap-r2c8  R=2 C=8  rate   894/s  achieved  894.0  API p99   21.5 ms  backlog@end  2921  drain 3.1s           e2e p50/p95/p99    2258/   3008/   3092 ms  NOT sustained: backlog at end of load is 2921 events, above the bound of 1788 (2 s of arrivals)
+  confirmation at 894/s: 0 of 2 repetitions sustained => false
+    confirm 715/s rep 1: cap-r2c8  R=2 C=8  rate   715/s  achieved  715.0  API p99    9.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      33/     68/    238 ms  sustained
+    confirm 715/s rep 2: cap-r2c8  R=2 C=8  rate   715/s  achieved  715.0  API p99   12.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      33/     70/    297 ms  sustained
+  confirmation at 715/s: 2 of 2 repetitions sustained => true
+  confirmed capacity: 715 events/s (ramp alone suggested 894)
+  latency at 70% (500/s) rep 1: cap-r2c8  R=2 C=8  rate   500/s  achieved  500.0  API p99    4.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     17/     91 ms  sustained
+  latency at 70% (500/s) rep 2: cap-r2c8  R=2 C=8  rate   500/s  achieved  500.0  API p99   46.9 ms  backlog@end  5139  drain 5.4s           e2e p50/p95/p99    1824/   9496/  10468 ms  NOT sustained: backlog at end of load is 5139 events, above the bound of 1000 (2 s of arrivals)
+  latency at 70% (500/s) rep 3: cap-r2c8  R=2 C=8  rate   500/s  achieved  500.0  API p99    4.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     17/     93 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r8c8: 8 relay(s), 8 consumer(s) per channel ===
+  ramp: cap-r8c8  R=8 C=8  rate   200/s  achieved  200.0  API p99    5.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     100/    189/    208 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   250/s  achieved  250.0  API p99    6.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      89/    178/    198 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   313/s  achieved  313.0  API p99    6.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/    131/    167 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   391/s  achieved  391.0  API p99    6.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/    116/    162 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   488/s  achieved  488.0  API p99    4.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      11/     15/     20 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   610/s  achieved  610.0  API p99    6.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      15/     26/     34 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   763/s  achieved  763.0  API p99   10.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      21/     50/     68 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate   954/s  achieved  954.0  API p99  190.9 ms  backlog@end  1798  drain 1.7s           e2e p50/p95/p99    1214/   1843/   1890 ms  sustained
+  ramp: cap-r8c8  R=8 C=8  rate  1192/s  achieved 1192.0  API p99  350.0 ms  backlog@end 10941  drain 9.4s           e2e p50/p95/p99    6536/  10052/  10070 ms  NOT sustained: backlog at end of load is 10941 events, above the bound of 2384 (2 s of arrivals)
+  ramp: cap-r8c8  R=8 C=8  rate  1490/s  achieved 1490.0  API p99 8728.3 ms  backlog@end 13315  drain 11.6s          e2e p50/p95/p99    6364/  10833/  11002 ms  NOT sustained: API p99 latency 8728 ms is not under 1 s
+    confirm 954/s rep 1: cap-r8c8  R=8 C=8  rate   954/s  achieved  954.0  API p99  372.3 ms  backlog@end  5100  drain 4.6s           e2e p50/p95/p99    3114/   4980/   5156 ms  NOT sustained: backlog at end of load is 5100 events, above the bound of 1908 (2 s of arrivals)
+    confirm 954/s rep 2: cap-r8c8  R=8 C=8  rate   954/s  achieved  954.0  API p99  380.7 ms  backlog@end  7672  drain 6.7s           e2e p50/p95/p99    5190/   7627/   7924 ms  NOT sustained: backlog at end of load is 7672 events, above the bound of 1908 (2 s of arrivals)
+  confirmation at 954/s: 0 of 2 repetitions sustained => false
+    confirm 763/s rep 1: cap-r8c8  R=8 C=8  rate   763/s  achieved  763.0  API p99   31.8 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      27/     98/    276 ms  sustained
+    confirm 763/s rep 2: cap-r8c8  R=8 C=8  rate   763/s  achieved  763.0  API p99   18.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      24/     68/    157 ms  sustained
+  confirmation at 763/s: 2 of 2 repetitions sustained => true
+  confirmed capacity: 763 events/s (ramp alone suggested 954)
+  latency at 70% (534/s) rep 1: cap-r8c8  R=8 C=8  rate   534/s  achieved  534.0  API p99    5.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      13/     22/     87 ms  sustained
+  latency at 70% (534/s) rep 2: cap-r8c8  R=8 C=8  rate   534/s  achieved  534.0  API p99    7.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      13/     22/    109 ms  sustained
+  latency at 70% (534/s) rep 3: cap-r8c8  R=8 C=8  rate   534/s  achieved  534.0  API p99    7.9 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      13/     23/    141 ms  sustained
+environment: Intel(R) Xeon(R) CPU @ 2.80GHz, 16 logical CPUs, power ac (), clock 2800/0 MHz, Docker VM 16 CPUs 62.8 GB
+=== cap-r1c1-last: 1 relay(s), 1 consumer(s) per channel ===
+  ramp: cap-r1c1-last  R=1 C=1  rate    50/s  achieved   50.0  API p99    4.3 ms  backlog@end     3  drain 0.2s           e2e p50/p95/p99     104/    204/    217 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate    63/s  achieved   63.0  API p99    4.3 ms  backlog@end     2  drain 0.2s           e2e p50/p95/p99     106/    204/    213 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate    78/s  achieved   78.0  API p99    4.3 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     103/    203/    213 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate    98/s  achieved   98.0  API p99    4.3 ms  backlog@end     4  drain 0.2s           e2e p50/p95/p99     112/    205/    216 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   122/s  achieved  122.0  API p99    4.2 ms  backlog@end     9  drain 0.2s           e2e p50/p95/p99     105/    205/    215 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   153/s  achieved  153.0  API p99    6.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     109/    206/    218 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   191/s  achieved  191.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     104/    203/    215 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   238/s  achieved  238.0  API p99    4.2 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      81/    198/    214 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   298/s  achieved  298.0  API p99    4.5 ms  backlog@end    13  drain 0.2s           e2e p50/p95/p99      40/    193/    211 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   373/s  achieved  373.0  API p99    4.4 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      15/     23/    141 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   466/s  achieved  466.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      21/     36/     43 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   582/s  achieved  582.0  API p99    4.6 ms  backlog@end   895  drain 1.9s           e2e p50/p95/p99      62/    769/    900 ms  sustained
+  ramp: cap-r1c1-last  R=1 C=1  rate   728/s  achieved  728.0  API p99    4.7 ms  backlog@end  5523  drain 8.8s           e2e p50/p95/p99    5925/   8298/   8422 ms  NOT sustained: backlog at end of load is 5523 events, above the bound of 1456 (2 s of arrivals)
+  ramp: cap-r1c1-last  R=1 C=1  rate   909/s  achieved  909.0  API p99    5.0 ms  backlog@end  9804  drain 15.5s          e2e p50/p95/p99    8603/  13359/  13706 ms  NOT sustained: backlog at end of load is 9804 events, above the bound of 1818 (2 s of arrivals)
+    confirm 582/s rep 1: cap-r1c1-last  R=1 C=1  rate   582/s  achieved  582.0  API p99    5.2 ms  backlog@end  2564  drain 4.2s           e2e p50/p95/p99    3804/   4977/   4990 ms  NOT sustained: backlog at end of load is 2564 events, above the bound of 1164 (2 s of arrivals)
+    confirm 582/s rep 2: cap-r1c1-last  R=1 C=1  rate   582/s  achieved  582.0  API p99    5.0 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99     191/    698/    759 ms  sustained
+    confirm 582/s rep 3: cap-r1c1-last  R=1 C=1  rate   582/s  achieved  582.0  API p99    5.4 ms  backlog@end  1717  drain 2.9s           e2e p50/p95/p99    1716/   3520/   3562 ms  NOT sustained: backlog at end of load is 1717 events, above the bound of 1164 (2 s of arrivals)
+  confirmation at 582/s: 1 of 3 repetitions sustained => false
+    confirm 466/s rep 1: cap-r1c1-last  R=1 C=1  rate   466/s  achieved  466.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     31/     87 ms  sustained
+    confirm 466/s rep 2: cap-r1c1-last  R=1 C=1  rate   466/s  achieved  466.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      12/     17/     82 ms  sustained
+  confirmation at 466/s: 2 of 2 repetitions sustained => true
+  confirmed capacity: 466 events/s (ramp alone suggested 582)
+  latency at 70% (326/s) rep 1: cap-r1c1-last  R=1 C=1  rate   326/s  achieved  326.0  API p99    4.7 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      18/    191/    209 ms  sustained
+  latency at 70% (326/s) rep 2: cap-r1c1-last  R=1 C=1  rate   326/s  achieved  326.0  API p99    4.5 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      43/    193/    211 ms  sustained
+  latency at 70% (326/s) rep 3: cap-r1c1-last  R=1 C=1  rate   326/s  achieved  326.0  API p99    4.6 ms  backlog@end     0  drain 0.0s           e2e p50/p95/p99      16/    174/    204 ms  sustained
+done
+EXIT 0

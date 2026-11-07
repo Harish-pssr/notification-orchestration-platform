@@ -1,0 +1,83 @@
+{
+  "run": "reliability-20261107T132558Z",
+  "negative_control": false,
+  "relays": 4,
+  "consumers": 4,
+  "rate": 150,
+  "duplicate_probability": 0.05,
+  "provider_error_probability": 0.02,
+  "load": {
+    "run": "reliability-20261107T132558Z",
+    "target_rate": 150,
+    "duration_s": 666.666666666,
+    "planned": 99999,
+    "sent": 99999,
+    "created": 99999,
+    "rejected": 0,
+    "errors": 0,
+    "skipped": 0,
+    "achieved_rate": 149.99850000015002,
+    "max_inflight": 37,
+    "schedule_lag_p50_ms": 0.567335,
+    "schedule_lag_p99_ms": 1.1472813600000007,
+    "schedule_lag_max_ms": 3.089581,
+    "api_p50_ms": 3.154084,
+    "api_p95_ms": 4.3765351,
+    "api_p99_ms": 5.498110620000001,
+    "api_max_ms": 241.759565,
+    "generator_kept_up": true
+  },
+  "relay_crashes": [
+    {
+      "planned_at_s": 111.653194102,
+      "at": "2026-11-07T13:27:55Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 448.936143867,
+      "at": "2026-11-07T13:33:33Z",
+      "container": "notifplatform-relay-2"
+    },
+    {
+      "planned_at_s": 547.419729335,
+      "at": "2026-11-07T13:35:11Z",
+      "container": "notifplatform-relay-2"
+    }
+  ],
+  "drain_after_load_s": 0.29126132,
+  "counts": {
+    "events": 99999,
+    "deliveries": 299997,
+    "deliveries_by_status": {
+      "DELIVERED": 299997
+    },
+    "delivered": 299997,
+    "dead_lettered": 0,
+    "not_finished": 0,
+    "retried_deliveries": 5661,
+    "ignored_by_consumers": 595,
+    "provider_requests": 320996,
+    "provider_distinct_request_keys": 299997,
+    "provider_effects": 299997,
+    "provider_distinct_effect_keys": 299997,
+    "provider_injected_failures": 6366,
+    "duplicate_deliveries": 14633,
+    "duplicate_side_effects": 0,
+    "suppressed_by_provider": 14633
+  },
+  "verdict": {
+    "pass": true
+  },
+  "environment": {
+    "captured_at": "2026-11-07T13:25:58.348301775Z",
+    "os": "linux",
+    "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+    "logical_cpus": 16,
+    "clock_mhz": 2800,
+    "power_source": "ac",
+    "vm_product": "Google Compute Engine",
+    "docker_cpus": 16,
+    "docker_mem_gb": 62.786582946777344
+  },
+  "started_at": "2026-11-07T13:25:58Z"
+}

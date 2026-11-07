@@ -1,0 +1,188 @@
+{
+  "run": "chaos500-20261107T165846Z",
+  "negative_control": false,
+  "relays": 4,
+  "consumers": 4,
+  "rate": 500,
+  "duplicate_probability": 0.05,
+  "provider_error_probability": 0.02,
+  "load": {
+    "run": "chaos500-20261107T165846Z",
+    "target_rate": 500,
+    "duration_s": 600,
+    "planned": 300000,
+    "sent": 300000,
+    "created": 289894,
+    "rejected": 10106,
+    "errors": 0,
+    "skipped": 0,
+    "achieved_rate": 483.1566666666667,
+    "max_inflight": 144,
+    "schedule_lag_p50_ms": 0.5125474999999999,
+    "schedule_lag_p99_ms": 1.10772804,
+    "schedule_lag_max_ms": 3.595236,
+    "api_p50_ms": 2.951809,
+    "api_p95_ms": 3.852860249999998,
+    "api_p99_ms": 32.73492071000008,
+    "api_max_ms": 7211.061356,
+    "generator_kept_up": true
+  },
+  "relay_crashes": [
+    {
+      "planned_at_s": 90,
+      "at": "2026-11-07T17:00:20Z",
+      "container": "notifplatform-relay-3"
+    },
+    {
+      "planned_at_s": 120,
+      "at": "2026-11-07T17:00:50Z",
+      "container": "notifplatform-relay-3"
+    },
+    {
+      "planned_at_s": 150,
+      "at": "2026-11-07T17:01:20Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 180,
+      "at": "2026-11-07T17:01:50Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 210,
+      "at": "2026-11-07T17:02:19Z",
+      "container": "notifplatform-relay-2"
+    },
+    {
+      "planned_at_s": 240,
+      "at": "2026-11-07T17:02:50Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 270,
+      "at": "2026-11-07T17:03:20Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 300,
+      "at": "2026-11-07T17:03:50Z",
+      "container": "notifplatform-relay-2"
+    },
+    {
+      "planned_at_s": 330,
+      "at": "2026-11-07T17:04:20Z",
+      "container": "notifplatform-relay-3"
+    },
+    {
+      "planned_at_s": 360,
+      "at": "2026-11-07T17:04:50Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 390,
+      "at": "2026-11-07T17:05:20Z",
+      "container": "notifplatform-relay-3"
+    },
+    {
+      "planned_at_s": 420,
+      "at": "2026-11-07T17:05:50Z",
+      "container": "notifplatform-relay-3"
+    },
+    {
+      "planned_at_s": 450,
+      "at": "2026-11-07T17:06:20Z",
+      "container": "notifplatform-relay-4"
+    },
+    {
+      "planned_at_s": 480,
+      "at": "2026-11-07T17:06:50Z",
+      "container": "notifplatform-relay-1"
+    },
+    {
+      "planned_at_s": 510,
+      "at": "2026-11-07T17:07:19Z",
+      "container": "notifplatform-relay-3"
+    }
+  ],
+  "consumer_crashes": [
+    {
+      "planned_at_s": 139.21122071,
+      "at": "2026-11-07T17:01:09Z",
+      "container": "notifplatform-consumer-webhook-1"
+    },
+    {
+      "planned_at_s": 204.756454219,
+      "at": "2026-11-07T17:02:14Z",
+      "container": "notifplatform-consumer-push-3"
+    },
+    {
+      "planned_at_s": 240.747483301,
+      "at": "2026-11-07T17:02:52Z",
+      "container": "notifplatform-consumer-webhook-1"
+    },
+    {
+      "planned_at_s": 451.446658804,
+      "at": "2026-11-07T17:06:22Z",
+      "container": "notifplatform-consumer-email-3"
+    },
+    {
+      "planned_at_s": 496.495275125,
+      "at": "2026-11-07T17:07:06Z",
+      "container": "notifplatform-consumer-webhook-2"
+    },
+    {
+      "planned_at_s": 526.753018424,
+      "at": "2026-11-07T17:07:36Z",
+      "container": "notifplatform-consumer-webhook-1"
+    }
+  ],
+  "postgres_crashes": [
+    {
+      "planned_at_s": 124.626566153,
+      "at": "2026-11-07T17:00:54Z",
+      "container": "notifplatform-postgres-platform-1"
+    },
+    {
+      "planned_at_s": 453.695006713,
+      "at": "2026-11-07T17:06:25Z",
+      "container": "notifplatform-postgres-platform-1"
+    }
+  ],
+  "requests_with_unknown_outcome": 10106,
+  "drain_after_load_s": 0.658087083,
+  "counts": {
+    "events": 289896,
+    "deliveries": 869688,
+    "deliveries_by_status": {
+      "DELIVERED": 869688
+    },
+    "delivered": 869688,
+    "dead_lettered": 0,
+    "not_finished": 0,
+    "retried_deliveries": 16640,
+    "ignored_by_consumers": 1732,
+    "provider_requests": 929843,
+    "provider_distinct_request_keys": 869688,
+    "provider_effects": 869688,
+    "provider_distinct_effect_keys": 869688,
+    "provider_injected_failures": 18672,
+    "duplicate_deliveries": 41483,
+    "duplicate_side_effects": 0,
+    "suppressed_by_provider": 41483
+  },
+  "verdict": {
+    "pass": true
+  },
+  "environment": {
+    "captured_at": "2026-11-07T16:58:46.354360048Z",
+    "os": "linux",
+    "cpu_model": "Intel(R) Xeon(R) CPU @ 2.80GHz",
+    "logical_cpus": 16,
+    "clock_mhz": 2800,
+    "power_source": "ac",
+    "vm_product": "Google Compute Engine",
+    "docker_cpus": 16,
+    "docker_mem_gb": 62.786582946777344
+  },
+  "started_at": "2026-11-07T16:58:46Z"
+}
