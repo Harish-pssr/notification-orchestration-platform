@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"math/rand/v2"
@@ -25,20 +26,24 @@ type crashRecord struct {
 
 // reliabilityReport is everything the reliability command measured (D17).
 type reliabilityReport struct {
-	Run         string                   `json:"run"`
-	Control     bool                     `json:"negative_control"`
-	Relays      int                      `json:"relays"`
-	Consumers   int                      `json:"consumers"`
-	Rate        float64                  `json:"rate"`
-	DupProb     float64                  `json:"duplicate_probability"`
-	ErrProb     float64                  `json:"provider_error_probability"`
-	Load        bench.RunSummary         `json:"load"`
-	Crashes     []crashRecord            `json:"relay_crashes"`
-	DrainS      float64                  `json:"drain_after_load_s"` // -1 if it did not finish
-	Counts      bench.Counts             `json:"counts"`
-	Verdict     bench.ReliabilityVerdict `json:"verdict"`
-	Environment bench.Environment        `json:"environment"`
-	StartedAt   string                   `json:"started_at"`
+	Run       string           `json:"run"`
+	Control   bool             `json:"negative_control"`
+	Relays    int              `json:"relays"`
+	Consumers int              `json:"consumers"`
+	Rate      float64          `json:"rate"`
+	DupProb   float64          `json:"duplicate_probability"`
+	ErrProb   float64          `json:"provider_error_probability"`
+	Load      bench.RunSummary `json:"load"`
+	Crashes   []crashRecord    `json:"relay_crashes"`
+	// Present only when the run asked for them (P1d, a bigger chaos run).
+	ConsumerCrashes []crashRecord            `json:"consumer_crashes,omitempty"`
+	PostgresCrashes []crashRecord            `json:"postgres_crashes,omitempty"`
+	UnknownOutcome  int                      `json:"requests_with_unknown_outcome,omitempty"` // API errors while Postgres was down
+	DrainS          float64                  `json:"drain_after_load_s"`                      // -1 if it did not finish
+	Counts          bench.Counts             `json:"counts"`
+	Verdict         bench.ReliabilityVerdict `json:"verdict"`
+	Environment     bench.Environment        `json:"environment"`
+	StartedAt       string                   `json:"started_at"`
 }
 
 // reliability is `bench reliability`: load through the API while duplicates, relay
@@ -51,6 +56,8 @@ func reliability(ctx context.Context, args []string) error {
 	relays := fs.Int("relays", 4, "relay instances")
 	consumers := fs.Int("consumers", 4, "consumer instances per channel")
 	crashes := fs.Int("crashes", 3, "relay containers to kill at random times during the load")
+	consumerKills := fs.Int("consumer-kills", 0, "consumer containers (any channel) to kill at random times during the load")
+	postgresKills := fs.Int("postgres-kills", 0, "times to SIGKILL the platform Postgres during the load; it is started again after about 5 s and recovers from its log")
 	dup := fs.Float64("duplicates", 0.05, "fraction of events the relay publishes twice")
 	errRate := fs.Float64("errors", 0.02, "fraction of provider requests that fail with 503")
 	control := fs.Bool("control", false, "negative control: switch the idempotency protections off (expects duplicate side effects)")
@@ -79,6 +86,7 @@ func reliability(ctx context.Context, args []string) error {
 	params := map[string]any{
 		"events": *total, "rate_per_s": *rate, "relays": *relays, "consumers_per_channel": *consumers,
 		"duplicate_probability": *dup, "provider_error_probability": *errRate, "relay_crashes": *crashes,
+		"consumer_kills": *consumerKills, "postgres_kills": *postgresKills,
 		"idempotency_protections": map[bool]string{false: "on", true: "OFF (negative control)"}[*control],
 	}
 	mark := func(kind, text string) {
@@ -145,31 +153,77 @@ func reliability(ctx context.Context, args []string) error {
 		loadSum, loadErr = e.stack.RunLoad(loadCtx, bench.OpenLoopConfig{Rate: *rate, Duration: duration, Run: run})
 	}()
 
-	if !*control && *crashes > 0 {
+	if !*control && (*crashes > 0 || *consumerKills > 0 || *postgresKills > 0) {
 		rng := rand.New(rand.NewPCG(uint64(time.Now().UnixNano()), 7))
-		for i, at := range bench.CrashTimes(rng, *crashes, duration, 45*time.Second) {
+		counts := map[string]int{}
+		totals := map[string]int{chaosRelay: *crashes, chaosConsumer: *consumerKills, chaosPostgres: *postgresKills}
+		for _, ev := range planChaos(rng, duration, *crashes, *consumerKills, *postgresKills) {
 			select {
 			case <-ctx.Done():
 				cancelLoad()
 				wg.Wait()
 				return ctx.Err()
-			case <-time.After(time.Until(loadStart.Add(at))):
+			case <-time.After(time.Until(loadStart.Add(ev.At))):
 			}
-			names, err := e.stack.ContainerNames(ctx, "relay")
-			if err != nil || len(names) == 0 {
-				fmt.Fprintln(os.Stderr, "no relay container to kill:", err)
-				continue
+			counts[ev.Kind]++
+			label := fmt.Sprintf("%s crash %d of %d", ev.Kind, counts[ev.Kind], totals[ev.Kind])
+			var victim string
+			switch ev.Kind {
+			case chaosRelay, chaosConsumer:
+				var names []string
+				var err error
+				if ev.Kind == chaosRelay {
+					names, err = e.stack.ContainerNames(ctx, "relay")
+				} else {
+					for _, ch := range events.AllChannels {
+						n, e2 := e.stack.ContainerNames(ctx, "consumer-"+string(ch))
+						names, err = append(names, n...), errors.Join(err, e2)
+					}
+				}
+				if err != nil || len(names) == 0 {
+					fmt.Fprintf(os.Stderr, "no %s container to kill: %v\n", ev.Kind, err)
+					continue
+				}
+				victim = names[rng.IntN(len(names))]
+			case chaosPostgres:
+				names, err := e.stack.ContainerNames(ctx, "postgres-platform")
+				if err != nil || len(names) == 0 {
+					fmt.Fprintln(os.Stderr, "no platform Postgres container to kill:", err)
+					continue
+				}
+				victim = names[0]
 			}
-			victim := names[rng.IntN(len(names))]
-			mark(experiment.Phase, fmt.Sprintf("relay crash %d of %d: SIGKILL %s", i+1, *crashes, victim))
+			mark(experiment.Phase, fmt.Sprintf("%s: SIGKILL %s", label, victim))
 			if err := e.stack.Kill(ctx, victim); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 				continue
 			}
-			rep.Crashes = append(rep.Crashes, crashRecord{PlannedAtS: at.Seconds(), At: time.Now().UTC().Format(time.RFC3339), Container: victim})
+			rec := crashRecord{PlannedAtS: ev.At.Seconds(), At: time.Now().UTC().Format(time.RFC3339), Container: victim}
+			switch ev.Kind {
+			case chaosRelay:
+				rep.Crashes = append(rep.Crashes, rec)
+			case chaosConsumer:
+				rep.ConsumerCrashes = append(rep.ConsumerCrashes, rec)
+			case chaosPostgres:
+				rep.PostgresCrashes = append(rep.PostgresCrashes, rec)
+			}
+			if ev.Kind == chaosPostgres {
+				time.Sleep(5 * time.Second) // a short outage: the database is simply gone
+				if err := e.stack.Start(ctx, "postgres-platform"); err != nil {
+					fmt.Fprintln(os.Stderr, "start Postgres again:", err)
+				}
+				mark(experiment.Phase, "platform Postgres started again; waiting for it to accept connections")
+				for i := 0; i < 60; i++ { // crash recovery takes a few seconds
+					if e.pool.Ping(ctx) == nil {
+						break
+					}
+					time.Sleep(time.Second)
+				}
+				continue
+			}
 			time.Sleep(2 * time.Second)
-			if err := e.stack.Scale(ctx, *relays, *consumers); err != nil { // bring the relay back
-				fmt.Fprintln(os.Stderr, "restore relays:", err)
+			if err := e.stack.Scale(ctx, *relays, *consumers); err != nil { // bring the container back
+				fmt.Fprintln(os.Stderr, "restore containers:", err)
 			}
 		}
 	}
@@ -203,7 +257,14 @@ func reliability(ctx context.Context, args []string) error {
 	if rep.Counts, err = bench.ReadCounts(ctx, e.pool, e.provider); err != nil {
 		return err
 	}
-	rep.Verdict = bench.JudgeReliability(loadSum.Created, len(events.RoutesFor(events.PaymentSucceeded)), rep.Counts, *control)
+	unknown := 0
+	if len(rep.PostgresCrashes) > 0 {
+		// A request that failed while the database was down (a timeout, a dropped connection or
+		// a 5xx reply) may still have committed just before the reply was lost.
+		unknown = loadSum.Errors + loadSum.Rejected
+		rep.UnknownOutcome = unknown
+	}
+	rep.Verdict = bench.JudgeReliabilityUnknown(loadSum.Created, unknown, len(events.RoutesFor(events.PaymentSucceeded)), rep.Counts, *control)
 	mark(experiment.End, fmt.Sprintf("finished: %s", map[bool]string{true: "PASS", false: "FAIL"}[rep.Verdict.Pass]))
 	rep.print()
 
@@ -222,6 +283,10 @@ func (r reliabilityReport) print() {
 	fmt.Printf("deliveries                      %8d  (delivered %d, dead-lettered %d, unfinished %d)\n", c.Deliveries, c.Delivered, c.DeadLettered, c.NotFinished)
 	fmt.Printf("deliveries that needed a retry  %8d\n", c.Retried)
 	fmt.Printf("relay crashes                   %8d\n", len(r.Crashes))
+	if len(r.ConsumerCrashes) > 0 || len(r.PostgresCrashes) > 0 {
+		fmt.Printf("consumer crashes                %8d\n", len(r.ConsumerCrashes))
+		fmt.Printf("platform Postgres kills         %8d  (%d API requests with an unknown outcome)\n", len(r.PostgresCrashes), r.UnknownOutcome)
+	}
 	fmt.Printf("provider requests               %8d  (distinct keys %d, injected errors %d)\n", c.ProviderRequests, c.DistinctRequestKeys, c.InjectedFailures)
 	fmt.Printf("duplicate copies absorbed       %8d  (stopped by consumers %d, by the provider %d)\n", c.IgnoredByConsum+c.SuppressedByProvider, c.IgnoredByConsum, c.SuppressedByProvider)
 	fmt.Printf("provider side effects           %8d  (distinct keys %d)\n", c.Effects, c.DistinctEffectKeys)

@@ -96,14 +96,27 @@ type ReliabilityVerdict struct {
 // The negative control (protections off) must instead show duplicate side effects:
 // otherwise the counters cannot be trusted to see them. It must still lose nothing.
 func JudgeReliability(accepted int, perEvent int, c Counts, control bool) ReliabilityVerdict {
+	return JudgeReliabilityUnknown(accepted, 0, perEvent, c, control)
+}
+
+// JudgeReliabilityUnknown is JudgeReliability for a run in which the API itself was made
+// unavailable (the platform Postgres was killed). A request that failed with an error may
+// still have committed before the reply was lost, so its outcome is unknown to the client:
+// unknown is how many such requests there were. The number of stored events must then lie
+// between accepted and accepted+unknown. Every stored event must still be fully delivered
+// exactly once, so nothing else is relaxed.
+func JudgeReliabilityUnknown(accepted, unknown, perEvent int, c Counts, control bool) ReliabilityVerdict {
 	var fails []string
 	add := func(format string, args ...any) { fails = append(fails, fmt.Sprintf(format, args...)) }
 
-	if c.Events != int64(accepted) {
-		add("%d events accepted by the API but %d stored", accepted, c.Events)
+	switch {
+	case c.Events < int64(accepted):
+		add("%d events accepted by the API but only %d stored", accepted, c.Events)
+	case c.Events > int64(accepted+unknown):
+		add("%d events accepted by the API (and %d with an unknown outcome) but %d stored", accepted, unknown, c.Events)
 	}
-	if want := int64(accepted * perEvent); c.Deliveries != want {
-		add("%d deliveries exist, want %d (%d per event)", c.Deliveries, want, perEvent)
+	if want := c.Events * int64(perEvent); c.Deliveries != want {
+		add("%d deliveries exist, want %d (%d per stored event)", c.Deliveries, want, perEvent)
 	}
 	if c.NotFinished != 0 {
 		add("%d deliveries are neither delivered nor dead-lettered", c.NotFinished)

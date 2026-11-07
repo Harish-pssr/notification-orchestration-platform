@@ -123,3 +123,36 @@ func TestAnalyzeRecoveryReportsNeverRecovered(t *testing.T) {
 		t.Errorf("recovery = %v, want -1 (never recovered)", r.RecoveryS)
 	}
 }
+
+func TestJudgeAllowsStoredEventsBetweenAcceptedAndAcceptedPlusUnknown(t *testing.T) {
+	clean := func(events int64) Counts {
+		return Counts{Events: events, Deliveries: events * 3, Delivered: events * 3, Effects: events * 3, DistinctEffectKeys: events * 3}
+	}
+	// 100 accepted, 7 requests with an unknown outcome: 100 to 107 stored events are fine.
+	for _, stored := range []int64{100, 103, 107} {
+		if v := JudgeReliabilityUnknown(100, 7, 3, clean(stored), false); !v.Pass {
+			t.Errorf("%d stored events with 7 unknown outcomes should pass, got %v", stored, v.Failures)
+		}
+	}
+	if v := JudgeReliabilityUnknown(100, 7, 3, clean(108), false); v.Pass {
+		t.Error("more stored events than accepted+unknown must fail: something created an event nobody asked for")
+	}
+	if v := JudgeReliabilityUnknown(100, 7, 3, clean(99), false); v.Pass {
+		t.Error("fewer stored events than accepted must fail: an acknowledged event was lost")
+	}
+}
+
+func TestJudgeUnknownOutcomesRelaxNothingElse(t *testing.T) {
+	c := Counts{Events: 105, Deliveries: 315, Delivered: 314, NotFinished: 1, Effects: 314, DistinctEffectKeys: 313, DuplicateSideEffects: 1}
+	v := JudgeReliabilityUnknown(100, 7, 3, c, false)
+	if v.Pass || len(v.Failures) < 2 {
+		t.Errorf("an unfinished delivery and a duplicate side effect must still fail, got %+v", v)
+	}
+}
+
+func TestJudgeReliabilityWithoutUnknownIsStrict(t *testing.T) {
+	c := Counts{Events: 101, Deliveries: 303, Delivered: 303, Effects: 303, DistinctEffectKeys: 303}
+	if v := JudgeReliability(100, 3, c, false); v.Pass {
+		t.Error("with no unknown outcomes an extra stored event must fail")
+	}
+}
