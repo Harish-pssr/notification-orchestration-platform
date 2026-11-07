@@ -36,7 +36,8 @@ type Config struct {
 	Concurrency int           // messages processed at the same time by this instance (D15)
 	FetchWait   time.Duration // how long an open fetch request waits at the broker
 	CallTimeout time.Duration // timeout for one provider call
-	RetryDelay  time.Duration // delay before retrying after a database error (not a provider failure)
+	RetryDelay  time.Duration // first delay before retrying after a database error (not a provider failure)
+	RetryCap    time.Duration // upper bound for that delay, which doubles with every delivery; zero keeps it fixed at RetryDelay
 
 	MaxAttempts int           // deliveries allowed before a message is dead-lettered (D7)
 	BackoffBase time.Duration // first retry delay
@@ -211,7 +212,7 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 	case err != nil:
 		log.Error("load delivery failed", "error", err)
 		c.metrics.Outcome(metrics.OutcomeError)
-		_ = msg.NakWithDelay(c.cfg.RetryDelay)
+		_ = msg.NakWithDelay(c.dbRetryDelay(attempt))
 		return
 	case status == "DLQ":
 		// Already dead-lettered; a replay sends a new message, so this one is stale.
@@ -291,7 +292,7 @@ func (c *Consumer) finishDelivered(ctx context.Context, log *slog.Logger, msg je
 		// provider recognises the key, and we try this update again.
 		log.Error("mark delivered failed", "error", err)
 		c.metrics.Outcome(metrics.OutcomeError)
-		_ = msg.NakWithDelay(c.cfg.RetryDelay)
+		_ = msg.NakWithDelay(c.dbRetryDelay(attempt))
 		return
 	}
 	c.metrics.Outcome(metrics.OutcomeDelivered)
@@ -309,7 +310,7 @@ func (c *Consumer) finishDead(ctx context.Context, log *slog.Logger, msg jetstre
 		m.EventID, string(m.Channel), attempt, reason); err != nil {
 		log.Error("dead-letter write failed", "error", err)
 		c.metrics.Outcome(metrics.OutcomeError)
-		_ = msg.NakWithDelay(c.cfg.RetryDelay)
+		_ = msg.NakWithDelay(c.dbRetryDelay(attempt))
 		return
 	}
 	c.metrics.Outcome(metrics.OutcomeDeadLettered)
@@ -354,6 +355,20 @@ func (c *Consumer) recordRetry(ctx context.Context, m events.Message, attempt in
 		m.EventID, string(m.Channel), attempt, cause.Error(), delay.Seconds()); err != nil {
 		c.log.Error("record retry failed", "error", err)
 	}
+}
+
+// dbRetryDelay is how long to wait before the broker redelivers a message after a database
+// error. It doubles with every delivery (equal jitter, capped) instead of staying fixed,
+// because the broker stops redelivering after MaxDeliver deliveries (MaxAttempts + 3) without
+// telling us. With a fixed one-second delay all eight deliveries were used up in eight seconds,
+// so a database outage that long made the broker drop in-flight messages and only the
+// reconciler (D22) found them again, ten minutes later. Found by the Postgres-kill chaos run.
+func (c *Consumer) dbRetryDelay(attempt int) time.Duration {
+	limit := c.cfg.RetryCap
+	if limit < c.cfg.RetryDelay {
+		limit = c.cfg.RetryDelay
+	}
+	return backoff.Delay(attempt, c.cfg.RetryDelay, limit, rand.Float64)
 }
 
 func sleep(ctx context.Context, d time.Duration) {
