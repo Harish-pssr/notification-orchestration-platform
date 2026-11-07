@@ -38,6 +38,7 @@ type Config struct {
 	CallTimeout time.Duration // timeout for one provider call
 	RetryDelay  time.Duration // first delay before retrying after a database error (not a provider failure)
 	RetryCap    time.Duration // upper bound for that delay, which doubles with every delivery; zero keeps it fixed at RetryDelay
+	DBWait      time.Duration // how long to hold a message while the database is down, retrying in place (see whileDatabaseIsDown); zero gives it back at once
 
 	MaxAttempts int           // deliveries allowed before a message is dead-lettered (D7)
 	BackoffBase time.Duration // first retry delay
@@ -199,10 +200,12 @@ func (c *Consumer) handle(ctx context.Context, msg jetstream.Msg) {
 	// One query returns both the delivery state and the payload (D6).
 	var status string
 	var payload json.RawMessage
-	err = c.pool.QueryRow(ctx, `
-		SELECT d.status, o.payload
-		FROM channel_deliveries d JOIN outbox_events o ON o.id = d.event_id
-		WHERE d.event_id = $1 AND d.channel = $2`, m.EventID, string(m.Channel)).Scan(&status, &payload)
+	err = c.whileDatabaseIsDown(ctx, msg, func() error {
+		return c.pool.QueryRow(ctx, `
+			SELECT d.status, o.payload
+			FROM channel_deliveries d JOIN outbox_events o ON o.id = d.event_id
+			WHERE d.event_id = $1 AND d.channel = $2`, m.EventID, string(m.Channel)).Scan(&status, &payload)
+	})
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		log.Error("no delivery row for message, discarding", "status", "orphan")
@@ -274,14 +277,16 @@ func (c *Consumer) finishDelivered(ctx context.Context, log *slog.Logger, msg je
 	// same statement, so it uses the database clock (D9). The status guard means only
 	// the first transition returns a row: a repeat delivery cannot double-count.
 	var latency float64
-	err := c.pool.QueryRow(ctx, `
-		UPDATE channel_deliveries d
-		SET status = 'DELIVERED', attempts = $3, delivered_at = now(),
-		    last_error = NULL, next_attempt_at = NULL
-		FROM outbox_events o
-		WHERE d.event_id = $1 AND d.channel = $2 AND o.id = d.event_id AND d.status <> 'DELIVERED'
-		RETURNING extract(epoch FROM (d.delivered_at - o.created_at))`,
-		m.EventID, string(m.Channel), attempt).Scan(&latency)
+	err := c.whileDatabaseIsDown(ctx, msg, func() error {
+		return c.pool.QueryRow(ctx, `
+			UPDATE channel_deliveries d
+			SET status = 'DELIVERED', attempts = $3, delivered_at = now(),
+			    last_error = NULL, next_attempt_at = NULL
+			FROM outbox_events o
+			WHERE d.event_id = $1 AND d.channel = $2 AND o.id = d.event_id AND d.status <> 'DELIVERED'
+			RETURNING extract(epoch FROM (d.delivered_at - o.created_at))`,
+			m.EventID, string(m.Channel), attempt).Scan(&latency)
+	})
 	switch {
 	case err == nil:
 		c.metrics.Latency(latency)
@@ -303,11 +308,14 @@ func (c *Consumer) finishDelivered(ctx context.Context, log *slog.Logger, msg je
 // finishDead records the dead-letter state and only then terminates the message, so
 // a failure to record leaves the message to be redelivered and tried again.
 func (c *Consumer) finishDead(ctx context.Context, log *slog.Logger, msg jetstream.Msg, m events.Message, attempt int, reason string) {
-	if _, err := c.pool.Exec(ctx, `
-		UPDATE channel_deliveries
-		SET status = 'DLQ', attempts = $3, last_error = $4, next_attempt_at = NULL
-		WHERE event_id = $1 AND channel = $2 AND status <> 'DELIVERED'`,
-		m.EventID, string(m.Channel), attempt, reason); err != nil {
+	if err := c.whileDatabaseIsDown(ctx, msg, func() error {
+		_, err := c.pool.Exec(ctx, `
+			UPDATE channel_deliveries
+			SET status = 'DLQ', attempts = $3, last_error = $4, next_attempt_at = NULL
+			WHERE event_id = $1 AND channel = $2 AND status <> 'DELIVERED'`,
+			m.EventID, string(m.Channel), attempt, reason)
+		return err
+	}); err != nil {
 		log.Error("dead-letter write failed", "error", err)
 		c.metrics.Outcome(metrics.OutcomeError)
 		_ = msg.NakWithDelay(c.dbRetryDelay(attempt))
@@ -355,6 +363,39 @@ func (c *Consumer) recordRetry(ctx context.Context, m events.Message, attempt in
 		m.EventID, string(m.Channel), attempt, cause.Error(), delay.Seconds()); err != nil {
 		c.log.Error("record retry failed", "error", err)
 	}
+}
+
+// maxHold is the longest the consumer sleeps between database retries while holding a message. It
+// stays well under the broker's 30 s AckWait, and InProgress resets that timer before every sleep.
+const maxHold = 10 * time.Second
+
+// whileDatabaseIsDown runs op, and while it fails because the database is unreachable it holds the
+// message and tries again, with growing pauses, for up to cfg.DBWait. Holding matters: every redelivery
+// the broker makes counts as a delivery attempt, so giving a message back after each database error
+// used up its attempts without the provider ever being called. That had two bad outcomes in the
+// Postgres-kill chaos run: after eight deliveries (MaxDeliver) the broker dropped the message and only
+// the reconciler (D22) found it ten minutes later, and once the database came back a healthy delivery
+// whose count had been inflated by the outage was dead-lettered as "retries exhausted". InProgress tells
+// the broker the message is still being worked on, so it neither redelivers nor counts. A missing row
+// (pgx.ErrNoRows) is an answer, not an outage, and is returned at once. If the database stays down
+// longer than DBWait the error is returned and the caller gives the message back as before.
+func (c *Consumer) whileDatabaseIsDown(ctx context.Context, msg jetstream.Msg, op func() error) error {
+	err := op()
+	if err == nil || errors.Is(err, pgx.ErrNoRows) || c.cfg.DBWait <= 0 {
+		return err
+	}
+	deadline := time.Now().Add(c.cfg.DBWait)
+	for i := 1; ctx.Err() == nil && time.Now().Before(deadline); i++ {
+		_ = msg.InProgress()
+		pause := min(c.dbRetryDelay(i), maxHold, time.Until(deadline))
+		if pause > 0 {
+			sleep(ctx, pause)
+		}
+		if err = op(); err == nil || errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+	}
+	return err
 }
 
 // dbRetryDelay is how long to wait before the broker redelivers a message after a database

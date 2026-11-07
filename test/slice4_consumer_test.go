@@ -27,6 +27,7 @@ type fakeMsg struct {
 	acks      int
 	terms     int
 	naks      []time.Duration // NakWithDelay delays; a plain Nak records 0
+	working   int             // times the consumer said "still working" (InProgress)
 }
 
 func newFakeMsg(t *testing.T, eventID string, ch events.Channel, delivered uint64) *fakeMsg {
@@ -47,7 +48,7 @@ func (m *fakeMsg) Ack() error                         { m.acks++; return nil }
 func (m *fakeMsg) DoubleAck(context.Context) error    { m.acks++; return nil }
 func (m *fakeMsg) Nak() error                         { m.naks = append(m.naks, 0); return nil }
 func (m *fakeMsg) NakWithDelay(d time.Duration) error { m.naks = append(m.naks, d); return nil }
-func (m *fakeMsg) InProgress() error                  { return nil }
+func (m *fakeMsg) InProgress() error                  { m.working++; return nil }
 func (m *fakeMsg) Term() error                        { m.terms++; return nil }
 func (m *fakeMsg) TermWithReason(string) error        { m.terms++; return nil }
 

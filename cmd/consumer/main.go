@@ -88,6 +88,7 @@ func run() error {
 		CallTimeout: config.GetenvDuration("CALL_TIMEOUT", 5*time.Second),
 		RetryDelay:  config.GetenvDuration("RETRY_DELAY", time.Second),
 		RetryCap:    config.GetenvDuration("RETRY_CAP", 30*time.Second), // database-error delays double up to this
+		DBWait:      config.GetenvDuration("DB_WAIT", 2*time.Minute),    // hold a message this long while the database is down
 		MaxAttempts: maxAttempts,
 		BackoffBase: config.GetenvDuration("BACKOFF_BASE", time.Second),
 		BackoffCap:  config.GetenvDuration("BACKOFF_CAP", 30*time.Second),
