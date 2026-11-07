@@ -57,7 +57,8 @@ func reliability(ctx context.Context, args []string) error {
 	consumers := fs.Int("consumers", 4, "consumer instances per channel")
 	crashes := fs.Int("crashes", 3, "relay containers to kill at random times during the load")
 	consumerKills := fs.Int("consumer-kills", 0, "consumer containers (any channel) to kill at random times during the load")
-	postgresKills := fs.Int("postgres-kills", 0, "times to SIGKILL the platform Postgres during the load; it is started again after about 5 s and recovers from its log")
+	postgresKills := fs.Int("postgres-kills", 0, "times to SIGKILL the platform Postgres during the load; it is then started again and recovers from its log")
+	postgresOutage := fs.Duration("postgres-outage", 5*time.Second, "how long the platform Postgres stays down after each kill, before it is started again")
 	dup := fs.Float64("duplicates", 0.05, "fraction of events the relay publishes twice")
 	errRate := fs.Float64("errors", 0.02, "fraction of provider requests that fail with 503")
 	control := fs.Bool("control", false, "negative control: switch the idempotency protections off (expects duplicate side effects)")
@@ -86,7 +87,7 @@ func reliability(ctx context.Context, args []string) error {
 	params := map[string]any{
 		"events": *total, "rate_per_s": *rate, "relays": *relays, "consumers_per_channel": *consumers,
 		"duplicate_probability": *dup, "provider_error_probability": *errRate, "relay_crashes": *crashes,
-		"consumer_kills": *consumerKills, "postgres_kills": *postgresKills,
+		"consumer_kills": *consumerKills, "postgres_kills": *postgresKills, "postgres_outage_s": postgresOutage.Seconds(),
 		"idempotency_protections": map[bool]string{false: "on", true: "OFF (negative control)"}[*control],
 	}
 	mark := func(kind, text string) {
@@ -208,7 +209,7 @@ func reliability(ctx context.Context, args []string) error {
 				rep.PostgresCrashes = append(rep.PostgresCrashes, rec)
 			}
 			if ev.Kind == chaosPostgres {
-				time.Sleep(5 * time.Second) // a short outage: the database is simply gone
+				time.Sleep(*postgresOutage) // the database is simply gone for this long
 				if err := e.stack.Start(ctx, "postgres-platform"); err != nil {
 					fmt.Fprintln(os.Stderr, "start Postgres again:", err)
 				}
