@@ -56,7 +56,7 @@ Each entry has the same shape: **the gap**, **why it exists** (a deliberate scop
 
 ## Performance and scale
 
-**The measured ceiling is modest and specific to one machine.** Roughly 310 to 370 events per second (about 1,000 deliveries per second) end to end on a Windows laptop under Docker Desktop (B2, B3). The pipeline is commit-bound: each event needs several synchronous commits. *Why not pushed further:* batching the consumer's database writes was considered and rejected because one slow message would delay the others' status writes (D15). *Production:* batch and group commits where head-of-line blocking is acceptable, partition the outbox across databases, shard by tenant, and move the hot path off a single Postgres.
+**The measured ceiling is modest and specific to the machines tested.** Roughly 310 to 370 events per second (about 1,000 deliveries per second) end to end on a Windows laptop under Docker Desktop (B2, B3), and about 470 to 900 events per second on a 16-vCPU Linux VM (benchmarks-linux.md, L2; plus or minus about 20% run to run), where the machine was about 81% busy at the ceiling. The pipeline is commit-bound: each event needs several synchronous commits. *Why not pushed further:* batching the consumer's database writes was considered and rejected because one slow message would delay the others' status writes (D15). *Production:* batch and group commits where head-of-line blocking is acceptable, partition the outbox across databases, shard by tenant, and move the hot path off a single Postgres.
 
 **The relay polls.** At low load an event waits half a poll interval (about 100 ms on average at the 200 ms default) before the relay notices it (D14). *Production:* `LISTEN/NOTIFY` as a wake-up hint with the poll kept as the safety net, or a shorter interval.
 
@@ -64,8 +64,9 @@ Each entry has the same shape: **the gap**, **why it exists** (a deliberate scop
 
 ## What the evidence covers
 
-- **One laptop, one environment.** All performance figures come from Docker Desktop on Windows. No benchmark was run on Linux, and the production setup in [deployment.md](deployment.md) was verified locally, not on a public server (decision D20).
-- **The multi-second latency stalls are explained but not proven.** They are periods of slow WAL fsync (B6); the likely cause is this environment's storage path, an inference from elimination.
-- **Failure injection is partial.** Provider errors are injected before the effect runs; consumer crash loops, API and Postgres crashes, and broker storage loss are not provoked (see the end of crash-analysis.md).
+- **Two machines, one session each.** Performance figures come from a Windows laptop (Docker Desktop) and one 16-vCPU Linux VM with everything, including the load generator and the mock provider, on the same machine. They are not a Linux-versus-Windows comparison. The production setup in [deployment.md](deployment.md) was verified locally and on the VM with a local certificate authority, not on a public server (decision D20).
+- **The multi-second latency stalls are explained but not proven.** They are periods of slow WAL fsync (B6); the likely cause is the laptop's storage path. They did not appear on the Linux VM (L7), which is consistent with that but not proof.
+- **The CPU-bound ceiling is a hypothesis.** The VM was about 81% busy at its ceiling and a three-times faster disk did not move it (L4); the limit was not isolated further.
+- **Failure injection is partial.** Relays, consumers and the platform Postgres were killed for real under load (L3); provider errors are injected before the effect runs; an API crash loop, a Postgres outage longer than 45 s, a disk failure and broker storage loss are not provoked (see the end of crash-analysis.md).
 - **The provider is a mock** that shares the machine's CPU (about 30% of it at the ceiling), so the platform's own capacity is understated.
 - **One event type dominates the benchmarks** (PaymentSucceeded, three channels); a mixed workload would change the fan-out.

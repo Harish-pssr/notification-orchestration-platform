@@ -9,7 +9,7 @@ broker, a consumer or the external provider crashes, and a repeated message must
 
 1. The client sends an event with an `Idempotency-Key`. 2. The API saves the business row, an outbox record and one delivery row per channel in **one transaction**. 3. A relay claims due outbox rows with a lease. 4. It publishes one small message per channel to NATS JetStream, waits for the broker's confirmation, then marks the event published. 5. Each channel's consumer pulls its messages. 6. The consumer calls the provider with an idempotency key; the provider records the key and the effect in one transaction. 7. The consumer records the delivery as done. 8. In the background, the **reconciler** (the dashed box, inside the relay) finds deliveries the broker lost after confirming them and sends them back through the relay to be published again.
 
-> **Scope: what is real and what is mocked.** The pipeline (two PostgreSQL databases, NATS JetStream, relays, consumers), the load, the injected failures (real `SIGKILL`s, real container stops, a purge of the broker's stream) and the counting are real. **The provider is a mock**: it stands in for the email, push and webhook services, has its own database, and an "effect" is a row it records, not a delivered email or push. It honors idempotency keys, so the claim is **"0 duplicate side effects at a provider that honors idempotency keys"**; it is not a measurement of real notification delivery. For a provider that does not honor keys (for example real SMTP, an optional mode here) the guarantee is at-least-once with a rare duplicate. All results are from one Windows laptop under Docker Desktop; there are no Linux numbers yet.
+> **Scope: what is real and what is mocked.** The pipeline (two PostgreSQL databases, NATS JetStream, relays, consumers), the load, the injected failures (real `SIGKILL`s, real container stops, a purge of the broker's stream) and the counting are real. **The provider is a mock**: it stands in for the email, push and webhook services, has its own database, and an "effect" is a row it records, not a delivered email or push. It honors idempotency keys, so the claim is **"0 duplicate side effects at a provider that honors idempotency keys"**; it is not a measurement of real notification delivery. For a provider that does not honor keys (for example real SMTP, an optional mode here) the guarantee is at-least-once with a rare duplicate. Results come from two environments: one Windows laptop under Docker Desktop, and one 16-vCPU Linux VM (a cloud machine used for the benchmarks and deleted afterwards; the project is not hosted publicly).
 
 ## What it demonstrates
 
@@ -31,7 +31,7 @@ broker, a consumer or the external provider crashes, and a repeated message must
 - **A live dashboard** that explains itself: pipeline, events, health, dead letters,
   failure controls and the duplicate-protection experiment.
 
-## Results (one Windows laptop, Docker Desktop)
+## Results
 
 | | Result |
 |---|---|
@@ -40,8 +40,19 @@ broker, a consumer or the external provider crashes, and a repeated message must
 | Lost broker messages | the broker's stream purged under load, 3 times: about 3,200 lost deliveries per run, all found and republished by the reconciler, 0 duplicate side effects (a simulated loss, not a disk failure) |
 | Capacity | roughly 310 to 370 events per second end to end; running 8 messages at a time per consumer lifted one consumer's capacity from 98 to 153 events/s |
 
-Full method, tables and limitations are in [docs/benchmarks.md](docs/benchmarks.md). These
-figures describe one machine and are not a promise about any other.
+**On a 16-vCPU Linux VM** (a different machine, so not a Linux-versus-Windows comparison; run-to-run variability about 20%):
+
+| | Result |
+|---|---|
+| Failure injection at 500 events/s | 289,894 events (869,688 deliveries) through 15 relay, 6 consumer and 2 platform-Postgres `SIGKILL`s: nothing lost, 0 dead letters, **0 duplicate side effects at a provider that honors idempotency keys**, finished 0.7 s after the load ended |
+| Reliability | the 99,999-event run again on the final code: 299,997 deliveries, 0 duplicate side effects (1,530 with the protections off) |
+| Database outages | two 45 s outages of the platform Postgres under load: 137,022 deliveries, 0 dead letters, 0 duplicates |
+| Relay scaling | 1 to 8 relays: 847 to 4,983 events/s (5.9x) |
+| Capacity | about 470 to 900 events/s end to end, 894 with 4 relays and 4 consumers per channel (CPU about 81% busy); median latency 11 to 30 ms at 70% of capacity (4-relay configurations) |
+| Found by chaos testing | a database outage made the broker drop in-flight messages (recovered only by the reconciler 10 minutes later); fixed in the consumer, verified before and after ([L5](docs/benchmarks-linux.md)) |
+
+Full method, tables and limitations are in [docs/benchmarks.md](docs/benchmarks.md) (laptop) and [docs/benchmarks-linux.md](docs/benchmarks-linux.md) (Linux VM). These
+figures describe those machines and are not a promise about any other.
 
 ## The dashboard
 
@@ -69,7 +80,8 @@ The **Duplicates** page runs the central experiment: one payment, every message 
 | [docs/architecture.md](docs/architecture.md) | how it works: components, data flow, state models, guarantees |
 | [docs/crash-analysis.md](docs/crash-analysis.md) | what a crash at each step of an event's flow leaves behind, how it recovers, and how that is tested |
 | [docs/failure-scenarios.md](docs/failure-scenarios.md) | the failures it is tested against, with what was observed |
-| [docs/benchmarks.md](docs/benchmarks.md) | measured results, with environment, method and limitations |
+| [docs/benchmarks.md](docs/benchmarks.md) | measured results on the laptop, with environment, method and limitations |
+| [docs/benchmarks-linux.md](docs/benchmarks-linux.md) | the same experiments on a Linux VM, harder failure injection, and the defect they found |
 | [docs/limitations.md](docs/limitations.md) | what it does not handle, and how production would |
 | [docs/deployment.md](docs/deployment.md) | the production setup (verified locally, not deployed to a public server) |
 
@@ -206,7 +218,7 @@ computed from exact database timestamps.
 
 ## Deployment
 
-A production setup (the same Compose stack behind Caddy with automatic HTTPS) is included and was smoke-tested locally; it has not been deployed to a public server. See [docs/deployment.md](docs/deployment.md).
+A production setup (the same Compose stack behind Caddy with automatic HTTPS) is included and was smoke-tested locally and on a Linux VM (with a local certificate authority); it has not been deployed to a public server. See [docs/deployment.md](docs/deployment.md).
 `scripts/deploy.sh` checks the configuration, starts everything and runs `scripts/smoke.sh`; fault injection is
 off by default and no database or broker port is ever published beyond the machine.
 
