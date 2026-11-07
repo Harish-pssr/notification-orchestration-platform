@@ -194,6 +194,19 @@ All tests live in [`test/`](../test) and run with `scripts/test.sh` against the 
 - **In the dashboard:** Failures, "Broker loses its messages", "Delete broker messages" (admin token and the failure switch required). The Overview then shows a "Repaired by reconciler" tile once deliveries are repaired, Health shows the count on the relay card, and an event's detail says "republished by the reconciler". Run for real: 5 events, 15 deliveries repaired, all delivered.
 - **Under load (B7):** the same purge during steady load of 150 events/s, 3 repetitions: about 3,200 deliveries lost per run, every one repaired once, 22,500 events and 67,500 deliveries delivered each time, 0 dead letters, 0 duplicate side effects, recovery about 34 s with the shortened 30 s wait.
 
+### F28. Relays, consumers and the platform Postgres killed together under load (Linux VM)
+
+- **Failure:** during one 300,000-event run at 500 events/s, 15 relays, 6 consumers and the platform Postgres (twice, 5 s down each) are killed with `SIGKILL` at random times, with duplicates and 2% provider errors running.
+- **Expected:** nothing accepted is lost, nothing is dead-lettered or applied twice; requests the API rejected during the outages were never accepted.
+- **Observed:** 289,894 accepted, 10,106 rejected, 289,896 stored (2 of the requests whose outcome was unknown had committed, which the judge allows); 869,688 deliveries delivered, 0 dead letters, 0 duplicate side effects, finished 0.7 s after the load ended, no reconciler repairs. See [benchmarks-linux.md](benchmarks-linux.md), L3.
+
+### F29. The platform Postgres goes down and the broker drops the consumers' messages (found and fixed, D23)
+
+- **Failure:** the platform Postgres is killed under load. The consumer, finding the database down, gave each message back with a fixed 1 s delay; each redelivery counts toward the broker's limit of 8, so an 8 s outage made the broker drop the message.
+- **Observed before the fix:** 11 deliveries stuck `RETRYING` after a 5 s outage and the run took 485 s to finish (the reconciler's 10-minute wait). A back-off-only fix then dead-lettered 1 healthy delivery.
+- **Observed after the fix (hold and retry in place):** 38,097 events stored = accepted, 114,291 deliveries delivered, 0 dead letters, 0 repairs, finished in 0.1 s; later 45 s outages (137,022 deliveries) also gave 0 dead letters and 0 duplicates.
+- **Tests:** `TestMessageIsHeldWhileTheDatabaseIsDownThenGivenBackAfterDBWait`, `TestAnOutageShorterThanDBWaitCostsNoDeliveryAttempt` (cuts the real connection for about a second), and the delay tests. See [benchmarks-linux.md](benchmarks-linux.md), L5.
+
 ## Not yet covered
 
-Scenarios not provoked for real: a consumer crash after the provider call and before the acknowledgement (the poison guard is verified with a simulated delivery count), a Postgres outage, an API crash, and a real loss of the broker's storage (the purge in F27 simulates it). They are analysed in [crash-analysis.md](crash-analysis.md).
+Scenarios not provoked for real: a consumer crash at a chosen point between the provider call and the acknowledgement (consumers were killed at random times in F28, and the poison guard is verified with a simulated delivery count), a Postgres outage longer than 45 s, an API crash loop, and a real loss of the broker's storage (the purge in F27 simulates it). They are analysed in [crash-analysis.md](crash-analysis.md).
